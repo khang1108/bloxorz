@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+"""Root launcher and programmatic entry point for Bloxorz 3D with Solver support."""
+
+import sys
+from pathlib import Path
+from typing import Optional, Callable, List
+
+# Add project root to sys.path
+root_dir = Path(__file__).parent.resolve()
+if str(root_dir) not in sys.path:
+    sys.path.insert(0, str(root_dir))
+
+from ursina import Ursina
+from bloxorz.core.constants import Direction
+from bloxorz.core.board import Board
+from bloxorz.main import BloxorzApp, InputHandler
+
+
+def launch(solver: Optional[Callable[[Board], List[Direction]]] = None) -> BloxorzApp:
+    """Launches the 3D Bloxorz app, optionally binding a custom solver function."""
+    app = Ursina()
+    bloxorz = BloxorzApp()
+    _ = InputHandler(bloxorz)
+
+    if solver:
+        bloxorz.register_solver(solver)
+
+    app.run()
+    return bloxorz
+
+
+if __name__ == "__main__":
+    launch()

@@ -1,0 +1,32 @@
+{
+  "name": "Stage 02",
+  "spawn": {
+    "x": 1,
+    "y": 2,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "111111......",
+    "111111......",
+    "111S11B11111",
+    "111111B11211",
+    "111111.11111",
+    ".......11111"
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [[6, 2], [6, 3]],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 3,
+      "y": 2,
+      "type": "SOFT",
+      "targets": ["b1"],
+      "action": "TOGGLE"
+    }
+  ]
+}

@@ -103,3 +103,18 @@ def load_level_from_file(file_path: Path) -> Board:
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return parse_level_data(data)
+
+
+class LevelLoader:
+    """Convenience class providing static methods to load and parse stages."""
+
+    @staticmethod
+    def load_json_level(file_path: Any) -> Board:
+        """Loads a stage from a path string or Path object."""
+        path_obj = Path(file_path)
+        return load_level_from_file(path_obj)
+
+    @staticmethod
+    def parse(data: Dict[str, Any]) -> Board:
+        """Parses a raw level data dictionary."""
+        return parse_level_data(data)

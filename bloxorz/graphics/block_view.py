@@ -1,9 +1,10 @@
 """3D Block representation and frame-perfect delta-time rolling animations."""
 
-from typing import Callable, Optional, Tuple
+import math
+from typing import Callable, Optional, Tuple, Any
 from ursina import Entity, Vec3, color, curve, time
 
-from bloxorz.core.constants import Direction
+from bloxorz.core.constants import Direction, BlockOrientation
 from bloxorz.core.block import BlockState
 from bloxorz.ui.theme import Palette, Motion
 from bloxorz.config import CONFIG
@@ -41,11 +42,19 @@ class BlockView(Entity):
         self._roll_angle: float = 0.0
         self._on_roll_complete: Optional[Callable[[], None]] = None
 
-        # Fall / Victory animation states
+        # Fall animation state (See-saw cantilever + free fall)
         self._is_falling: bool = False
         self._fall_time: float = 0.0
+        self._is_seesaw: bool = False
+        self._seesaw_phase: int = 1
+        self._seesaw_axis: str = "z"
+        self._tilt_sign: float = 1.0
+        self._current_tilt_angle: float = 0.0
+        self._angular_velocity: float = 0.0
+        self._fall_velocity_y: float = 0.0
         self._on_fall_complete: Optional[Callable[[], None]] = None
 
+        # Victory goal plunge animation state
         self._is_sinking_victory: bool = False
         self._victory_time: float = 0.0
         self._on_victory_complete: Optional[Callable[[], None]] = None
@@ -141,20 +150,73 @@ class BlockView(Entity):
         self._on_roll_complete = on_complete
         self._is_rolling = True
 
-    def animate_fall(self, on_complete: Optional[Callable[[], None]] = None):
-        """Initiates tumbling descent into the abyss upon falling off."""
+    def animate_fall(
+        self,
+        board: Optional[Any] = None,
+        direction: Optional[Direction] = None,
+        on_complete: Optional[Callable[[], None]] = None,
+    ):
+        """Initiates torque-based see-saw tipping or tumbling descent into the abyss."""
         self.is_animating = True
         self._is_rolling = False
         self._is_falling = True
         self._fall_time = 0.0
         self._on_fall_complete = on_complete
+        self._is_seesaw = False
+        self._seesaw_phase = 1
+        self._seesaw_axis = "z"
+        self._tilt_sign = 1.0
+        self._current_tilt_angle = 0.0
+        self._angular_velocity = 0.0
+        self._fall_velocity_y = 0.0
+
+        if self.current_state:
+            c_center = self.current_state.get_center_3d()
+            center_world = Vec3(float(c_center[0]), float(c_center[2]), -float(c_center[1]))
+
+            # Check if exactly one cell is supported on board and one cell is over void (See-Saw Cantilever)
+            cells = list(self.current_state.occupied_cells)
+            if len(cells) == 2 and board:
+                c1, c2 = cells[0], cells[1]
+                s1 = board.is_tile_walkable(board.get_tile(c1[0], c1[1]))
+                s2 = board.is_tile_walkable(board.get_tile(c2[0], c2[1]))
+
+                if s1 != s2:
+                    c_sup = c1 if s1 else c2
+                    c_void = c2 if s1 else c1
+                    self._is_seesaw = True
+
+                    if self.current_state.orientation == BlockOrientation.LYING_X:
+                        self._seesaw_axis = "z"
+                        if c_void[0] > c_sup[0]:  # Void to +X (Right)
+                            fulcrum = Vec3(c_sup[0] + 0.5, 0.0, -c_sup[1])
+                            self._tilt_sign = 1.0  # +rot_z tilts +X down, -X up
+                        else:  # Void to -X (Left)
+                            fulcrum = Vec3(c_sup[0] - 0.5, 0.0, -c_sup[1])
+                            self._tilt_sign = -1.0  # -rot_z tilts -X down, +X up
+                    else:  # LYING_Y
+                        self._seesaw_axis = "x"
+                        if c_void[1] > c_sup[1]:  # Void to South (+Y grid -> -Z Ursina)
+                            fulcrum = Vec3(c_sup[0], 0.0, -(c_sup[1] + 0.5))
+                            self._tilt_sign = -1.0  # -rot_x tilts -Z down, +Z up
+                        else:  # Void to North (-Y grid -> +Z Ursina)
+                            fulcrum = Vec3(c_sup[0], 0.0, -(c_sup[1] - 0.5))
+                            self._tilt_sign = 1.0  # +rot_x tilts +Z down, -Z up
+
+                    # Pivot on the supported tile edge at surface Y = 0.0 (prevents floor clipping)
+                    self.pivot.position = fulcrum
+                    self.pivot.rotation = Vec3(0, 0, 0)
+                    self.mesh.position = center_world - fulcrum
+                    self.mesh.rotation = Vec3(0, 0, 0)
+                    self._angular_velocity = self._tilt_sign * 18.0
 
     def animate_victory(self, on_complete: Optional[Callable[[], None]] = None):
-        """Initiates sinking into the goal hole upon victory."""
+        """Initiates prolonged sinking descent into the goal hole upon victory."""
         self.is_animating = True
         self._is_rolling = False
         self._is_sinking_victory = True
         self._victory_time = 0.0
+        self._fall_velocity_y = 0.0
         self._on_victory_complete = on_complete
 
     def update(self):
@@ -185,12 +247,53 @@ class BlockView(Entity):
         # Handle falling
         elif self._is_falling:
             self._fall_time += dt
-            self.pivot.y -= CONFIG.block.fall_gravity * dt
-            self.pivot.rotation_x += CONFIG.block.fall_rot_x * dt
-            self.pivot.rotation_y += CONFIG.block.fall_rot_y * dt
-            self.pivot.rotation_z += CONFIG.block.fall_rot_z * dt
+            g = getattr(CONFIG.block, "fall_gravity", 9.8)
 
-            if self._fall_time >= Motion.FALL_DURATION:
+            if self._is_seesaw:
+                if self._seesaw_phase == 1:
+                    # Phase 1: See-saw moment & torque about supported tile edge
+                    # Torque tau = F * r * sin(theta + 12 deg), where F = m * g (g = 9.8)
+                    # Angular acceleration alpha = tau / I in rad/s^2, converted to deg/s^2
+                    rad_arm = math.radians(abs(self._current_tilt_angle) + 12.0)
+                    torque_alpha = self._tilt_sign * (0.75 * g * math.sin(rad_arm)) * (180.0 / math.pi)
+                    self._angular_velocity += torque_alpha * dt
+                    self._current_tilt_angle += self._angular_velocity * dt
+
+                    if self._seesaw_axis == "z":
+                        self.pivot.rotation_z = self._current_tilt_angle
+                    else:
+                        self.pivot.rotation_x = self._current_tilt_angle
+
+                    # When tipped past 65 degrees, the block slips off the edge into free fall
+                    if abs(self._current_tilt_angle) >= 65.0:
+                        self._seesaw_phase = 2
+                        world_pos = self.mesh.world_position
+                        world_rot = self.mesh.world_rotation
+                        self.pivot.position = world_pos
+                        self.pivot.rotation = world_rot
+                        self.mesh.position = Vec3(0, 0, 0)
+                        self.mesh.rotation = Vec3(0, 0, 0)
+                        self._fall_velocity_y = 2.5
+                else:
+                    # Phase 2: Free fall into the abyss
+                    self._fall_velocity_y += g * dt
+                    self.pivot.y -= self._fall_velocity_y * dt
+                    if self._seesaw_axis == "z":
+                        self.pivot.rotation_z += self._angular_velocity * dt
+                        self.pivot.rotation_y += self._tilt_sign * 50.0 * dt
+                    else:
+                        self.pivot.rotation_x += self._angular_velocity * dt
+                        self.pivot.rotation_y += self._tilt_sign * 50.0 * dt
+            else:
+                # Direct fall (fragile tile collapse or standing off edge)
+                self._fall_velocity_y += g * dt
+                self.pivot.y -= self._fall_velocity_y * dt
+                self.pivot.rotation_x += CONFIG.block.fall_rot_x * dt
+                self.pivot.rotation_y += CONFIG.block.fall_rot_y * dt
+                self.pivot.rotation_z += CONFIG.block.fall_rot_z * dt
+
+            fall_dur = Motion.FALL_DURATION
+            if self._fall_time >= fall_dur:
                 self._is_falling = False
                 self.is_animating = False
                 self.mesh.visible = False
@@ -202,12 +305,25 @@ class BlockView(Entity):
         # Handle victory sink
         elif self._is_sinking_victory:
             self._victory_time += dt
-            sink_dur = Motion.VICTORY_PULSE_DURATION
-            if self._victory_time <= sink_dur:
-                self.pivot.y -= (CONFIG.block.victory_sink_depth * dt) / sink_dur
-            else:
+            sink_dur = getattr(Motion, "VICTORY_FALL_DURATION", 4.50)
+            g = getattr(CONFIG.block, "fall_gravity", 9.8)
+
+            # Smoothly accelerate downward into the deep goal well
+            self._fall_velocity_y += (0.42 * g) * dt
+            self.pivot.y -= self._fall_velocity_y * dt
+
+            # As it plunges deep into the hole, gently shrink as it descends into infinite depths
+            progress = min(1.0, self._victory_time / sink_dur)
+            dim = self.current_state.get_dimensions_3d() if self.current_state else (1, 1, 2)
+            base_scale = self._compute_scale(dim)
+            if progress > 0.12:
+                shrink = max(0.02, 1.0 - ((progress - 0.12) / 0.88) * 0.98)
+                self.mesh.scale = base_scale * shrink
+
+            if self._victory_time >= sink_dur:
                 self._is_sinking_victory = False
                 self.is_animating = False
+                self.mesh.visible = False
                 if self._on_victory_complete:
                     cb = self._on_victory_complete
                     self._on_victory_complete = None

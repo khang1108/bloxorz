@@ -32,18 +32,19 @@ step_orbit_angle = 45.0         # Step rotation angle for Q/E keys (degrees)
 
 [motion]
 roll_duration = 0.20            # Block roll duration in seconds (200ms)
-fall_duration = 0.65            # Fall animation duration before level restart
-victory_pulse_duration = 0.50   # Goal sinking animation duration
+fall_duration = 1.30            # Fall animation duration (see-saw tipping + free fall) in seconds
+victory_fall_duration = 4.50    # Goal plunge descent duration before victory menu in seconds (4-8s)
+victory_pulse_duration = 4.50   # Backward-compatible alias
 fade_transition = 0.25          # UI scene fade duration
 
 [graphics.block]
 unit_scale_1 = 0.86             # Visual scale for 1-unit block edge (leaves 0.14 gap)
 unit_scale_2 = 1.86             # Visual scale for 2-unit block edge
-fall_gravity = 14.0             # Y-axis descent velocity during fall
+fall_gravity = 9.8              # Downward gravitational acceleration g = 9.8 m/s^2
 fall_rot_x = 120.0              # Tumbling rotation speed on X (deg/sec)
 fall_rot_y = 80.0               # Tumbling rotation speed on Y (deg/sec)
 fall_rot_z = 60.0               # Tumbling rotation speed on Z (deg/sec)
-victory_sink_depth = 0.75       # Depth the block sinks into the goal hole
+victory_sink_depth = 16.0       # Depth the block plunges through the goal hole into abyss
 
 [graphics.board]
 tile_size = 0.86                # Standard tile width/length (leaving 0.14 void gap)

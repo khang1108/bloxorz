@@ -178,7 +178,11 @@ class BloxorzApp:
                 def on_fall_done():
                     invoke(self.restart_stage, delay=0.2)
 
-                self.block_view.animate_fall(on_complete=on_fall_done)
+                self.block_view.animate_fall(
+                    board=self.game.board,
+                    direction=direction,
+                    on_complete=on_fall_done,
+                )
 
             if on_done:
                 on_done(outcome)

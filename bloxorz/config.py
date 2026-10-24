@@ -109,10 +109,15 @@ class BoardConfig:
 
 @dataclass
 class AudioConfig:
-    """Procedural audio synthesis parameters, sample rates, and sample lengths."""
+    """Procedural audio synthesis parameters, volume levels, and theme tracks."""
     enabled: bool = True          # Master audio mute toggle (True: enabled, False: muted)
     sample_rate: int = 44100      # Audio synthesis sample rate in Hz (CD quality 44.1 kHz)
     master_headroom: float = 0.75  # Amplitude headroom scaling (75% of max signed 16-bit integer)
+    bgm_enabled: bool = True      # Background theme music enabled (True: playing, False: muted)
+    bgm_volume: float = 0.50      # Background music playback volume (0.0 to 1.0)
+    sfx_enabled: bool = True      # Sound effects enabled (True: playing, False: muted)
+    sfx_volume: float = 0.80      # Sound effects playback volume (0.0 to 1.0)
+    theme_track: str = "background.mp3"  # BGM theme filename located in assets/sounds/
     roll_duration: float = 0.07   # Duration of slate rolling tap waveform in seconds (70ms)
     switch_duration: float = 0.045  # Duration of mechanical click waveform in seconds (45ms)
     fall_duration: float = 0.40   # Duration of descending abyss whoosh waveform in seconds (400ms)

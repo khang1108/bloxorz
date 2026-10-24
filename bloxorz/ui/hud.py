@@ -45,7 +45,7 @@ class HUD:
             parent=self.root,
             text=(
                 "[ WASD / ARROWS ] ROLL   ·   [ RMB DRAG ] ORBIT   ·   "
-                "[ SCROLL ] ZOOM   ·   [ Q/E ] ROTATE   ·   [ C ] RESET   ·   [ ESC ] MENU"
+                "[ SCROLL ] ZOOM   ·   [ Q/E ] ROTATE   ·   [ C ] RESET   ·   [ O ] SETTINGS   ·   [ ESC ] MENU"
             ),
             position=(0.0, -0.46),
             scale=0.48,

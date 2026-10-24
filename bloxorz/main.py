@@ -66,6 +66,7 @@ class BloxorzApp:
             on_toggle_audio=self.sound_mgr.toggle_audio,
             get_audio_status=lambda: self.sound_mgr.enabled,
             stages_count=len(self.stage_files),
+            sound_mgr=self.sound_mgr,
         )
 
         self.game: Game = None
@@ -317,6 +318,14 @@ class BloxorzApp:
         if k_clean == "m":
             self.sound_mgr.toggle_audio()
             return
+        if k_clean in ("o", "raw_o"):
+            if self.menu_mgr.is_settings_open():
+                self.menu_mgr.close_all()
+                self.camera_ctrl.enabled_controls = True
+            else:
+                self.camera_ctrl.enabled_controls = False
+                self.menu_mgr.show_settings_menu(self.current_stage_idx)
+            return
         if k_clean == "p":
             self.trigger_solver()
             return
@@ -401,6 +410,7 @@ class InputHandler(Entity):
                 "u": ["u", "raw-u"],
                 "r": ["r", "raw-r"],
                 "m": ["m", "raw-m"],
+                "o": ["o", "raw-o", "raw_o"],
                 "p": ["p", "raw-p"],
                 "c": ["c", "raw-c"],
                 "q": ["q", "raw-q"],

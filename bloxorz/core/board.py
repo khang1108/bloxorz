@@ -86,6 +86,11 @@ class Board:
         """Calculates center of the board in 2D coordinates."""
         return ((self.min_x + self.max_x) / 2.0, (self.min_y + self.max_y) / 2.0)
 
+    @property
+    def has_teleports(self) -> bool:
+        """Indicates if this stage contains teleport/splitter tiles."""
+        return any(tile == TileType.TELEPORT for tile in self.base_tiles.values())
+
     def reset(self):
         """Resets dynamic board elements (bridges, fragile states)."""
         self.current_tiles = dict(self.base_tiles)

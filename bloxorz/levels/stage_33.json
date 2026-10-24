@@ -1,0 +1,220 @@
+{
+  "name": "Stage 33",
+  "passcode": "614955",
+  "spawn": {
+    "x": 1,
+    "y": 3,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    ".....11S111....",
+    ".....111111B...",
+    "111..S11S11111.",
+    "111111111SS11S.",
+    ".....11S11S111.",
+    ".....111111S11.",
+    "111..111111S111",
+    "121111S1..111SH",
+    "111..111...1111",
+    "111.........111"
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          11,
+          1
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          3
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          3,
+          7
+        ],
+        [
+          4,
+          7
+        ]
+      ],
+      "initially_open": true
+    }
+  ],
+  "switches": [
+    {
+      "x": 7,
+      "y": 0,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 9,
+      "y": 3,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 10,
+      "y": 3,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 13,
+      "y": 3,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 7,
+      "y": 4,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 10,
+      "y": 4,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 11,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 11,
+      "y": 6,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 6,
+      "y": 7,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 13,
+      "y": 7,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 14,
+      "y": 7,
+      "type": "HEAVY",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "OPEN"
+      },
+      "action": "OPEN"
+    }
+  ],
+  "teleports": []
+}

@@ -43,6 +43,7 @@ class Switch:
     switch_type: TileType  # SWITCH_SOFT or SWITCH_HEAVY
     target_bridge_ids: List[str]
     action: SwitchAction = SwitchAction.TOGGLE
+    target_actions: Optional[Dict[str, SwitchAction]] = None
 
 
 class Board:
@@ -99,7 +100,14 @@ class Board:
     def clone(self) -> "Board":
         """Returns a deep copy of the board for solver state-space branching."""
         cloned_switches = [
-            Switch(s.x, s.y, s.switch_type, list(s.target_bridge_ids), s.action)
+            Switch(
+                s.x,
+                s.y,
+                s.switch_type,
+                list(s.target_bridge_ids),
+                s.action,
+                dict(s.target_actions) if s.target_actions else None,
+            )
             for s in self.switches.values()
         ]
         cloned_bridges = {
@@ -138,6 +146,7 @@ class Board:
             TileType.SWITCH_HEAVY,
             TileType.BRIDGE_OPEN,
             TileType.GOAL,
+            TileType.TELEPORT,
         )
 
     def evaluate_block_state(self, block: BlockState) -> Tuple[str, Optional[Tuple[int, int]]]:
@@ -145,7 +154,7 @@ class Board:
 
         Returns:
             (outcome, cause_coord):
-            outcome is one of: 'SAFE', 'VICTORY', 'FELL_VOID', 'FELL_FRAGILE', 'FELL_HALF_GOAL'
+            outcome is one of: 'SAFE', 'VICTORY', 'FELL_VOID', 'FELL_FRAGILE'
         """
         cells = block.occupied_cells
 
@@ -165,14 +174,7 @@ class Board:
             if tile == TileType.FRAGILE:
                 return ("FELL_FRAGILE", cell)
 
-        # 3. Lying tests
-        else:
-            # If any cell is on the GOAL while lying down, the block falls halfway into the hole
-            for cell in cells:
-                tile = self.get_tile(cell[0], cell[1])
-                if tile == TileType.GOAL:
-                    return ("FELL_HALF_GOAL", cell)
-
+        # 3. Lying tests: all occupied cells are walkable (including GOAL) -> SAFE
         return ("SAFE", None)
 
     def trigger_switches(self, block: BlockState) -> List[str]:
@@ -200,11 +202,16 @@ class Board:
                 for bridge_id in switch.target_bridge_ids:
                     bridge = self.bridges.get(bridge_id)
                     if bridge:
-                        if switch.action == SwitchAction.TOGGLE:
+                        act = (
+                            switch.target_actions.get(bridge_id, switch.action)
+                            if switch.target_actions
+                            else switch.action
+                        )
+                        if act == SwitchAction.TOGGLE:
                             bridge.toggle()
-                        elif switch.action == SwitchAction.OPEN:
+                        elif act == SwitchAction.OPEN:
                             bridge.open()
-                        elif switch.action == SwitchAction.CLOSE:
+                        elif act == SwitchAction.CLOSE:
                             bridge.close()
                         self._sync_bridge_tiles(bridge)
                         modified_bridges.append(bridge_id)

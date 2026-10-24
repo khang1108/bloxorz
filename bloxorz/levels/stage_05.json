@@ -1,16 +1,116 @@
 {
   "name": "Stage 05",
+  "passcode": "028431",
   "spawn": {
-    "x": 0,
-    "y": 0,
+    "x": 13,
+    "y": 1,
     "orientation": "STANDING"
   },
   "layout": [
-    "1111........",
-    "..1111......",
-    "....1111....",
-    "......1111..",
-    "........1111",
-    "..........12"
-  ]
+    "...........1111",
+    ".1111111S111111",
+    ".1111.......111",
+    ".11S1..........",
+    ".1111..........",
+    "...111S111111..",
+    "..........1111S",
+    "111.......11111",
+    "1211111111111..",
+    "1111..........."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          8,
+          5
+        ],
+        [
+          9,
+          5
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          5,
+          8
+        ],
+        [
+          6,
+          8
+        ]
+      ],
+      "initially_open": true
+    }
+  ],
+  "switches": [
+    {
+      "x": 8,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 6,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 14,
+      "y": 6,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
 }

@@ -1,0 +1,46 @@
+{
+  "name": "Stage 07",
+  "passcode": "189493",
+  "spawn": {
+    "x": 1,
+    "y": 3,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "........1111...",
+    "........1111...",
+    "111.....1..1111",
+    "111111111...121",
+    "111....11H..111",
+    "111....111..111",
+    ".11B...1.......",
+    "..111111......."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          3,
+          6
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 9,
+      "y": 4,
+      "type": "HEAVY",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

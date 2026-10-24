@@ -10,17 +10,16 @@ root_dir = Path(__file__).parent.resolve()
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
-from ursina import Ursina
-from bloxorz.core.constants import Direction
-from bloxorz.core.board import Board
-from bloxorz.main import BloxorzApp, InputHandler
+from ursina import Ursina  # noqa: E402
+from bloxorz.core.constants import Direction  # noqa: E402
+from bloxorz.core.board import Board  # noqa: E402
+from bloxorz.main import BloxorzApp  # noqa: E402
 
 
 def launch(solver: Optional[Callable[[Board], List[Direction]]] = None) -> BloxorzApp:
     """Launches the 3D Bloxorz app, optionally binding a custom solver function."""
     app = Ursina()
     bloxorz = BloxorzApp()
-    _ = InputHandler(bloxorz)
 
     if solver:
         bloxorz.register_solver(solver)

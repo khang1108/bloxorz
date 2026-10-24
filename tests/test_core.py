@@ -1,10 +1,11 @@
 """Unit tests for Bloxorz core mechanics."""
 
 import unittest
+from pathlib import Path
 from bloxorz.core.constants import Direction, BlockOrientation, TileType, GameStatus
 from bloxorz.core.block import BlockState
 from bloxorz.core.game import Game
-from bloxorz.core.level_loader import parse_level_data
+from bloxorz.core.level_loader import parse_level_data, load_level_from_file
 
 
 class TestBlockRollMechanics(unittest.TestCase):
@@ -94,9 +95,27 @@ class TestBoardMechanics(unittest.TestCase):
         assert res == "SAFE"
 
         # (0, 1) LYING_Y -> RIGHT -> (1, 1) LYING_Y (cells (1,1), (1,2))
-        # Note: cell (1,1) is GOAL, lying on goal -> FELL_HALF_GOAL!
+        # Note: cell (1,1) is GOAL, cell (1,2) is NORMAL tile -> lying across goal is SAFE!
         res, state, _ = game.roll(Direction.RIGHT)
-        assert res == "FELL_HALF_GOAL"
+        assert res == "SAFE"
+
+    def test_stage_01_lying_on_goal_is_safe(self):
+        """Verifies the exact scenario from Stage 1: lying horizontally across goal is SAFE."""
+        stage_file = Path(__file__).parent.parent / "bloxorz" / "levels" / "stage_01.json"
+        board = load_level_from_file(stage_file)
+
+        # In Stage 1, goal is at board.goal_pos (7, 4)
+        gx, gy = board.goal_pos
+        # Block lying on (gx - 1, gy) and (gx, gy)
+        lying_block = BlockState(gx - 1, gy, BlockOrientation.LYING_X)
+        outcome, cause = board.evaluate_block_state(lying_block)
+        assert outcome == "SAFE"
+        assert cause is None
+
+        # Standing on goal (gx, gy)
+        standing_block = BlockState(gx, gy, BlockOrientation.STANDING)
+        outcome, cause = board.evaluate_block_state(standing_block)
+        assert outcome == "VICTORY"
 
     def test_standing_on_goal_wins(self):
         # Create a layout where we stand directly onto goal

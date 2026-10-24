@@ -1,0 +1,90 @@
+{
+  "name": "Stage 19",
+  "passcode": "119785",
+  "spawn": {
+    "x": 1,
+    "y": 0,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    ".111111111S1111",
+    ".....11......11",
+    ".....11......11",
+    ".............11",
+    ".............11",
+    "111..11BB1S1111",
+    "121..11........",
+    "111..11........",
+    ".11..11........",
+    ".111111111S111."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          7,
+          5
+        ],
+        [
+          8,
+          5
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          2,
+          9
+        ],
+        [
+          3,
+          9
+        ]
+      ],
+      "initially_open": true
+    }
+  ],
+  "switches": [
+    {
+      "x": 10,
+      "y": 0,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 10,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 10,
+      "y": 9,
+      "type": "SOFT",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "OPEN"
+      },
+      "action": "OPEN"
+    }
+  ],
+  "teleports": []
+}

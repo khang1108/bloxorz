@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 from typing import List, Optional, Callable, Dict, Any
 from ursina import (
@@ -19,20 +20,21 @@ from bloxorz.graphics.camera_ctrl import CameraController
 from bloxorz.graphics.board_view import BoardView
 from bloxorz.graphics.block_view import BlockView
 from bloxorz.audio.sound_manager import SoundManager
+from bloxorz.config import CONFIG
 
 
 class BloxorzApp:
     """Master application coordinator managing graphics, input, audio, and state."""
 
     def __init__(self):
-        # Configure Ursina window for high refresh-rate minimalist experience
-        window.title = "BLOXORZ 3D  ·  ARCHITECTURAL MINIMALISM"
-        window.borderless = False
-        window.fullscreen = False
-        window.size = (1280, 720)
+        # Configure Ursina window from centralized config
+        window.title = CONFIG.window.title
+        window.borderless = CONFIG.window.borderless
+        window.fullscreen = CONFIG.window.fullscreen
+        window.size = (CONFIG.window.width, CONFIG.window.height)
         window.color = color.hex(Palette.BACKGROUND.hex_code)
         window.show_ursina_splash = False
-        window.vsync = True  # Supports 60, 120, 144+ FPS without screen tearing
+        window.vsync = CONFIG.window.vsync
 
         # Find level files
         self.levels_dir = Path(__file__).parent / "levels"
@@ -53,7 +55,7 @@ class BloxorzApp:
         self._is_playing_solution: bool = False
         self._active_solution: List[Direction] = []
         self._solution_idx: int = 0
-        self._solution_delay: float = 0.08
+        self._solution_delay: float = CONFIG.solver.default_delay
         self._on_solution_complete: Optional[Callable[[], None]] = None
 
         self.menu_mgr = MenuManager(
@@ -67,6 +69,9 @@ class BloxorzApp:
         )
 
         self.game: Game = None
+        self._last_input_time: float = 0.0
+        self._last_input_key: str = ""
+        self.input_handler = InputHandler(self)
         self.load_stage_by_index(self.current_stage_idx, animate_camera=False)
 
     def load_stage_by_index(self, stage_idx: int, animate_camera: bool = True):
@@ -154,11 +159,11 @@ class BloxorzApp:
                 self.sound_mgr.play("win")
                 self.block_view.animate_victory(
                     on_complete=lambda: self.menu_mgr.show_victory_menu(
-                        self.game.board.level_name, self.game.move_count
+                        self.game.board.level_name, self.game.move_count, self.current_stage_idx
                     )
                 )
 
-            elif outcome in ("FELL_VOID", "FELL_FRAGILE", "FELL_HALF_GOAL"):
+            elif outcome in ("FELL_VOID", "FELL_FRAGILE"):
                 self.hud.update_moves(self.game.move_count)
                 self.sound_mgr.play("fall")
                 banner_msg = "FRAGILE COLLAPSE" if outcome == "FELL_FRAGILE" else "FELL INTO VOID"
@@ -265,54 +270,135 @@ class BloxorzApp:
     # =========================================================================
 
     def handle_input(self, key: str):
-        """Processes global keyboard shortcuts."""
-        k = key.lower()
+        """Processes global keyboard shortcuts with robust normalization and debouncing."""
+        k = key.lower().strip()
+        k_clean = k.replace("-", "_").replace(" ", "_")
+        if k_clean.startswith("raw_"):
+            k_clean = k_clean[4:]
 
-        # Movement: W-S swapped with A-D to align with isometric projection + full arrow keys support
-        if k in ("w", "arrow_up", "up arrow", "up"):
-            self.handle_move(Direction.RIGHT)
-        elif k in ("s", "arrow_down", "down arrow", "down"):
-            self.handle_move(Direction.LEFT)
-        elif k in ("a", "arrow_left", "left arrow", "left"):
-            self.handle_move(Direction.UP)
-        elif k in ("d", "arrow_right", "right arrow", "right"):
-            self.handle_move(Direction.DOWN)
+        # Debounce duplicate events arriving within 50ms (e.g. both ShowBase and Ursina input)
+        now = time.time()
+        if k_clean == self._last_input_key and (now - self._last_input_time) < 0.05:
+            return
+        self._last_input_time = now
+        self._last_input_key = k_clean
 
-        # Actions
-        elif k == "u":
+        # Global Control Actions
+        if k_clean == "u":
             self.handle_undo()
-        elif k == "r":
+            return
+        if k_clean == "r":
             self.restart_stage()
-        elif k == "m":
+            return
+        if k_clean == "m":
             self.sound_mgr.toggle_audio()
-        elif k == "p":
+            return
+        if k_clean == "p":
             self.trigger_solver()
-        elif k == "escape":
-            if self.menu_mgr.pause_root or self.menu_mgr.stage_select_root:
+            return
+        if k_clean == "escape":
+            if self.menu_mgr.is_any_menu_open():
                 self.menu_mgr.close_all()
             else:
-                self.menu_mgr.show_pause_menu()
-        elif k == "space":
+                self.menu_mgr.show_stage_select_menu(self.current_stage_idx)
+            return
+        if k_clean == "space":
             if self.menu_mgr.victory_root:
                 self.next_stage()
+            return
+
+        arrow_scheme = getattr(getattr(CONFIG, "controls", None), "arrow_scheme", "isometric")
+
+        if arrow_scheme == "classic":
+            # Arrow Keys: Classic Bloxorz cardinal grid navigation
+            # Right Arrow: East (+X), Left Arrow: West (-X), Up Arrow: North (-Y), Down Arrow: South (+Y)
+            if k_clean in ("right_arrow", "arrow_right", "raw_arrow_right", "right"):
+                self.handle_move(Direction.RIGHT)
+            elif k_clean in ("left_arrow", "arrow_left", "raw_arrow_left", "left"):
+                self.handle_move(Direction.LEFT)
+            elif k_clean in ("up_arrow", "arrow_up", "raw_arrow_up", "up"):
+                self.handle_move(Direction.UP)
+            elif k_clean in ("down_arrow", "arrow_down", "raw_arrow_down", "down"):
+                self.handle_move(Direction.DOWN)
+
+            # WASD: Screen-relative isometric projection diagonals
+            elif k_clean == "w":
+                self.handle_move(Direction.RIGHT)  # Screen Up-Right (+X)
+            elif k_clean == "s":
+                self.handle_move(Direction.LEFT)   # Screen Down-Left (-X)
+            elif k_clean == "a":
+                self.handle_move(Direction.UP)     # Screen Up-Left (-Y)
+            elif k_clean == "d":
+                self.handle_move(Direction.DOWN)   # Screen Down-Right (+Y)
+        else:
+            # Unified Isometric scheme: Both WASD and Arrows steer along screen diagonals
+            if k_clean in ("w", "up", "arrow_up", "up_arrow", "raw_arrow_up", "raw_up"):
+                self.handle_move(Direction.RIGHT)
+            elif k_clean in ("s", "down", "arrow_down", "down_arrow", "raw_arrow_down", "raw_down"):
+                self.handle_move(Direction.LEFT)
+            elif k_clean in ("a", "left", "arrow_left", "left_arrow", "raw_arrow_left", "raw_left"):
+                self.handle_move(Direction.UP)
+            elif k_clean in ("d", "right", "arrow_right", "right_arrow", "raw_arrow_right", "raw_right"):
+                self.handle_move(Direction.DOWN)
 
 
 class InputHandler(Entity):
-    """OOP Input dispatching entity for Ursina event loop."""
+    """OOP Input dispatching entity bridging Ursina event loop and direct Panda3D ShowBase."""
 
     def __init__(self, app_instance: BloxorzApp):
         super().__init__()
         self.app_instance = app_instance
+        self._setup_direct_listeners()
 
-    def input(self, key):
+    def _setup_direct_listeners(self):
+        """Registers direct ShowBase event listeners for hardware key scancodes.
+
+        On Linux (Wayland/X11/IBus), Ursina only binds 'raw-' listeners for
+        alphanumeric keys, ignoring raw control keys ('raw-escape', 'raw-space')
+        and raw arrow key scancodes ('raw-arrow_up', etc.).
+        Hooking directly into Panda3D ShowBase ensures 100% reliable hardware key delivery.
+        """
+        try:
+            from direct.showbase.ShowBaseGlobal import base
+            if not base:
+                return
+
+            event_map = {
+                "up arrow": ["arrow_up", "raw-arrow_up", "up", "raw-up", "arrow-up", "raw-arrow-up"],
+                "down arrow": ["arrow_down", "raw-arrow_down", "down", "raw-down", "arrow-down", "raw-arrow-down"],
+                "left arrow": ["arrow_left", "raw-arrow_left", "left", "raw-left", "arrow-left", "raw-arrow-left"],
+                "right arrow": [
+                    "arrow_right", "raw-arrow_right", "right", "raw-right", "arrow-right", "raw-arrow-right"
+                ],
+                "escape": ["escape", "raw-escape"],
+                "space": ["space", "raw-space"],
+                "u": ["u", "raw-u"],
+                "r": ["r", "raw-r"],
+                "m": ["m", "raw-m"],
+                "p": ["p", "raw-p"],
+                "w": ["w", "raw-w"],
+                "a": ["a", "raw-a"],
+                "s": ["s", "raw-s"],
+                "d": ["d", "raw-d"],
+            }
+
+            for key_name, events in event_map.items():
+                for ev in events:
+                    base.accept(ev, self._make_event_callback(key_name))
+        except Exception:
+            pass
+
+    def _make_event_callback(self, key_name: str):
+        return lambda: self.app_instance.handle_input(key_name)
+
+    def input(self, key: str):
         self.app_instance.handle_input(key)
 
 
 def main():
     """Application launcher."""
     app = Ursina()
-    bloxorz = BloxorzApp()
-    _ = InputHandler(bloxorz)
+    _ = BloxorzApp()
     app.run()
 
 

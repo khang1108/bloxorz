@@ -16,10 +16,14 @@ CHAR_TO_TILE = {
     "2": TileType.GOAL,
     "G": TileType.GOAL,
     "3": TileType.FRAGILE,
+    "-": TileType.FRAGILE,
     "O": TileType.FRAGILE,
     "S": TileType.SWITCH_SOFT,
     "H": TileType.SWITCH_HEAVY,
+    "X": TileType.SWITCH_HEAVY,
     "B": TileType.BRIDGE_CLOSED,
+    "T": TileType.TELEPORT,
+    "8": TileType.TELEPORT,
 }
 
 
@@ -68,12 +72,19 @@ def parse_level_data(data: Dict[str, Any]) -> Board:
         action_str = s_data.get("action", "TOGGLE").upper()
         action = SwitchAction[action_str]
         s_type = TileType.SWITCH_HEAVY if s_data.get("type") == "HEAVY" else TileType.SWITCH_SOFT
+        target_actions = None
+        if "actions" in s_data and isinstance(s_data["actions"], dict):
+            target_actions = {
+                b_id: SwitchAction[act.upper()]
+                for b_id, act in s_data["actions"].items()
+            }
         switch = Switch(
             x=s_data["x"],
             y=s_data["y"],
             switch_type=s_type,
             target_bridge_ids=s_data.get("targets", []),
             action=action,
+            target_actions=target_actions,
         )
         switches.append(switch)
         tiles[(switch.x, switch.y)] = s_type

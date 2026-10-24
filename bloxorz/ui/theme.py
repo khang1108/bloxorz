@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Tuple
+from bloxorz.config import CONFIG
 
 
 @dataclass(frozen=True)
@@ -81,7 +82,7 @@ class Typography:
 
 class Motion:
     """Motion curves and duration constants for 60-120fps animations."""
-    ROLL_DURATION = 0.20          # 200ms silky-smooth tactile roll
-    FALL_DURATION = 0.65          # Falling into abyss
-    VICTORY_PULSE_DURATION = 0.5  # Sinking flush into goal
-    FADE_TRANSITION = 0.25        # UI scene transitions
+    ROLL_DURATION = CONFIG.motion.roll_duration
+    FALL_DURATION = CONFIG.motion.fall_duration
+    VICTORY_PULSE_DURATION = CONFIG.motion.victory_pulse_duration
+    FADE_TRANSITION = CONFIG.motion.fade_transition

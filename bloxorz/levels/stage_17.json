@@ -1,0 +1,128 @@
+{
+  "name": "Stage 17",
+  "passcode": "683596",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "111............",
+    "111111111B..111",
+    "111....B1111121",
+    "111.........HH1",
+    "111............",
+    "111............",
+    "111...B11111H..",
+    "11111111B..11..",
+    "1S1........11..",
+    "111........1H.."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          9,
+          1
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          7,
+          2
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          6,
+          6
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b4",
+      "tiles": [
+        [
+          8,
+          7
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 12,
+      "y": 3,
+      "type": "HEAVY",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 13,
+      "y": 3,
+      "type": "HEAVY",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 12,
+      "y": 6,
+      "type": "HEAVY",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 1,
+      "y": 8,
+      "type": "SOFT",
+      "targets": [
+        "b4"
+      ],
+      "actions": {
+        "b4": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 12,
+      "y": 9,
+      "type": "HEAVY",
+      "targets": [
+        "b1",
+        "b4"
+      ],
+      "actions": {
+        "b1": "OPEN",
+        "b4": "CLOSE"
+      },
+      "action": "OPEN"
+    }
+  ],
+  "teleports": []
+}

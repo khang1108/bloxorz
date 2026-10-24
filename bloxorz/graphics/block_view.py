@@ -6,6 +6,7 @@ from ursina import Entity, Vec3, color, curve, time
 from bloxorz.core.constants import Direction
 from bloxorz.core.block import BlockState
 from bloxorz.ui.theme import Palette, Motion
+from bloxorz.config import CONFIG
 
 
 class BlockView(Entity):
@@ -51,10 +52,12 @@ class BlockView(Entity):
 
     @staticmethod
     def _compute_scale(dim: Tuple[float, float, float]) -> Vec3:
-        """Calculates exact visual scale: 0.86 for 1 unit, 1.86 for 2 units."""
-        sx = 1.86 if dim[0] > 1.5 else 0.86
-        sy = 1.86 if dim[2] > 1.5 else 0.86  # Height along Y in Ursina
-        sz = 1.86 if dim[1] > 1.5 else 0.86  # Depth along Z in Ursina
+        """Calculates visual scale based on unit dimensions configured in config."""
+        u1 = CONFIG.block.unit_scale_1
+        u2 = CONFIG.block.unit_scale_2
+        sx = u2 if dim[0] > 1.5 else u1
+        sy = u2 if dim[2] > 1.5 else u1  # Height along Y in Ursina
+        sz = u2 if dim[1] > 1.5 else u1  # Depth along Z in Ursina
         return Vec3(sx, sy, sz)
 
     def sync_to_state(self, state: BlockState):
@@ -182,10 +185,10 @@ class BlockView(Entity):
         # Handle falling
         elif self._is_falling:
             self._fall_time += dt
-            self.pivot.y -= 14.0 * dt
-            self.pivot.rotation_x += 120.0 * dt
-            self.pivot.rotation_y += 80.0 * dt
-            self.pivot.rotation_z += 60.0 * dt
+            self.pivot.y -= CONFIG.block.fall_gravity * dt
+            self.pivot.rotation_x += CONFIG.block.fall_rot_x * dt
+            self.pivot.rotation_y += CONFIG.block.fall_rot_y * dt
+            self.pivot.rotation_z += CONFIG.block.fall_rot_z * dt
 
             if self._fall_time >= Motion.FALL_DURATION:
                 self._is_falling = False
@@ -201,7 +204,7 @@ class BlockView(Entity):
             self._victory_time += dt
             sink_dur = Motion.VICTORY_PULSE_DURATION
             if self._victory_time <= sink_dur:
-                self.pivot.y -= (0.75 * dt) / sink_dur
+                self.pivot.y -= (CONFIG.block.victory_sink_depth * dt) / sink_dur
             else:
                 self._is_sinking_victory = False
                 self.is_animating = False

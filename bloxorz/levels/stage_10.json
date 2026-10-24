@@ -1,0 +1,108 @@
+{
+  "name": "Stage 10",
+  "passcode": "300590",
+  "spawn": {
+    "x": 9,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "111.....111111",
+    "121BB1BB111181",
+    "111.....1111B.",
+    ".........111B.",
+    "...........11.",
+    "............1.",
+    "............1.",
+    "...........11.",
+    "....11111..11.",
+    "....1S..111H1."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          12,
+          2
+        ],
+        [
+          12,
+          3
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 5,
+      "y": 9,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 11,
+      "y": 9,
+      "type": "HEAVY",
+      "targets": [
+        "b2",
+        "b3"
+      ],
+      "actions": {
+        "b2": "TOGGLE",
+        "b3": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": [
+    {
+      "x": 12,
+      "y": 1,
+      "target_1": [
+        9,
+        1
+      ],
+      "target_2": [
+        12,
+        1
+      ],
+      "selected": 1
+    }
+  ]
+}

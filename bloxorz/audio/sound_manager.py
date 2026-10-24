@@ -9,13 +9,14 @@ import struct
 import wave
 from pathlib import Path
 from typing import Dict, Optional, Any
+from bloxorz.config import CONFIG
 
 
 class SoundManager:
     """Manages audio generation and playback for Bloxorz."""
 
     def __init__(self, assets_dir: Optional[Path] = None):
-        self.enabled: bool = True
+        self.enabled: bool = CONFIG.audio.enabled
         if assets_dir is None:
             self.assets_dir = Path(__file__).parent.parent / "assets" / "sounds"
         else:
@@ -43,7 +44,7 @@ class SoundManager:
                 val = generator_fn(t, duration)
                 # Clamp to 16-bit signed integer range (-32767 to 32767)
                 clamped = max(-1.0, min(1.0, val))
-                int_val = int(clamped * 32767.0 * 0.75)  # 75% master headroom
+                int_val = int(clamped * 32767.0 * CONFIG.audio.master_headroom)
                 raw_data.extend(struct.pack("<h", int_val))
 
             wav.writeframes(raw_data)
@@ -51,7 +52,8 @@ class SoundManager:
 
     def _generate_procedural_sounds(self):
         """Synthesizes all minimal tactile sound effects."""
-        sr = 44100
+        cfg = CONFIG.audio
+        sr = cfg.sample_rate
 
         # 1. Roll sound: Subtle ceramic/slate wooden tap (70ms)
         def roll_gen(t, d):
@@ -98,11 +100,11 @@ class SoundManager:
             freq = 300.0 + (progress * 500.0)
             return math.sin(2.0 * math.pi * freq * t) * envelope
 
-        self.roll_file = self._create_wav("roll.wav", 0.07, sr, roll_gen)
-        self.switch_file = self._create_wav("switch.wav", 0.045, sr, switch_gen)
-        self.fall_file = self._create_wav("fall.wav", 0.40, sr, fall_gen)
-        self.win_file = self._create_wav("win.wav", 0.60, sr, win_gen)
-        self.undo_file = self._create_wav("undo.wav", 0.04, sr, undo_gen)
+        self.roll_file = self._create_wav("roll.wav", cfg.roll_duration, sr, roll_gen)
+        self.switch_file = self._create_wav("switch.wav", cfg.switch_duration, sr, switch_gen)
+        self.fall_file = self._create_wav("fall.wav", cfg.fall_duration, sr, fall_gen)
+        self.win_file = self._create_wav("win.wav", cfg.win_duration, sr, win_gen)
+        self.undo_file = self._create_wav("undo.wav", cfg.undo_duration, sr, undo_gen)
 
     def load_audio_objects(self):
         """Loads Ursina Audio objects once the engine is running."""

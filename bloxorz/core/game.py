@@ -41,7 +41,7 @@ class Game:
             where outcome is one of:
             - 'SAFE': successfully moved, detail is list of toggled bridges
             - 'VICTORY': reached goal
-            - 'FELL_VOID', 'FELL_FRAGILE', 'FELL_HALF_GOAL': block falls, detail is cause coordinate
+            - 'FELL_VOID', 'FELL_FRAGILE': block falls, detail is cause coordinate
             - 'IGNORED': move cannot be performed in current state
         """
         if self.status != GameStatus.PLAYING:

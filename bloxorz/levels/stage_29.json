@@ -1,0 +1,228 @@
+{
+  "name": "Stage 29",
+  "passcode": "691859",
+  "spawn": {
+    "x": 7,
+    "y": 3,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "..S111...1BBH..",
+    ".....1...1.....",
+    ".....11111.....",
+    "HBB111111111BBH",
+    ".....11111.....",
+    ".....B1..1.....",
+    ".....B1..111S..",
+    "111..11..1.....",
+    "121BB1...1.....",
+    "111B.....111S.."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          10,
+          0
+        ],
+        [
+          11,
+          0
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b4",
+      "tiles": [
+        [
+          12,
+          3
+        ],
+        [
+          13,
+          3
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b5",
+      "tiles": [
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          6
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b6",
+      "tiles": [
+        [
+          10,
+          6
+        ],
+        [
+          11,
+          6
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b7",
+      "tiles": [
+        [
+          3,
+          8
+        ],
+        [
+          4,
+          8
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b8",
+      "tiles": [
+        [
+          3,
+          9
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b9",
+      "tiles": [
+        [
+          10,
+          9
+        ],
+        [
+          11,
+          9
+        ]
+      ],
+      "initially_open": true
+    }
+  ],
+  "switches": [
+    {
+      "x": 2,
+      "y": 0,
+      "type": "SOFT",
+      "targets": [
+        "b2",
+        "b6"
+      ],
+      "actions": {
+        "b2": "OPEN",
+        "b6": "CLOSE"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 12,
+      "y": 0,
+      "type": "HEAVY",
+      "targets": [
+        "b5"
+      ],
+      "actions": {
+        "b5": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 0,
+      "y": 3,
+      "type": "HEAVY",
+      "targets": [
+        "b9",
+        "b7"
+      ],
+      "actions": {
+        "b9": "CLOSE",
+        "b7": "OPEN"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 14,
+      "y": 3,
+      "type": "HEAVY",
+      "targets": [
+        "b8"
+      ],
+      "actions": {
+        "b8": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 12,
+      "y": 6,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 12,
+      "y": 9,
+      "type": "SOFT",
+      "targets": [
+        "b1",
+        "b2",
+        "b4"
+      ],
+      "actions": {
+        "b1": "CLOSE",
+        "b2": "CLOSE",
+        "b4": "OPEN"
+      },
+      "action": "CLOSE"
+    }
+  ],
+  "teleports": []
+}

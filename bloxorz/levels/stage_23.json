@@ -1,0 +1,162 @@
+{
+  "name": "Stage 23",
+  "passcode": "293486",
+  "spawn": {
+    "x": 4,
+    "y": 7,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    ".111........111",
+    ".1H1........1S1",
+    ".111...11111111",
+    "B111B..121..11S",
+    "1...1..111....1",
+    "S...1..333....1",
+    "1BB111333331111",
+    "...11133333181.",
+    "...11133333111.",
+    "...11111B......"
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          10,
+          2
+        ],
+        [
+          11,
+          2
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          0,
+          3
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          4,
+          3
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b4",
+      "tiles": [
+        [
+          1,
+          6
+        ],
+        [
+          2,
+          6
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b5",
+      "tiles": [
+        [
+          14,
+          6
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b6",
+      "tiles": [
+        [
+          8,
+          9
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 2,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 13,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "b4",
+        "b6"
+      ],
+      "actions": {
+        "b4": "OPEN",
+        "b6": "TOGGLE"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 14,
+      "y": 3,
+      "type": "SOFT",
+      "targets": [
+        "b1",
+        "b5"
+      ],
+      "actions": {
+        "b1": "CLOSE",
+        "b5": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 0,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "b2",
+        "b4"
+      ],
+      "actions": {
+        "b2": "OPEN",
+        "b4": "CLOSE"
+      },
+      "action": "OPEN"
+    }
+  ],
+  "teleports": [
+    {
+      "x": 12,
+      "y": 7,
+      "target_1": [
+        2,
+        2
+      ],
+      "target_2": [
+        12,
+        7
+      ],
+      "selected": 1
+    }
+  ]
+}

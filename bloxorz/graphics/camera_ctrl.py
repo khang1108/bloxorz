@@ -4,22 +4,27 @@ import math
 from ursina import camera, Vec3, curve
 
 
+from bloxorz.config import CONFIG
+
+
 class CameraController:
     """Manages isometric view angle, distance, and auto-framing for Bloxorz."""
 
     def __init__(self):
+        cfg = CONFIG.camera
         # Configure projection
         camera.orthographic = False
-        camera.fov = 34.0
+        camera.fov = cfg.fov
 
         # Elegant architectural dimetric angle
-        self.angle_x = 52.0
-        self.angle_y = -40.0
+        self.angle_x = cfg.angle_x
+        self.angle_y = cfg.angle_y
         self.target_center = Vec3(0, 0, 0)
-        self.target_distance = 18.0
+        self.target_distance = cfg.min_distance
 
     def frame_board(self, min_x: int, max_x: int, min_y: int, max_y: int, animate: bool = True):
         """Calculates optimal camera position to frame the board symmetrically."""
+        cfg = CONFIG.camera
         center_x = (min_x + max_x) / 2.0
         center_z = -((min_y + max_y) / 2.0)
 
@@ -28,7 +33,10 @@ class CameraController:
         diagonal = math.sqrt(board_width ** 2 + board_depth ** 2)
 
         # Set distance based on board scale
-        self.target_distance = max(15.0, diagonal * 1.85 + 4.0)
+        self.target_distance = max(
+            cfg.min_distance,
+            diagonal * cfg.distance_diagonal_scale + cfg.distance_offset
+        )
         self.target_center = Vec3(center_x, 0.0, center_z)
 
         # Compute camera position relative to target center using spherical coordinates
@@ -47,8 +55,9 @@ class CameraController:
         )
 
         if animate:
-            camera.animate_position(final_pos, duration=0.4, curve=curve.out_cubic)
-            camera.animate_rotation(Vec3(self.angle_x, -self.angle_y, 0), duration=0.4, curve=curve.out_cubic)
+            dur = cfg.transition_duration
+            camera.animate_position(final_pos, duration=dur, curve=curve.out_cubic)
+            camera.animate_rotation(Vec3(self.angle_x, -self.angle_y, 0), duration=dur, curve=curve.out_cubic)
         else:
             camera.position = final_pos
             camera.rotation = Vec3(self.angle_x, -self.angle_y, 0)

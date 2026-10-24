@@ -168,6 +168,36 @@ class BoardView:
                     )
                     self.switch_entities[(x, y)] = plate
 
+            elif tile_type == TileType.TELEPORT:
+                # Teleport/splitter slab with twin architectural cyan insets
+                top_slab = Entity(
+                    parent=self.root,
+                    model='cube',
+                    position=(pos_x, cfg.normal_slab_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
+                    color=c_normal,
+                )
+                c_teleport_accent = color.hex(Palette.TEXT_ACCENT.hex_code)
+                inset_w = tile_size * 0.36
+                inset_h = tile_size * 0.36
+                offset_x = tile_size * 0.22
+                # Dual square plates symbolizing block division
+                Entity(
+                    parent=self.root,
+                    model='cube',
+                    position=(pos_x - offset_x, cfg.normal_inset_y, pos_z),
+                    scale=(inset_w, 0.02, inset_h),
+                    color=c_teleport_accent,
+                )
+                Entity(
+                    parent=self.root,
+                    model='cube',
+                    position=(pos_x + offset_x, cfg.normal_inset_y, pos_z),
+                    scale=(inset_w, 0.02, inset_h),
+                    color=c_teleport_accent,
+                )
+                self.tile_entities[(x, y)] = top_slab
+
         # Build bridge entities (slatted architectural planks)
         for group in board.bridges.values():
             for (bx, by) in group.tiles:

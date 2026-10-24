@@ -60,6 +60,14 @@ class SplitBlockState(BaseBlockState):
         """Returns the set of grid cells occupied by both cubes."""
         return {(self.b1.x, self.b1.y), (self.b2.x, self.b2.y)}
 
+    def get_center_3d(self) -> Vector3D:
+        """Returns the 3D center of the currently active 1x1x1 cube."""
+        return self.active_block.get_center_3d()
+
+    def get_dimensions_3d(self) -> Dimensions3D:
+        """Returns (1.0, 1.0, 1.0) for the active 1x1x1 cube."""
+        return self.active_block.get_dimensions_3d()
+
     def roll(self, direction: Direction) -> "SplitBlockState":
         """Polymorphic alias for move_active to conform to BaseBlockState."""
         return self.move_active(direction)

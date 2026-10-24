@@ -144,3 +144,69 @@ class TestGoalVictoryPlungeAnimation:
         assert bv._is_sinking_victory is True
         assert bv._victory_time == 0.0
         assert bv._on_victory_complete is on_done
+
+
+class TestSplitBlockFallAnimation:
+    """Verifies that split cube falls animate the active cube without crashing."""
+
+    def test_split_block_fall_does_not_crash(self):
+        board = create_test_board([(0, 0)])
+        bv = BlockView()
+        from bloxorz.core.block.split import SplitBlockState, SingleBlock
+        state = SplitBlockState(SingleBlock(0, 0), SingleBlock(5, 5), active_index=0)
+        bv.sync_to_state(state)
+
+        bv.animate_fall(board=board, direction=Direction.RIGHT)
+        assert bv._is_falling is True
+        assert bv._is_seesaw is False
+        assert bv._falling_split_cube is bv.split_mesh_1
+
+
+class TestTeleportSplitFlightAnimation:
+    """Verifies that teleport split produces a 3D aerial parabolic flight to targets."""
+
+    def test_teleport_split_flight_initiation_and_state(self):
+        bv = BlockView()
+        from bloxorz.core.block.normal import NormalBlockState
+        from bloxorz.core.block.split import SplitBlockState, SingleBlock
+
+        standing = NormalBlockState(4, 4, BlockOrientation.STANDING)
+        split_target = SplitBlockState(SingleBlock(10, 1), SingleBlock(10, 7), active_index=0)
+
+        completed = False
+
+        def on_done():
+            nonlocal completed
+            completed = True
+
+        bv.animate_teleport_split(standing, split_target, on_complete=on_done)
+        assert bv.is_animating is True
+        assert bv._is_teleporting is True
+        assert bv._teleport_src == (4.0, 4.0)
+        assert bv._teleport_dst_1 == (10.0, 1.0)
+        assert bv._teleport_dst_2 == (10.0, 7.0)
+        assert bv.split_mesh_1.visible is True
+        assert bv.split_mesh_2.visible is True
+        assert bv.mesh.visible is False
+
+
+class TestSplitCubeRollAnimation:
+    """Verifies that 1x1x1 split cubes roll with physical edge-pivot rotation."""
+
+    def test_single_cube_roll_initiation(self):
+        bv = BlockView()
+        from bloxorz.core.block.split import SplitBlockState, SingleBlock
+
+        state1 = SplitBlockState(SingleBlock(5, 5), SingleBlock(1, 1), active_index=0)
+        state2 = state1.roll(Direction.RIGHT)
+
+        bv.sync_to_state(state1)
+        bv.roll_animated(state1, state2, Direction.RIGHT)
+
+        assert bv.is_animating is True
+        assert bv._is_cube_rolling is True
+        assert bv._cube_rot_axis == "z"
+        assert bv._cube_rot_angle == 90.0
+        assert bv._cube_pivot_pos.x == 5.5
+        assert bv._cube_pivot_pos.y == 0.0
+        assert bv._cube_pivot_pos.z == -5.0

@@ -94,6 +94,7 @@ class BloxorzApp:
         self.hud.update_stage(board.level_name, f"STAGE {stage_idx:02d} / {len(self.stage_files):02d}")
         self.hud.update_moves(0)
         self.hud.hide_banner()
+        self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
         self.menu_mgr.close_all()
 
     def restart_stage(self):
@@ -104,6 +105,7 @@ class BloxorzApp:
             self.block_view.sync_to_state(self.game.board.spawn_state)
             self.hud.update_moves(0)
             self.hud.hide_banner()
+            self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
             self.menu_mgr.close_all()
             self.camera_ctrl.reset_view(animate=True)
             self.camera_ctrl.enabled_controls = True
@@ -130,6 +132,7 @@ class BloxorzApp:
             self.board_view.update_bridges(self.game.board)
             self.hud.update_moves(self.game.move_count)
             self.hud.hide_banner()
+            self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
 
     def handle_move(self, direction: Direction, on_done: Optional[Callable[[str], None]] = None):
         """Executes a move request from player input or solver API."""
@@ -149,9 +152,17 @@ class BloxorzApp:
         self.sound_mgr.play("roll")
 
         def on_roll_finished():
-            if outcome == "SAFE":
+            if outcome in ("SAFE", "MERGED", "TELEPORT"):
                 self.hud.update_moves(self.game.move_count)
-                if detail:  # Toggled bridges
+                self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
+                if outcome == "TELEPORT":
+                    self.sound_mgr.play("switch")
+                    self.hud.show_banner("TELEPORT SPLIT")
+                elif outcome == "MERGED":
+                    self.sound_mgr.play("switch")
+                    self.hud.show_banner("BLOCKS MERGED")
+
+                if detail and outcome in ("SAFE", "MERGED"):  # Toggled bridges
                     self.sound_mgr.play("switch")
                     self.board_view.update_bridges(self.game.board)
                     # Trigger switch plate depression
@@ -187,7 +198,13 @@ class BloxorzApp:
             if on_done:
                 on_done(outcome)
 
-        self.block_view.roll_animated(prev_state, next_state, direction, on_complete=on_roll_finished)
+        self.block_view.roll_animated(
+            prev_state,
+            next_state,
+            direction,
+            on_complete=on_roll_finished,
+            on_split_takeoff=lambda: self.sound_mgr.play("switch"),
+        )
 
     # =========================================================================
     # SOLVER COMMUNICATION & AUTOMATION API
@@ -206,8 +223,7 @@ class BloxorzApp:
 
         moves = self.registered_solver(self.game.board)
         if moves:
-            self.hud.show_banner(f"SOLVER: {len(moves)} MOVES")
-            invoke(self.hud.hide_banner, delay=1.2)
+            self.hud.show_banner(f"SOLVER: {len(moves)} MOVES", duration=1.2)
             self.play_solution(moves)
 
     def play_solution(
@@ -239,8 +255,16 @@ class BloxorzApp:
         next_dir = self._active_solution[self._solution_idx]
         self._solution_idx += 1
 
+        if next_dir is None or next_dir == "SWITCH" or next_dir == "_":
+            if getattr(self.game.block, "is_split", False):
+                self.game.switch_block()
+                self.sound_mgr.play("switch")
+                self.block_view.sync_to_state(self.game.block)
+            invoke(self._play_next_solver_step, delay=self._solution_delay)
+            return
+
         def on_step_finished(outcome: str):
-            if outcome == "SAFE":
+            if outcome in ("SAFE", "MERGED", "TELEPORT"):
                 invoke(self._play_next_solver_step, delay=self._solution_delay)
             elif outcome == "VICTORY":
                 self._is_playing_solution = False
@@ -344,6 +368,12 @@ class BloxorzApp:
         if k_clean == "space":
             if self.menu_mgr.victory_root:
                 self.next_stage()
+            elif getattr(self.game.block, "is_split", False):
+                if not self.block_view.is_animating:
+                    switched = self.game.switch_block()
+                    if switched:
+                        self.sound_mgr.play("switch")
+                        self.block_view.sync_to_state(self.game.block)
             return
 
         arrow_scheme = getattr(getattr(CONFIG, "controls", None), "arrow_scheme", "isometric")

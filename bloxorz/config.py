@@ -55,6 +55,7 @@ class MotionConfig:
     fall_duration: float = 1.30  # Fall animation duration (see-saw tipping + free fall) in seconds
     victory_fall_duration: float = 4.50  # Goal plunge fall duration in seconds (4-8s)
     victory_pulse_duration: float = 4.50  # Backward-compatible alias
+    teleport_flight_duration: float = 0.70  # Parabolic aerial flight duration during teleport split (700ms)
     fade_transition: float = 0.25  # UI modal scene fade transition duration in seconds (250ms)
 
 

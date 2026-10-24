@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, List, Tuple, Optional
 from bloxorz.core.constants import TileType, BlockOrientation
+from bloxorz.core.block.base import BaseBlockState
 from bloxorz.core.block import BlockState
 
 
@@ -46,6 +47,16 @@ class Switch:
     target_actions: Optional[Dict[str, SwitchAction]] = None
 
 
+@dataclass
+class Teleport:
+    """A teleport/splitter tile dividing a monolithic block into dual 1x1x1 cubes."""
+    x: int
+    y: int
+    target_1: Tuple[int, int]
+    target_2: Tuple[int, int]
+    selected: int = 0
+
+
 class Board:
     """Represents the puzzle grid, bridges, switches, and goal."""
 
@@ -56,6 +67,7 @@ class Board:
         spawn_state: BlockState,
         switches: Optional[List[Switch]] = None,
         bridges: Optional[Dict[str, BridgeGroup]] = None,
+        teleports: Optional[Dict[Tuple[int, int], Teleport]] = None,
         level_name: str = "Level",
     ):
         self.base_tiles: Dict[Tuple[int, int], TileType] = dict(tiles)
@@ -68,6 +80,7 @@ class Board:
             (s.x, s.y): s for s in (switches or [])
         }
         self.bridges: Dict[str, BridgeGroup] = bridges or {}
+        self.teleports: Dict[Tuple[int, int], Teleport] = teleports or {}
 
         # Precompute bounding box for camera placement
         all_coords = list(self.base_tiles.keys())
@@ -89,7 +102,7 @@ class Board:
     @property
     def has_teleports(self) -> bool:
         """Indicates if this stage contains teleport/splitter tiles."""
-        return any(tile == TileType.TELEPORT for tile in self.base_tiles.values())
+        return bool(self.teleports) or any(tile == TileType.TELEPORT for tile in self.base_tiles.values())
 
     def reset(self):
         """Resets dynamic board elements (bridges, fragile states)."""
@@ -119,12 +132,17 @@ class Board:
             b_id: BridgeGroup(b.group_id, list(b.tiles), b.initially_open, b.is_open)
             for b_id, b in self.bridges.items()
         }
+        cloned_teleports = {
+            coord: Teleport(tp.x, tp.y, tp.target_1, tp.target_2, tp.selected)
+            for coord, tp in self.teleports.items()
+        }
         new_board = Board(
             tiles=dict(self.base_tiles),
             goal_pos=self.goal_pos,
             spawn_state=self.spawn_state,
             switches=cloned_switches,
             bridges=cloned_bridges,
+            teleports=cloned_teleports,
             level_name=self.level_name,
         )
         new_board.current_tiles = dict(self.current_tiles)
@@ -154,12 +172,12 @@ class Board:
             TileType.TELEPORT,
         )
 
-    def evaluate_block_state(self, block: BlockState) -> Tuple[str, Optional[Tuple[int, int]]]:
-        """Evaluates whether the block is safe, falls off, breaks fragile, or wins.
+    def evaluate_block_state(self, block: BaseBlockState) -> Tuple[str, Optional[Tuple[int, int]]]:
+        """Evaluates whether the block is safe, falls off, breaks fragile, teleports, or wins.
 
         Returns:
             (outcome, cause_coord):
-            outcome is one of: 'SAFE', 'VICTORY', 'FELL_VOID', 'FELL_FRAGILE'
+            outcome is one of: 'SAFE', 'VICTORY', 'FELL_VOID', 'FELL_FRAGILE', 'TELEPORT'
         """
         cells = block.occupied_cells
 
@@ -169,8 +187,14 @@ class Board:
             if not self.is_tile_walkable(tile):
                 return ("FELL_VOID", cell)
 
-        # 2. Standing tests
-        if block.orientation == BlockOrientation.STANDING:
+        # 2. Split state evaluation (dual 1x1x1 cubes)
+        if getattr(block, "is_split", False):
+            # Single 1x1x1 cubes do not trigger goal victory, do not collapse fragile tiles,
+            # and only fall if stepping into void or closed bridge (already checked above).
+            return ("SAFE", None)
+
+        # 3. Monolithic block standing tests
+        if getattr(block, "orientation", None) == BlockOrientation.STANDING:
             cell = next(iter(cells))
             tile = self.get_tile(cell[0], cell[1])
 
@@ -178,30 +202,39 @@ class Board:
                 return ("VICTORY", cell)
             if tile == TileType.FRAGILE:
                 return ("FELL_FRAGILE", cell)
+            if tile == TileType.TELEPORT or cell in self.teleports:
+                return ("TELEPORT", cell)
 
-        # 3. Lying tests: all occupied cells are walkable (including GOAL) -> SAFE
+        # 4. Lying / safe resting state
         return ("SAFE", None)
 
-    def trigger_switches(self, block: BlockState) -> List[str]:
+    def trigger_switches(self, block: BaseBlockState) -> List[str]:
         """Triggers switches beneath the block if conditions are met.
 
         Returns list of modified bridge group IDs.
         """
         modified_bridges: List[str] = []
-        cells = block.occupied_cells
+        is_split = getattr(block, "is_split", False)
+        is_standing = (getattr(block, "orientation", None) == BlockOrientation.STANDING)
 
-        for cell in cells:
+        if is_split:
+            active_b = getattr(block, "active_block", None)
+            trigger_cells = [(active_b.x, active_b.y)] if active_b else list(block.occupied_cells)
+        else:
+            trigger_cells = list(block.occupied_cells)
+
+        for cell in trigger_cells:
             switch = self.switches.get(cell)
             if not switch:
                 continue
 
             can_trigger = False
             if switch.switch_type == TileType.SWITCH_SOFT:
-                # Any contact triggers soft switch
+                # Any contact triggers soft switch (monolithic and split cubes)
                 can_trigger = True
             elif switch.switch_type == TileType.SWITCH_HEAVY:
-                # Heavy switch only triggers when standing upright
-                can_trigger = (block.orientation == BlockOrientation.STANDING)
+                # Heavy switch only triggers when monolithic block stands upright
+                can_trigger = (not is_split and is_standing)
 
             if can_trigger:
                 for bridge_id in switch.target_bridge_ids:

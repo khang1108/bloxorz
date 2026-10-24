@@ -29,3 +29,13 @@ class BaseBlockState(ABC):
     def canonical_key(self) -> tuple:
         """Returns an immutable hashable tuple uniquely identifying the state for solver visited sets."""
         pass
+
+    @abstractmethod
+    def get_center_3d(self) -> Tuple[float, float, float]:
+        """Returns the 3D center coordinate in grid-relative world coordinates."""
+        pass
+
+    @abstractmethod
+    def get_dimensions_3d(self) -> Tuple[float, float, float]:
+        """Returns 3D dimensions (width_x, depth_y, height_z)."""
+        pass

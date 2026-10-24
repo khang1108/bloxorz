@@ -37,6 +37,15 @@ class CameraConfig:
     distance_diagonal_scale: float = 1.85  # Standoff multiplier per board diagonal unit (fits wide stages)
     distance_offset: float = 4.0  # Additional safety standoff buffer margin (units)
     transition_duration: float = 0.4  # Camera auto-framing glide duration in seconds (400ms out_cubic)
+    orbit_speed_x: float = 120.0  # Orbit yaw sensitivity (degrees / screen drag)
+    orbit_speed_y: float = 100.0  # Orbit pitch sensitivity (degrees / screen drag)
+    zoom_speed: float = 1.8       # Zoom delta distance per scroll tick
+    min_pitch: float = 15.0       # Minimum pitch angle in degrees
+    max_pitch: float = 85.0       # Maximum pitch angle in degrees
+    min_distance_factor: float = 0.45  # Minimum zoom distance factor
+    max_distance_factor: float = 2.2   # Maximum zoom distance factor
+    smoothing: float = 12.0       # Exponential damping factor for 60-120fps motion
+    step_orbit_angle: float = 45.0  # Step rotation angle for Q/E keys (degrees)
 
 
 @dataclass

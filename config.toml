@@ -20,6 +20,15 @@ min_distance = 15.0             # Minimum camera standoff distance
 distance_diagonal_scale = 1.85  # Standoff multiplier per diagonal board unit
 distance_offset = 4.0           # Standoff baseline margin
 transition_duration = 0.4       # Camera auto-framing transition duration in seconds
+orbit_speed_x = 120.0           # Orbit yaw sensitivity (degrees / screen drag)
+orbit_speed_y = 100.0           # Orbit pitch sensitivity (degrees / screen drag)
+zoom_speed = 1.8                # Zoom delta distance per scroll tick
+min_pitch = 15.0                # Minimum pitch angle in degrees
+max_pitch = 85.0                # Maximum pitch angle in degrees
+min_distance_factor = 0.45      # Minimum zoom multiplier
+max_distance_factor = 2.2       # Maximum zoom multiplier
+smoothing = 12.0                # Exponential damping factor for 60-120fps motion
+step_orbit_angle = 45.0         # Step rotation angle for Q/E keys (degrees)
 
 [motion]
 roll_duration = 0.20            # Block roll duration in seconds (200ms)

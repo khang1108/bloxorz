@@ -136,6 +136,7 @@ def test_escape_key_toggles_stage_select_menu():
     app._last_input_time = 0.0
     app._last_input_key = ""
     app.menu_mgr = MagicMock()
+    app.camera_ctrl = MagicMock()
 
     # Case 1: Menu is closed -> opens stage select menu
     app.menu_mgr.is_any_menu_open.return_value = False

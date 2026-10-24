@@ -43,9 +43,12 @@ class HUD:
         # Bottom-Center: Minimalist hotkey guide (delicate and unobtrusive)
         self.guide_text = Text(
             parent=self.root,
-            text="[ WASD / ARROWS ] ROLL   ·   [ U ] UNDO   ·   [ R ] RESTART   ·   [ P ] SOLVE   ·   [ ESC ] MENU",
+            text=(
+                "[ WASD / ARROWS ] ROLL   ·   [ RMB DRAG ] ORBIT   ·   "
+                "[ SCROLL ] ZOOM   ·   [ Q/E ] ROTATE   ·   [ C ] RESET   ·   [ ESC ] MENU"
+            ),
             position=(0.0, -0.46),
-            scale=0.58,
+            scale=0.48,
             color=c_text_muted,
             origin=(0.0, -0.5),
         )

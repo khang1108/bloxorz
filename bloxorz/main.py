@@ -104,10 +104,13 @@ class BloxorzApp:
             self.hud.update_moves(0)
             self.hud.hide_banner()
             self.menu_mgr.close_all()
+            self.camera_ctrl.reset_view(animate=True)
+            self.camera_ctrl.enabled_controls = True
 
     def resume_game(self):
         """Closes pause menu and returns to play."""
         self.menu_mgr.close_all()
+        self.camera_ctrl.enabled_controls = True
 
     def next_stage(self):
         """Advances to the next stage or loops to beginning."""
@@ -157,6 +160,8 @@ class BloxorzApp:
             elif outcome == "VICTORY":
                 self.hud.update_moves(self.game.move_count)
                 self.sound_mgr.play("win")
+                gx, gy = self.game.board.goal_pos
+                self.camera_ctrl.animate_victory_focus(gx, gy)
                 self.block_view.animate_victory(
                     on_complete=lambda: self.menu_mgr.show_victory_menu(
                         self.game.board.level_name, self.game.move_count, self.current_stage_idx
@@ -276,12 +281,31 @@ class BloxorzApp:
         if k_clean.startswith("raw_"):
             k_clean = k_clean[4:]
 
-        # Debounce duplicate events arriving within 50ms (e.g. both ShowBase and Ursina input)
+        # Debounce duplicate events arriving within 50ms (scroll has 10ms window)
         now = time.time()
-        if k_clean == self._last_input_key and (now - self._last_input_time) < 0.05:
+        is_scroll = k_clean in ("scroll_up", "scroll_down", "wheel_up", "wheel_down")
+        debounce_window = 0.01 if is_scroll else 0.05
+        if k_clean == self._last_input_key and (now - self._last_input_time) < debounce_window:
             return
         self._last_input_time = now
         self._last_input_key = k_clean
+
+        # Camera Controls (Zoom, Orbit, Reset)
+        if k_clean in ("scroll_up", "wheel_up", "page_up", "+", "="):
+            self.camera_ctrl.zoom(-1.0)
+            return
+        if k_clean in ("scroll_down", "wheel_down", "page_down", "-", "_"):
+            self.camera_ctrl.zoom(1.0)
+            return
+        if k_clean == "q":
+            self.camera_ctrl.step_orbit(-1)
+            return
+        if k_clean == "e":
+            self.camera_ctrl.step_orbit(1)
+            return
+        if k_clean == "c":
+            self.camera_ctrl.reset_view()
+            return
 
         # Global Control Actions
         if k_clean == "u":
@@ -299,7 +323,9 @@ class BloxorzApp:
         if k_clean == "escape":
             if self.menu_mgr.is_any_menu_open():
                 self.menu_mgr.close_all()
+                self.camera_ctrl.enabled_controls = True
             else:
+                self.camera_ctrl.enabled_controls = False
                 self.menu_mgr.show_stage_select_menu(self.current_stage_idx)
             return
         if k_clean == "space":
@@ -376,6 +402,13 @@ class InputHandler(Entity):
                 "r": ["r", "raw-r"],
                 "m": ["m", "raw-m"],
                 "p": ["p", "raw-p"],
+                "c": ["c", "raw-c"],
+                "q": ["q", "raw-q"],
+                "e": ["e", "raw-e"],
+                "scroll up": ["wheel_up", "raw-wheel_up", "scroll_up", "scroll up"],
+                "scroll down": ["wheel_down", "raw-wheel_down", "scroll_down", "scroll down"],
+                "+": ["+", "raw-+", "=", "raw-="],
+                "-": ["-", "raw--", "_", "raw-_"],
                 "w": ["w", "raw-w"],
                 "a": ["a", "raw-a"],
                 "s": ["s", "raw-s"],

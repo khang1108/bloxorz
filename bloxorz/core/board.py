@@ -197,12 +197,8 @@ class Board:
 
         # 2. Split state evaluation (dual 1x1x1 cubes)
         if getattr(block, "is_split", False):
-            # A 1x1x1 unit cube cannot complete the stage alone; stepping into goal hole causes fall
-            for cell in cells:
-                tile = self.get_tile(cell[0], cell[1])
-                if tile == TileType.GOAL:
-                    return ("FELL_VOID", cell)
-            # A 1x1x1 unit cube on a fragile tile is safe (does not collapse)
+            # Single 1x1x1 cubes do not trigger goal victory, do not collapse fragile tiles,
+            # and only fall if stepping into void or closed bridge (already checked above).
             return ("SAFE", None)
 
         # 3. Monolithic block standing tests

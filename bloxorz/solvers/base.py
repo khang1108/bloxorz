@@ -4,7 +4,7 @@ import time
 import tracemalloc
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Any
 
 from bloxorz.core.constants import Direction
 from bloxorz.core.block import BlockState

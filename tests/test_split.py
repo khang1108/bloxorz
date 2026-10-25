@@ -70,8 +70,8 @@ class TestSplitMechanics(unittest.TestCase):
         self.assertEqual(outcome, "SAFE")
         self.assertIsNone(cause)
 
-    def test_split_on_goal_fails(self):
-        # Rule: a single unit cube cannot win and falls into goal hole
+    def test_split_on_goal_does_not_win(self):
+        # Rule: a single unit cube cannot win on goal hole
         tiles = {
             (2, 2): TileType.GOAL,
             (5, 5): TileType.NORMAL,
@@ -80,8 +80,8 @@ class TestSplitMechanics(unittest.TestCase):
         s = SplitBlockState(cube1=(2, 2), cube2=(5, 5), active_cube=0)
 
         outcome, cause = board.evaluate_block_state(s)
-        self.assertEqual(outcome, "FELL_VOID")
-        self.assertEqual(cause, (2, 2))
+        self.assertNotEqual(outcome, "VICTORY")
+        self.assertEqual(outcome, "SAFE")
 
     def test_split_switches_interaction(self):
         # Soft switch triggers on unit cube; Heavy switch does NOT

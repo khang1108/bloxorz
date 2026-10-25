@@ -71,6 +71,7 @@ class Game:
             return ("IGNORED", self.block, None)
 
         # Compute new geometric state
+        prev_is_split = getattr(self.block, "is_split", False)
         next_block = self.block.roll(direction)
 
         # Evaluate against board
@@ -83,8 +84,13 @@ class Game:
             toggled_bridges = self.board.trigger_switches(next_block)
 
             # Check if dual cubes re-merge
-            if getattr(next_block, "is_split", False):
-                merged = next_block.check_merge()
+            if prev_is_split:
+                merged = None
+                if not getattr(next_block, "is_split", False):
+                    merged = next_block
+                elif hasattr(next_block, "check_merge"):
+                    merged = next_block.check_merge()
+
                 if merged is not None:
                     self.block = merged
                     merged_bridges = self.board.trigger_switches(merged)

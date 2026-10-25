@@ -3,7 +3,7 @@
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from bloxorz.core.constants import Direction
 from bloxorz.core.block import BlockState
@@ -19,13 +19,18 @@ class SolverResult:
     execution_time_ms: float = 0.0
     max_depth: int = 0
     message: str = ""
+    expanded_nodes: int = 0
+    solution_cost: Optional[float] = None
 
     def summary(self) -> str:
         """Returns a formatted one-line performance summary."""
         status = "SOLVED" if self.is_solved else "FAILED"
+        cost = "N/A" if self.solution_cost is None else f"{self.solution_cost:g}"
         return (
             f"[{status}] Moves: {len(self.moves)} | "
+            f"Cost: {cost} | "
             f"Visited States: {self.visited_count} | "
+            f"Expanded Nodes: {self.expanded_nodes} | "
             f"Depth: {self.max_depth} | "
             f"Time: {self.execution_time_ms:.2f} ms"
         )

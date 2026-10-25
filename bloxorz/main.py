@@ -55,6 +55,7 @@ class BloxorzApp:
         self._solution_idx: int = 0
         self._solution_delay: float = 0.08
         self._on_solution_complete: Optional[Callable[[], None]] = None
+        self._solution_generation: int = 0
 
         self.menu_mgr = MenuManager(
             on_resume=self.resume_game,
@@ -71,6 +72,7 @@ class BloxorzApp:
 
     def load_stage_by_index(self, stage_idx: int, animate_camera: bool = True):
         """Loads and initializes a stage by 1-based index."""
+        self.stop_solution()
         if not (1 <= stage_idx <= len(self.stage_files)):
             stage_idx = 1
         self.current_stage_idx = stage_idx
@@ -92,6 +94,7 @@ class BloxorzApp:
 
     def restart_stage(self):
         """Resets the current stage."""
+        self.stop_solution()
         if self.game:
             self.game.restart()
             self.board_view.update_bridges(self.game.board)
@@ -182,18 +185,31 @@ class BloxorzApp:
         """Registers a user solver function: solver_fn(board) -> List[Direction]."""
         self.registered_solver = solver_callback
 
-    def trigger_solver(self):
-        """Executes the registered solver on the current stage and animates the solution."""
-        if not self.registered_solver or not self.game:
+    def trigger_solver(self) -> None:
+        """Solve from a fresh stage, reporting missing solvers and empty results."""
+        if not self.game:
+            return
+        if self.registered_solver is None:
+            self.hud.show_banner("NO SOLVER REGISTERED")
             return
         if self.block_view.is_animating or self._is_playing_solution:
             return
 
-        moves = self.registered_solver(self.game.board)
+        # The callback accepts a Board and solves from spawn, not the current block.
+        self.restart_stage()
+        try:
+            moves = self.registered_solver(self.game.board)
+        except NotImplementedError:
+            self.hud.show_banner("SOLVER DOES NOT SUPPORT THIS STAGE")
+            return
         if moves:
             self.hud.show_banner(f"SOLVER: {len(moves)} MOVES")
             invoke(self.hud.hide_banner, delay=1.2)
             self.play_solution(moves)
+        elif self.game.board.evaluate_block_state(self.game.block)[0] == "VICTORY":
+            self.hud.show_banner("ALREADY AT GOAL")
+        else:
+            self.hud.show_banner("SOLVER FOUND NO SOLUTION")
 
     def play_solution(
         self,
@@ -204,6 +220,7 @@ class BloxorzApp:
         """Sequentially executes a list of directions from a solver with 3D animation."""
         if not moves:
             return
+        self.stop_solution()
         self._active_solution = list(moves)
         self._solution_idx = 0
         self._solution_delay = delay_between_moves
@@ -211,8 +228,10 @@ class BloxorzApp:
         self._is_playing_solution = True
         self._play_next_solver_step()
 
-    def _play_next_solver_step(self):
+    def _play_next_solver_step(self, generation: Optional[int] = None) -> None:
         """Plays the next queued step in the solver solution."""
+        if generation is not None and generation != self._solution_generation:
+            return
         if not self._is_playing_solution:
             return
         if self._solution_idx >= len(self._active_solution):
@@ -223,10 +242,13 @@ class BloxorzApp:
 
         next_dir = self._active_solution[self._solution_idx]
         self._solution_idx += 1
+        generation = self._solution_generation
 
         def on_step_finished(outcome: str):
+            if generation != self._solution_generation or not self._is_playing_solution:
+                return
             if outcome == "SAFE":
-                invoke(self._play_next_solver_step, delay=self._solution_delay)
+                invoke(self._play_next_solver_step, generation, delay=self._solution_delay)
             elif outcome == "VICTORY":
                 self._is_playing_solution = False
                 if self._on_solution_complete:
@@ -236,10 +258,12 @@ class BloxorzApp:
 
         self.handle_move(next_dir, on_done=on_step_finished)
 
-    def stop_solution(self):
-        """Stops ongoing solver solution playback."""
+    def stop_solution(self) -> None:
+        """Stop playback and invalidate callbacks queued before a stage reset."""
+        self._solution_generation += 1
         self._is_playing_solution = False
         self._active_solution.clear()
+        self._on_solution_complete = None
 
     def step(self, direction: Direction, on_done: Optional[Callable[[str], None]] = None):
         """Programmatic single move execution for external solvers and AI agents."""
@@ -308,10 +332,13 @@ class InputHandler(Entity):
         self.app_instance.handle_input(key)
 
 
-def main():
+def main() -> None:
     """Application launcher."""
+    from bloxorz.solvers import UCSSolver
+
     app = Ursina()
     bloxorz = BloxorzApp()
+    bloxorz.register_solver(UCSSolver())
     _ = InputHandler(bloxorz)
     app.run()
 

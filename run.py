@@ -14,6 +14,7 @@ from ursina import Ursina
 from bloxorz.core.constants import Direction
 from bloxorz.core.board import Board
 from bloxorz.main import BloxorzApp, InputHandler
+from bloxorz.solvers import UCSSolver
 
 
 def launch(solver: Optional[Callable[[Board], List[Direction]]] = None) -> BloxorzApp:
@@ -29,5 +30,10 @@ def launch(solver: Optional[Callable[[Board], List[Direction]]] = None) -> Bloxo
     return bloxorz
 
 
+def main() -> None:
+    """Start interactive gameplay with UCS bound to the P shortcut."""
+    launch(solver=UCSSolver())
+
+
 if __name__ == "__main__":
-    launch()
+    main()

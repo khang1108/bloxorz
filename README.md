@@ -29,6 +29,10 @@ bloxorz_solvers/
 │   │   ├── stage_03.json
 │   │   ├── stage_04.json
 │   │   └── stage_05.json
+│   ├── solvers/            # Headless search algorithms and shared cost functions
+│   │   ├── base.py         # Solver contract and search-state helpers
+│   │   ├── costs.py        # Shared fragile-tile route preference
+│   │   └── ucs.py          # Uniform-cost search
 │   ├── ui/                 # Typography-driven interface system
 │   │   ├── hud.py          # Real-time move counter, status banners, hotkeys
 │   │   ├── menu.py         # Pause, stage selector, and victory overlays
@@ -132,6 +136,39 @@ state = app.get_state()
 # Execute single step
 app.step(Direction.UP, on_done=lambda outcome: print("Result:", outcome))
 ```
+
+### 4. Uniform-Cost Solver
+
+UCS minimizes total route cost: each legal roll costs 1, plus 2 if the destination
+touches at least one fragile tile. For example, in Stage 03 it chooses a 9-move
+route costing 9 over an 8-move route costing 10. This is a deterministic route
+preference, not a probability of falling.
+
+```python
+from pathlib import Path
+from bloxorz.core.level_loader import load_level_from_file
+from bloxorz.solvers import UCSSolver
+
+board = load_level_from_file(Path("bloxorz/levels/stage_03.json"))
+result = UCSSolver().solve(board)
+print(result.summary())
+print([move.name for move in result.moves])
+```
+
+The standard launcher registers UCS for 3D playback:
+
+```bash
+python run.py
+```
+
+Press **P** to restart the stage and animate its UCS solution. The solver does not
+accept a mid-game block position, so the controller resets the stage before solving.
+Restarting or selecting another stage cancels the previous playback. A failed search
+displays `SOLVER FOUND NO SOLUTION` instead of silently returning.
+Bridge-level correctness awaits the shared
+`Board.clone()` fix; Stage 04 currently fails to solve because of this core bug.
+Teleport/split levels raise `NotImplementedError` until the core supports them.
+See [UCS documentation](docs/ucs.md) for the algorithm, metrics, tests and limitations.
 
 ---
 

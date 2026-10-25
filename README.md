@@ -23,10 +23,10 @@ bloxorz_solvers/
 │   │   ├── block_view.py   # Frame-perfect delta-time rotation hierarchy
 │   │   ├── board_view.py   # Procedural tile generation and bridge animation
 │   │   └── camera_ctrl.py  # Golden-ratio isometric camera positioning
-│   ├── levels/             # Packaged stages (All 33 canonical stages: stage_01 to stage_33)
-│   │   ├── stage_01.json
-│   │   ├── ...
-│   │   └── stage_33.json
+│   ├── levels/             # Packaged stages (83 stages: stage_01 to stage_83)
+│   │   ├── stage_01.json   # 33 canonical stages (01 - 33)
+│   │   ├── ...             # 50 verified community stages (34 - 83)
+│   │   └── stage_83.json
 │   ├── solvers/            # Headless search algorithms and shared cost functions
 │   │   ├── base.py         # Solver contract and search-state helpers
 │   │   ├── costs.py        # Shared fragile-tile route preference
@@ -39,6 +39,7 @@ bloxorz_solvers/
 │   └── main.py             # Application coordinator and runtime event loop
 ├── data/                   # Data archive and ground-truth benchmark suite
 │   ├── coolmath.json       # Canonical 33-stage dataset from Coolmath Games
+│   ├── bloxorz_3d_levels.json # 50 community stages from KrishnaKumarSoni/bloxorz-3d
 │   ├── solutions.json      # Ground-truth minimal-move solution sequences (1,999 moves total)
 │   ├── external_maps/      # 33 raw text maps from phamquiluan/BloxorzSolver
 │   └── SOURCES.md          # Upstream repository credits, schemas, and stage catalog

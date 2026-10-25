@@ -1,0 +1,20 @@
+{
+  "name": "Stage 37 - T JUNCTION",
+  "passcode": "498429",
+  "spawn": {
+    "x": 1,
+    "y": 4,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "....121....",
+    "....111....",
+    "....111....",
+    "11111111111",
+    "11111111111",
+    "11111111111"
+  ],
+  "bridges": [],
+  "switches": [],
+  "teleports": []
+}

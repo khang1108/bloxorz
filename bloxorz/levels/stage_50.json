@@ -1,0 +1,64 @@
+{
+  "name": "Stage 50 - DRAWBRIDGE",
+  "passcode": "959906",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111......1111",
+    "11111BBBBBB1211",
+    "11111......1111",
+    "..111..........",
+    "..1S1..........",
+    "..111.........."
+  ],
+  "bridges": [
+    {
+      "id": "4",
+      "tiles": [
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ],
+        [
+          10,
+          1
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 3,
+      "y": 4,
+      "type": "SOFT",
+      "targets": [
+        "4"
+      ],
+      "actions": {
+        "4": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

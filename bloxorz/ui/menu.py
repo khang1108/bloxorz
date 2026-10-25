@@ -308,6 +308,10 @@ class MenuManager:
         """Returns True if settings modal overlay is currently visible."""
         return self.settings_root is not None
 
+    def is_stage_select_open(self) -> bool:
+        """Returns True if stage select overlay is currently visible."""
+        return self.stage_select_root is not None
+
     def close_all(self):
         """Removes all active modal overlays."""
         if self.pause_root:
@@ -328,8 +332,8 @@ class MenuManager:
         """Displays the unified Stage Select & Pause overlay."""
         self.show_stage_select_menu(current_stage=current_stage)
 
-    def show_stage_select_menu(self, current_stage: int = 1):
-        """Displays minimalist 7-column grid of all available stages."""
+    def show_stage_select_menu(self, current_stage: int = 1, page: Optional[int] = None):
+        """Displays minimalist 7-column grid of all available stages with pagination."""
         self.close_all()
 
         root = Entity(parent=camera.ui, name="stage_select_menu")
@@ -362,20 +366,31 @@ class MenuManager:
             z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
-        # 7-column grid layout
+        # 7-column paginated grid layout (max 35 stages per page)
+        per_page = 35
+        total_pages = max(1, (self.stages_count + per_page - 1) // per_page)
+        if page is None:
+            current_page = min(total_pages, max(1, (current_stage - 1) // per_page + 1))
+        else:
+            current_page = min(total_pages, max(1, page))
+
         dx = MenuConstants.GRID_SPACING_X
         dy = MenuConstants.GRID_SPACING_Y
         y_start = MenuConstants.GRID_START_Y
         cols = MenuConstants.GRID_COLUMNS
 
-        for idx in range(1, self.stages_count + 1):
-            row = (idx - 1) // cols
-            col = (idx - 1) % cols
-            items_in_row = cols if row < 4 else (self.stages_count - (cols * 4))
-            if row < 4:
-                x_pos = (col - (cols - 1) / 2.0) * dx
-            else:
-                x_pos = (col - (items_in_row - 1) / 2.0) * dx
+        start_idx = (current_page - 1) * per_page + 1
+        end_idx = min(self.stages_count, current_page * per_page)
+        items_on_page = end_idx - start_idx + 1
+
+        for local_i, idx in enumerate(range(start_idx, end_idx + 1)):
+            row = local_i // cols
+            col = local_i % cols
+            rows_on_page = (items_on_page + cols - 1) // cols
+            is_last_row = (row == rows_on_page - 1)
+            items_in_row = cols if not is_last_row else (items_on_page - (cols * (rows_on_page - 1)))
+
+            x_pos = (col - (items_in_row - 1) / 2.0) * dx
             y_pos = y_start - row * dy
             is_current = (idx == current_stage)
 
@@ -392,6 +407,37 @@ class MenuManager:
                 y=y_pos,
                 on_click=make_handler(),
             )
+
+        # Pagination Bar (shown when there are multiple pages)
+        if total_pages > 1:
+            y_page_ctrl = -0.142
+            if current_page > 1:
+                MenuActionButton(
+                    text="< PREV",
+                    parent=root,
+                    x=-0.22,
+                    y=y_page_ctrl,
+                    scale=(0.14, 0.038),
+                    on_click=lambda cp=current_page: self.show_stage_select_menu(current_stage=current_stage, page=cp - 1),
+                )
+            Text(
+                parent=root,
+                text=f"PAGE {current_page} / {total_pages}",
+                position=(0.0, y_page_ctrl),
+                scale=1.05,
+                color=color.hex(Palette.TEXT_MUTED.hex_code),
+                origin=UIAnchor.CENTER,
+                z=MenuConstants.Z_FOREGROUND_TEXT,
+            )
+            if current_page < total_pages:
+                MenuActionButton(
+                    text="NEXT >",
+                    parent=root,
+                    x=0.22,
+                    y=y_page_ctrl,
+                    scale=(0.14, 0.038),
+                    on_click=lambda cp=current_page: self.show_stage_select_menu(current_stage=current_stage, page=cp + 1),
+                )
 
         # Bottom action bar: CONTINUE, RESTART, SETTINGS, QUIT
         actions = [

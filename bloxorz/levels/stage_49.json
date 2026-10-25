@@ -1,0 +1,59 @@
+{
+  "name": "Stage 49 - CROSSROADS",
+  "passcode": "855177",
+  "spawn": {
+    "x": 1,
+    "y": 4,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "......111......",
+    "......1H1......",
+    "......111......",
+    "111111111111111",
+    "1111331.1331B21",
+    "111111111111111",
+    "......111......",
+    "......1S1......",
+    "......111......"
+  ],
+  "bridges": [
+    {
+      "id": "3",
+      "tiles": [
+        [
+          12,
+          4
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 7,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "3"
+      ],
+      "actions": {
+        "3": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 7,
+      "y": 7,
+      "type": "SOFT",
+      "targets": [
+        "3"
+      ],
+      "actions": {
+        "3": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

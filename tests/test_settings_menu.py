@@ -215,3 +215,37 @@ def test_hud_banner_autohide_and_lifecycle(monkeypatch):
     # Trigger current timer - dismisses correctly
     second_cb()
     assert not hud.banner_text.visible
+
+
+def test_stage_select_menu_pagination(monkeypatch):
+    """Verifies that stage selection grid handles pagination smoothly for 83 stages."""
+    from bloxorz.ui.menu import MenuManager
+    mock_sound_mgr = MagicMock()
+
+    mm = MenuManager(
+        on_resume=MagicMock(),
+        on_restart=MagicMock(),
+        on_select_stage=MagicMock(),
+        on_next_stage=MagicMock(),
+        on_toggle_audio=mock_sound_mgr.toggle_audio,
+        get_audio_status=lambda: True,
+        stages_count=83,
+        sound_mgr=mock_sound_mgr,
+    )
+
+    # Calling show_stage_select_menu with 83 stages
+    mm.show_stage_select_menu(current_stage=1)
+    assert mm.stage_select_root is not None
+    assert mm.is_stage_select_open() is True
+
+    # Switching to a later stage (stage 50 -> page 2)
+    mm.show_stage_select_menu(current_stage=50)
+    assert mm.stage_select_root is not None
+
+    # Explicit page
+    mm.show_stage_select_menu(current_stage=1, page=3)
+    assert mm.stage_select_root is not None
+
+    mm.close_all()
+    assert mm.is_stage_select_open() is False
+

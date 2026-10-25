@@ -1,0 +1,20 @@
+{
+  "name": "Stage 42 - PATCHWORK",
+  "passcode": "122074",
+  "spawn": {
+    "x": 1,
+    "y": 0,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "1111311111",
+    "1113113111",
+    "1311131111",
+    "1111311311",
+    "1113111211",
+    "1111111111"
+  ],
+  "bridges": [],
+  "switches": [],
+  "teleports": []
+}

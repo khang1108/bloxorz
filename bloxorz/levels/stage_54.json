@@ -1,0 +1,31 @@
+{
+  "name": "Stage 54 - SPLIT ENDS",
+  "passcode": "478822",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "111111111111",
+    "111181111211",
+    "111111111111"
+  ],
+  "bridges": [],
+  "switches": [],
+  "teleports": [
+    {
+      "x": 4,
+      "y": 1,
+      "target_1": [
+        6,
+        0
+      ],
+      "target_2": [
+        6,
+        2
+      ],
+      "selected": 0
+    }
+  ]
+}

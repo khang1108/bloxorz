@@ -1,0 +1,20 @@
+{
+  "name": "Stage 35 - THE BEND",
+  "passcode": "288971",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "1111......",
+    "1111......",
+    "1111......",
+    ".111111111",
+    ".111111121",
+    ".111111111"
+  ],
+  "bridges": [],
+  "switches": [],
+  "teleports": []
+}

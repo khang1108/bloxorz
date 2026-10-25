@@ -43,3 +43,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Scratch
+scratch/

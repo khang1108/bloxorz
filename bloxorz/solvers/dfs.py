@@ -4,7 +4,7 @@ Author: Member 3
 Assignment: Project 1 - Bloxorz Solver (Introduction to Artificial Intelligence)
 """
 
-from typing import List, Tuple, Set, Dict, Optional, Union
+from typing import List, Tuple, Set, Dict, Optional, Union, Any
 from bloxorz.core.constants import Direction
 from bloxorz.core.block import BlockState, SplitBlockState
 from bloxorz.core.board import Board

@@ -80,7 +80,7 @@ class BloxorzApp:
 
         self.menu_mgr = MenuManager(
             on_resume=self.resume_game,
-            on_restart=self.restart_stage,
+            on_restart=lambda: self.restart_stage(trigger_sfx=True),
             on_select_stage=self.load_stage_by_index,
             on_next_stage=self.next_stage,
             on_toggle_audio=self.sound_mgr.toggle_audio,
@@ -121,13 +121,17 @@ class BloxorzApp:
             self.solver_widget.set_running_state(False)
             self.solver_widget.set_visible(True)
 
-    def restart_stage(self, show_banner: bool = True):
-        """Resets the current stage."""
+    def restart_stage(self, trigger_sfx: bool = False):
+        """Resets the current stage.
+
+        Only plays restart SFX and banner if explicitly requested (e.g. user pressed R,
+        clicked Restart in menu, or fell into void).
+        """
         self.stop_solution()
         if getattr(self, "solver_widget", None):
             self.solver_widget.set_visible(True)
         if self.game:
-            if hasattr(self, "sound_mgr") and self.sound_mgr and show_banner:
+            if hasattr(self, "sound_mgr") and self.sound_mgr and trigger_sfx:
                 self.sound_mgr.play("restart")
             self.game.restart()
             if getattr(self, "board_view", None) and hasattr(self.board_view, "update_bridges"):
@@ -139,7 +143,7 @@ class BloxorzApp:
                     self.hud.update_moves(0)
                 if hasattr(self.hud, "set_split_mode"):
                     self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
-                if show_banner and hasattr(self.hud, "show_banner"):
+                if trigger_sfx and hasattr(self.hud, "show_banner"):
                     self.hud.show_banner("Argghhh let's try again", duration=2.5)
                 elif hasattr(self.hud, "hide_banner"):
                     self.hud.hide_banner()
@@ -234,7 +238,7 @@ class BloxorzApp:
                 self.hud.show_banner(banner_msg)
 
                 def on_fall_done():
-                    invoke(self.restart_stage, delay=0.2)
+                    invoke(lambda: self.restart_stage(trigger_sfx=True), delay=0.2)
 
                 self.block_view.animate_fall(
                     board=self.game.board,
@@ -295,7 +299,7 @@ class BloxorzApp:
             return
 
         # The callback accepts a Board and solves from spawn, not the current block.
-        self.restart_stage(show_banner=False)
+        self.restart_stage(trigger_sfx=False)
         try:
             moves = self.registered_solver(self.game.board)
         except NotImplementedError:
@@ -458,7 +462,7 @@ class BloxorzApp:
             self.handle_undo()
             return
         if k_clean == "r":
-            self.restart_stage()
+            self.restart_stage(trigger_sfx=True)
             return
         if k_clean == "m":
             self.sound_mgr.toggle_audio()

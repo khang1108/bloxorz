@@ -1,0 +1,124 @@
+{
+  "test_cases": [
+    {
+      "id": 1,
+      "group": "Group 1: Basic / Standard",
+      "stage_file": "stage_01.json",
+      "name": "Stage 01",
+      "grid_size": "6x10",
+      "optimal_moves": 7,
+      "features": ["Solid floor", "Void gaps", "Goal alignment"],
+      "description": "Baseline level with standard 1x1x2 block rolling mechanics on simple solid grid."
+    },
+    {
+      "id": 2,
+      "group": "Group 1: Basic / Standard",
+      "stage_file": "stage_03.json",
+      "name": "Stage 03",
+      "grid_size": "6x15",
+      "optimal_moves": 19,
+      "features": ["Narrow catwalks", "Dead-ends", "Orientation constraints"],
+      "description": "Longer navigation on narrow bridges without any special switches or tiles."
+    },
+    {
+      "id": 3,
+      "group": "Group 1: Basic / Standard",
+      "stage_file": "stage_06.json",
+      "name": "Stage 06",
+      "grid_size": "10x15",
+      "optimal_moves": 35,
+      "features": ["Complex maze", "High branch factor", "Detours"],
+      "description": "Advanced pure pathfinding puzzle requiring deep search trees and cycle pruning."
+    },
+    {
+      "id": 4,
+      "group": "Group 2: Fragile Tiles",
+      "stage_file": "stage_04.json",
+      "name": "Stage 04",
+      "grid_size": "9x14",
+      "optimal_moves": 28,
+      "features": ["Fragile orange tiles", "Weight distribution"],
+      "description": "Requires traversing fragile orange tiles exclusively in lying orientations to prevent collapse."
+    },
+    {
+      "id": 5,
+      "group": "Group 2: Fragile Tiles",
+      "stage_file": "stage_13.json",
+      "name": "Stage 13",
+      "grid_size": "10x14",
+      "optimal_moves": 46,
+      "features": ["Extensive fragile arrays", "Tight orientation corridors"],
+      "description": "High difficulty fragile navigation forcing exact parity alignment before each crossing."
+    },
+    {
+      "id": 6,
+      "group": "Group 3: Switches & Bridges",
+      "stage_file": "stage_02.json",
+      "name": "Stage 02",
+      "grid_size": "6x15",
+      "optimal_moves": 17,
+      "features": ["Soft switch", "Heavy switch", "Toggle bridges"],
+      "description": "Introduction to soft circular switches and heavy cross switches controlling bridge passability."
+    },
+    {
+      "id": 7,
+      "group": "Group 3: Switches & Bridges",
+      "stage_file": "stage_05.json",
+      "name": "Stage 05",
+      "grid_size": "10x15",
+      "optimal_moves": 33,
+      "features": ["Multi-switch networks", "3 Bridges", "4 Switches"],
+      "description": "Interdependent bridge groups requiring precise activation sequences to form a complete bridge."
+    },
+    {
+      "id": 8,
+      "group": "Group 3: Switches & Bridges",
+      "stage_file": "stage_07.json",
+      "name": "Stage 07",
+      "grid_size": "8x15",
+      "optimal_moves": 44,
+      "features": ["Single bridge toggle", "Long circuitous path"],
+      "description": "Long-range traversal requiring a switch to be triggered early and backtracking over the newly opened bridge."
+    },
+    {
+      "id": 9,
+      "group": "Group 4: Split Blocks / Teleports",
+      "stage_file": "stage_08.json",
+      "name": "Stage 08",
+      "grid_size": "9x15",
+      "optimal_moves": 10,
+      "features": ["Split switch ()", "Two 1x1x1 cubes", "Vertical rejoining"],
+      "description": "Canonical splitting tutorial: teleports and splits block; individual cube control and vertical re-merging."
+    },
+    {
+      "id": 10,
+      "group": "Group 4: Split Blocks / Teleports",
+      "stage_file": "stage_09.json",
+      "name": "Stage 09",
+      "grid_size": "5x15",
+      "optimal_moves": 24,
+      "features": ["Teleport splitter", "Narrow alleys", "Horizontal rejoining"],
+      "description": "Requires independent coordination of both unit cubes to clear paths and merge horizontally."
+    },
+    {
+      "id": 11,
+      "group": "Group 5: Complex Combined",
+      "stage_file": "stage_10.json",
+      "name": "Stage 10",
+      "grid_size": "10x14",
+      "optimal_moves": 57,
+      "features": ["Split switch", "Soft switch", "Heavy switch", "Fragile tiles", "3 Bridges"],
+      "description": "Full integration: unit cubes activating soft switches, fragile tiles safe for unit cubes, and final merge."
+    },
+    {
+      "id": 12,
+      "group": "Group 5: Complex Combined",
+      "stage_file": "stage_23.json",
+      "name": "Stage 23",
+      "grid_size": "10x15",
+      "optimal_moves": 75,
+      "features": ["Fragile tiles", "6 Bridges", "4 Switches", "1 Teleport"],
+      "description": "Master challenge level incorporating all advanced mechanics in a large multi-layered search space."
+    }
+  ]
+}

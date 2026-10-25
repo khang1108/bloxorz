@@ -13,6 +13,7 @@ if str(root_dir) not in sys.path:
 from ursina import Ursina  # noqa: E402
 from bloxorz.core.constants import Direction  # noqa: E402
 from bloxorz.core.board import Board  # noqa: E402
+from bloxorz.solvers.dfs import DFSSolver, IDSSolver  # noqa: E402
 from bloxorz.main import BloxorzApp  # noqa: E402
 
 
@@ -21,8 +22,9 @@ def launch(solver: Optional[Callable[[Board], List[Direction]]] = None) -> Bloxo
     app = Ursina()
     bloxorz = BloxorzApp()
 
-    if solver:
-        bloxorz.register_solver(solver)
+    # Register solver (default to IDSSolver if not specified for optimal solution replay)
+    active_solver = solver or IDSSolver()
+    bloxorz.register_solver(active_solver)
 
     app.run()
     return bloxorz

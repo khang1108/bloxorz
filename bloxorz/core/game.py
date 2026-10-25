@@ -1,9 +1,8 @@
-"""Game session controller managing turns, moves, undo, and state transitions."""
-
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Union
 from bloxorz.core.constants import Direction, GameStatus
 from bloxorz.core.block import BlockState
 from bloxorz.core.board import Board
+from bloxorz.core.split import SplitBlockState
 
 
 class Game:
@@ -11,12 +10,12 @@ class Game:
 
     def __init__(self, board: Board):
         self.board: Board = board
-        self.block: BlockState = board.spawn_state
+        self.block: Union[BlockState, SplitBlockState] = board.spawn_state
         self.move_count: int = 0
         self.status: GameStatus = GameStatus.PLAYING
 
         # History stack for full Undo support: (block_state, bridge_states_dict)
-        self.history: List[Tuple[BlockState, Dict[str, bool]]] = []
+        self.history: List[Tuple[Union[BlockState, SplitBlockState], Dict[str, bool]]] = []
 
     def restart(self):
         """Restarts the level to its initial spawn configuration."""
@@ -26,14 +25,14 @@ class Game:
         self.status = GameStatus.PLAYING
         self.history.clear()
 
-    def snapshot_state(self) -> Tuple[BlockState, Dict[str, bool]]:
+    def snapshot_state(self) -> Tuple[Union[BlockState, SplitBlockState], Dict[str, bool]]:
         """Takes a snapshot of current block and bridge configurations."""
         bridge_states = {
             b_id: bridge.is_open for b_id, bridge in self.board.bridges.items()
         }
         return (self.block, bridge_states)
 
-    def roll(self, direction: Direction) -> Tuple[str, BlockState, Any]:
+    def roll(self, direction: Direction) -> Tuple[str, Union[BlockState, SplitBlockState], Any]:
         """Attempts to roll the block in the given direction.
 
         Returns:
@@ -59,9 +58,11 @@ class Game:
         if outcome == "SAFE":
             # Apply move
             self.history.append(pre_move_snapshot)
-            self.block = next_block
-            self.move_count += 1
+            if direction != Direction.SWITCH_CUBE:
+                self.move_count += 1
             toggled_bridges = self.board.trigger_switches(next_block)
+            next_block = self.board.trigger_teleport(next_block)
+            self.block = next_block
             return ("SAFE", next_block, toggled_bridges)
 
         elif outcome == "VICTORY":

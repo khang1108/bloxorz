@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple, Any, Optional
 from bloxorz.core.constants import TileType, BlockOrientation
 from bloxorz.core.block import BlockState
 from bloxorz.core.board import Board, Switch, BridgeGroup, SwitchAction
+from bloxorz.core.split import Teleport
 
 
 CHAR_TO_TILE = {
@@ -89,6 +90,19 @@ def parse_level_data(data: Dict[str, Any]) -> Board:
         switches.append(switch)
         tiles[(switch.x, switch.y)] = s_type
 
+    # Parse teleports (split switches)
+    teleports: List[Teleport] = []
+    for t_data in data.get("teleports", []):
+        teleport = Teleport(
+            x=t_data["x"],
+            y=t_data["y"],
+            target_1=tuple(t_data["target_1"]),
+            target_2=tuple(t_data["target_2"]),
+            selected=t_data.get("selected", 0),
+        )
+        teleports.append(teleport)
+        tiles[(teleport.x, teleport.y)] = TileType.TELEPORT
+
     # Spawn configuration
     spawn_data = data.get("spawn", {"x": 0, "y": 0, "orientation": "STANDING"})
     ori = BlockOrientation[spawn_data.get("orientation", "STANDING").upper()]
@@ -105,6 +119,7 @@ def parse_level_data(data: Dict[str, Any]) -> Board:
         spawn_state=spawn_state,
         switches=switches,
         bridges=bridges,
+        teleports=teleports,
         level_name=level_name,
     )
 

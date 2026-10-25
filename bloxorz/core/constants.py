@@ -9,6 +9,7 @@ class Direction(Enum):
     DOWN = (0, 1)    # +Y (South in 2D grid)
     LEFT = (-1, 0)   # -X (West in 2D grid)
     RIGHT = (1, 0)   # +X (East in 2D grid)
+    SWITCH_CUBE = (0, 0)  # Toggle active cube when split
 
     @property
     def dx(self) -> int:

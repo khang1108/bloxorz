@@ -195,16 +195,27 @@ class BloxorzApp:
 
     def trigger_solver(self):
         """Executes the registered solver on the current stage and animates the solution."""
-        if not self.registered_solver or not self.game:
+        if not self.game:
             return
         if self.block_view.is_animating or self._is_playing_solution:
             return
+
+        if not self.registered_solver:
+            from bloxorz.solvers.dfs import IDSSolver
+            self.registered_solver = IDSSolver()
+
+        # If player made manual moves, reset to spawn before executing solver path
+        if self.game.move_count > 0:
+            self.restart_stage()
 
         moves = self.registered_solver(self.game.board)
         if moves:
             self.hud.show_banner(f"SOLVER: {len(moves)} MOVES")
             invoke(self.hud.hide_banner, delay=1.2)
             self.play_solution(moves)
+        else:
+            self.hud.show_banner("NO SOLUTION FOUND")
+            invoke(self.hud.hide_banner, delay=1.5)
 
     def play_solution(
         self,

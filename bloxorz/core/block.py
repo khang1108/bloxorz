@@ -13,6 +13,11 @@ class BlockState:
     orientation: BlockOrientation
 
     @property
+    def is_split(self) -> bool:
+        """Indicates this is a standard unified 1x1x2 block."""
+        return False
+
+    @property
     def occupied_cells(self) -> Set[Tuple[int, int]]:
         """Returns the set of 2D grid cells currently covered by the block."""
         if self.orientation == BlockOrientation.STANDING:

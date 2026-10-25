@@ -30,6 +30,13 @@ class TestLevelLoading(unittest.TestCase):
 
     def test_non_teleport_stage_optimal_solutions(self):
         """Validates that non-teleport stages reach VICTORY with optimal move sequences."""
+        self._validate_stages_solutions(teleport_stages=False)
+
+    def test_all_33_stages_optimal_solutions(self):
+        """Validates that all 33 stages (including teleport/split stages) achieve VICTORY."""
+        self._validate_stages_solutions(teleport_stages=True)
+
+    def _validate_stages_solutions(self, teleport_stages: bool):
         if not self.solutions_file.is_file():
             self.skipTest("solutions.json not available")
 
@@ -43,14 +50,16 @@ class TestLevelLoading(unittest.TestCase):
             "R": Direction.RIGHT,
         }
 
-        # Validate non-teleport stages against ground truth solutions
         for idx in range(1, 34):
             stage_file = self.levels_dir / f"stage_{idx:02d}.json"
             with open(stage_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            if data.get("teleports"):
-                continue  # Split block mechanic reserved for future expansion
+            has_teleports = bool(data.get("teleports"))
+            if not teleport_stages and has_teleports:
+                continue
+            if teleport_stages and not has_teleports:
+                continue
 
             board = load_level_from_file(stage_file)
             game = Game(board)
@@ -62,6 +71,13 @@ class TestLevelLoading(unittest.TestCase):
                 if move_char in dir_map:
                     outcome, _, _ = game.roll(dir_map[move_char])
                     final_outcome = outcome
-                    self.assertNotIn(outcome, ("FELL_VOID", "FELL_FRAGILE"), f"Stage {idx} failed on move {move_char}")
+                    self.assertNotIn(
+                        outcome,
+                        ("FELL_VOID", "FELL_FRAGILE"),
+                        f"Stage {idx} failed on move {move_char} with outcome {outcome}",
+                    )
+                elif move_char in ("_", " "):
+                    switched = game.switch_block()
+                    self.assertTrue(switched, f"Stage {idx} failed to switch block on '{move_char}'")
 
             self.assertEqual(final_outcome, "VICTORY", f"Stage {idx} did not achieve VICTORY with optimal moves")

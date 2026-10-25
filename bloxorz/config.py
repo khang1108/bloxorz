@@ -52,8 +52,10 @@ class CameraConfig:
 class MotionConfig:
     """Kinematic timings, animation durations, and easing intervals."""
     roll_duration: float = 0.20  # Duration of single 90-degree block roll in seconds (200ms)
-    fall_duration: float = 0.65  # Tumbling descent duration before restarting stage in seconds (650ms)
-    victory_pulse_duration: float = 0.50  # Goal sinking animation duration upon completion in seconds (500ms)
+    fall_duration: float = 1.30  # Fall animation duration (see-saw tipping + free fall) in seconds
+    victory_fall_duration: float = 4.50  # Goal plunge fall duration in seconds (4-8s)
+    victory_pulse_duration: float = 4.50  # Backward-compatible alias
+    teleport_flight_duration: float = 0.70  # Parabolic aerial flight duration during teleport split (700ms)
     fade_transition: float = 0.25  # UI modal scene fade transition duration in seconds (250ms)
 
 
@@ -62,11 +64,11 @@ class BlockConfig:
     """3D block geometry scaling, descent gravity, and tumbling kinematics."""
     unit_scale_1: float = 0.86  # Dimension for 1-unit block edge; leaves 0.14 gap from 1.0 grid pitch
     unit_scale_2: float = 1.86  # Dimension for 2-unit block edge (2 * 1.0 - 0.14 gap)
-    fall_gravity: float = 14.0  # Downward vertical speed along Y axis when falling into abyss (units/sec)
+    fall_gravity: float = 9.8   # Downward gravitational acceleration g = 9.8 m/s^2
     fall_rot_x: float = 120.0   # Tumbling angular velocity around X axis during fall in deg/sec
     fall_rot_y: float = 80.0    # Tumbling angular velocity around Y axis during fall in deg/sec
     fall_rot_z: float = 60.0    # Tumbling angular velocity around Z axis during fall in deg/sec
-    victory_sink_depth: float = 0.75  # Target descent depth into goal hole when won (units)
+    victory_sink_depth: float = 16.0  # Target descent depth into goal hole when won (units)
 
 
 @dataclass

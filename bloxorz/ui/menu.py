@@ -5,6 +5,7 @@ from ursina import Entity, Button, Text, color, camera, destroy, application
 
 from bloxorz.config import CONFIG
 from bloxorz.ui.theme import Palette
+from bloxorz.ui.constants import MenuConstants, UIAnchor
 
 
 def format_volume_gauge(volume: float) -> str:
@@ -24,7 +25,7 @@ class MinimalistButton(Button):
         parent: Entity,
         y: float,
         on_click: Optional[Callable[[], None]] = None,
-        scale: tuple = (0.45, 0.065),
+        scale: tuple = MenuConstants.MINIMALIST_BTN_SCALE,
     ):
         c_text = color.hex(Palette.TEXT_MUTED.hex_code)
         c_hover = color.hex(Palette.TEXT_PRIMARY.hex_code)
@@ -41,11 +42,13 @@ class MinimalistButton(Button):
             color=color.clear,
             highlight_color=color.clear,
             pressed_color=color.clear,
+            text_color=c_text,
+            highlight_text_color=c_hover,
+            text_size=MenuConstants.MINIMALIST_BTN_TEXT_SCALE_FACTOR,
+            highlight_text_size=MenuConstants.MINIMALIST_BTN_TEXT_SCALE_FACTOR,
             **kwargs,
         )
 
-        self.text_entity.color = c_text
-        self.text_entity.scale *= 1.25
         self.default_x = self.x
         self.c_text = c_text
         self.c_hover = c_hover
@@ -53,12 +56,15 @@ class MinimalistButton(Button):
     def on_mouse_enter(self):
         super().on_mouse_enter()
         self.text_entity.color = self.c_hover
-        self.animate_x(self.default_x + 0.015, duration=0.1)
+        self.animate_x(
+            self.default_x + MenuConstants.BTN_HOVER_OFFSET_X,
+            duration=MenuConstants.BTN_ANIM_DURATION,
+        )
 
     def on_mouse_exit(self):
         super().on_mouse_exit()
         self.text_entity.color = self.c_text
-        self.animate_x(self.default_x, duration=0.1)
+        self.animate_x(self.default_x, duration=MenuConstants.BTN_ANIM_DURATION)
 
 
 class StageCardButton(Button):
@@ -72,7 +78,7 @@ class StageCardButton(Button):
         x: float,
         y: float,
         on_click: Optional[Callable[[], None]] = None,
-        scale: tuple = (0.142, 0.050),
+        scale: tuple = MenuConstants.STAGE_CARD_SCALE,
     ):
         c_bg = (
             color.rgba(0.22, 0.74, 0.97, 0.20)
@@ -81,6 +87,12 @@ class StageCardButton(Button):
         )
         c_highlight = color.hex(Palette.TILE_NORMAL.hex_code)
         c_pressed = color.hex(Palette.TILE_PEDESTAL.hex_code)
+        c_text = (
+            color.hex(Palette.TEXT_ACCENT.hex_code)
+            if is_current
+            else color.hex(Palette.TEXT_MUTED.hex_code)
+        )
+        c_hover = color.hex(Palette.TEXT_PRIMARY.hex_code)
 
         kwargs = {}
         if callable(on_click):
@@ -95,15 +107,13 @@ class StageCardButton(Button):
             color=c_bg,
             highlight_color=c_highlight,
             pressed_color=c_pressed,
+            text_color=c_text,
+            highlight_text_color=c_hover,
+            text_size=MenuConstants.STAGE_CARD_TEXT_SCALE_FACTOR,
+            highlight_text_size=MenuConstants.STAGE_CARD_TEXT_SCALE_FACTOR,
             **kwargs,
         )
 
-        self.text_entity.scale *= 0.82
-        self.text_entity.color = (
-            color.hex(Palette.TEXT_ACCENT.hex_code)
-            if is_current
-            else color.hex(Palette.TEXT_MUTED.hex_code)
-        )
         self.is_current = is_current
 
     def on_mouse_enter(self):
@@ -129,7 +139,7 @@ class MenuActionButton(Button):
         x: float,
         y: float,
         on_click: Optional[Callable[[], None]] = None,
-        scale: tuple = (0.24, 0.050),
+        scale: tuple = MenuConstants.MENU_ACTION_BTN_SCALE,
     ):
         kwargs = {}
         if callable(on_click):
@@ -144,10 +154,12 @@ class MenuActionButton(Button):
             color=color.hex(Palette.BACKGROUND_SECONDARY.hex_code),
             highlight_color=color.hex(Palette.TILE_NORMAL.hex_code),
             pressed_color=color.hex(Palette.TILE_PEDESTAL.hex_code),
+            text_color=color.hex(Palette.TEXT_PRIMARY.hex_code),
+            highlight_text_color=color.hex(Palette.TEXT_PRIMARY.hex_code),
+            text_size=MenuConstants.MENU_ACTION_BTN_TEXT_SCALE_FACTOR,
+            highlight_text_size=MenuConstants.MENU_ACTION_BTN_TEXT_SCALE_FACTOR,
             **kwargs,
         )
-        self.text_entity.scale *= 0.85
-        self.text_entity.color = color.hex(Palette.TEXT_PRIMARY.hex_code)
 
 
 class SettingToggleButton(Button):
@@ -160,7 +172,7 @@ class SettingToggleButton(Button):
         parent: Entity,
         x: float,
         y: float,
-        scale: tuple = (0.16, 0.046),
+        scale: tuple = MenuConstants.SETTING_TOGGLE_BTN_SCALE,
     ):
         self.is_active = is_active
         self.on_toggle_cb = on_toggle
@@ -177,20 +189,31 @@ class SettingToggleButton(Button):
             ),
             highlight_color=color.hex(Palette.TILE_NORMAL.hex_code),
             pressed_color=color.hex(Palette.TILE_PEDESTAL.hex_code),
+            text_color=(
+                color.hex(Palette.TEXT_ACCENT.hex_code)
+                if is_active
+                else color.hex(Palette.TEXT_MUTED.hex_code)
+            ),
+            highlight_text_color=color.hex(Palette.TEXT_PRIMARY.hex_code),
+            text_size=MenuConstants.SETTING_TOGGLE_TEXT_SCALE_FACTOR,
+            highlight_text_size=MenuConstants.SETTING_TOGGLE_TEXT_SCALE_FACTOR,
             on_click=self._handle_click,
         )
-        self.text_entity.scale *= 0.85
         self._update_label()
 
     def _update_label(self):
         if self.is_active:
             self.text = "ENABLED"
             self.color = color.rgba(0.22, 0.74, 0.97, 0.22)
-            self.text_entity.color = color.hex(Palette.TEXT_ACCENT.hex_code)
+            self.text_color = color.hex(Palette.TEXT_ACCENT.hex_code)
+            if self.text_entity:
+                self.text_entity.color = color.hex(Palette.TEXT_ACCENT.hex_code)
         else:
             self.text = "MUTED"
             self.color = color.hex(Palette.BACKGROUND_SECONDARY.hex_code)
-            self.text_entity.color = color.hex(Palette.TEXT_MUTED.hex_code)
+            self.text_color = color.hex(Palette.TEXT_MUTED.hex_code)
+            if self.text_entity:
+                self.text_entity.color = color.hex(Palette.TEXT_MUTED.hex_code)
 
     def _handle_click(self):
         self.is_active = self.on_toggle_cb()
@@ -207,7 +230,7 @@ class SettingStepperButton(Button):
         parent: Entity,
         x: float,
         y: float,
-        scale: tuple = (0.046, 0.044),
+        scale: tuple = MenuConstants.SETTING_STEPPER_BTN_SCALE,
     ):
         super().__init__(
             parent=parent,
@@ -218,10 +241,12 @@ class SettingStepperButton(Button):
             color=color.hex(Palette.BACKGROUND_SECONDARY.hex_code),
             highlight_color=color.hex(Palette.TILE_NORMAL.hex_code),
             pressed_color=color.hex(Palette.TILE_PEDESTAL.hex_code),
+            text_color=color.hex(Palette.TEXT_PRIMARY.hex_code),
+            highlight_text_color=color.hex(Palette.TEXT_PRIMARY.hex_code),
+            text_size=MenuConstants.SETTING_STEPPER_TEXT_SCALE_FACTOR,
+            highlight_text_size=MenuConstants.SETTING_STEPPER_TEXT_SCALE_FACTOR,
             on_click=on_step,
         )
-        self.text_entity.scale *= 0.95
-        self.text_entity.color = color.hex(Palette.TEXT_PRIMARY.hex_code)
 
 
 class MenuManager:
@@ -290,42 +315,43 @@ class MenuManager:
         Entity(
             parent=root,
             model="quad",
-            scale=(2.5, 2.0),
+            scale=MenuConstants.BACKDROP_SCALE,
             color=color.hex(Palette.SURFACE_OVERLAY.hex_code),
-            z=1,
+            z=MenuConstants.Z_BACKDROP,
         )
 
         # Header Title & Subtitle
         Text(
             parent=root,
             text="SELECT STAGE",
-            position=(0.0, 0.38),
-            scale=2.4,
+            position=MenuConstants.STAGE_SELECT_TITLE_POS,
+            scale=MenuConstants.STAGE_SELECT_TITLE_SCALE,
             color=color.hex(Palette.TEXT_PRIMARY.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
         Text(
             parent=root,
             text=f"ACTIVE: STAGE {current_stage:02d}  ·  {self.stages_count} ARCHITECTURAL PUZZLES",
-            position=(0.0, 0.30),
-            scale=1.1,
+            position=MenuConstants.STAGE_SELECT_SUBTITLE_POS,
+            scale=MenuConstants.STAGE_SELECT_SUBTITLE_SCALE,
             color=color.hex(Palette.TEXT_MUTED.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         # 7-column grid layout
-        dx = 0.155
-        dy = 0.064
-        y_start = 0.18
+        dx = MenuConstants.GRID_SPACING_X
+        dy = MenuConstants.GRID_SPACING_Y
+        y_start = MenuConstants.GRID_START_Y
+        cols = MenuConstants.GRID_COLUMNS
 
         for idx in range(1, self.stages_count + 1):
-            row = (idx - 1) // 7
-            col = (idx - 1) % 7
-            items_in_row = 7 if row < 4 else (self.stages_count - 28)
+            row = (idx - 1) // cols
+            col = (idx - 1) % cols
+            items_in_row = cols if row < 4 else (self.stages_count - (cols * 4))
             if row < 4:
-                x_pos = (col - 3.0) * dx
+                x_pos = (col - (cols - 1) / 2.0) * dx
             else:
                 x_pos = (col - (items_in_row - 1) / 2.0) * dx
             y_pos = y_start - row * dy
@@ -352,14 +378,14 @@ class MenuManager:
             ("SETTINGS", lambda: self.show_settings_menu(current_stage=current_stage)),
             ("QUIT GAME", self._quit_game),
         ]
-        dx_bar = 0.26
+        dx_bar = MenuConstants.STAGE_SELECT_BOTTOM_BAR_SPACING
         for i, (label, cb) in enumerate(actions):
-            x_pos = (i - 1.5) * dx_bar
+            x_pos = (i - (len(actions) - 1) / 2.0) * dx_bar
             btn = MenuActionButton(
                 text=label,
                 parent=root,
                 x=x_pos,
-                y=-0.21,
+                y=MenuConstants.STAGE_SELECT_BOTTOM_BAR_Y,
                 on_click=cb,
             )
             if i == 2:
@@ -369,11 +395,11 @@ class MenuManager:
         Text(
             parent=root,
             text="[ ESC ] RESUME    ·    [ R ] RESTART    ·    [ O ] SETTINGS    ·    [ U ] UNDO    ·    [ P ] SOLVER",
-            position=(0.0, -0.29),
-            scale=0.95,
+            position=MenuConstants.STAGE_SELECT_HINT_POS,
+            scale=MenuConstants.STAGE_SELECT_HINT_SCALE,
             color=color.hex(Palette.TEXT_MUTED.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         self.stage_select_root = root
@@ -387,67 +413,67 @@ class MenuManager:
         Entity(
             parent=root,
             model="quad",
-            scale=(2.5, 2.0),
+            scale=MenuConstants.BACKDROP_SCALE,
             color=color.hex(Palette.SURFACE_OVERLAY.hex_code),
-            z=1,
+            z=MenuConstants.Z_BACKDROP,
         )
 
         # Monolithic Card Container
         Entity(
             parent=root,
             model="quad",
-            scale=(1.02, 0.74),
+            scale=MenuConstants.SETTINGS_CONTAINER_SCALE,
             color=color.hex(Palette.BACKGROUND_SECONDARY.hex_code),
-            z=0.8,
+            z=MenuConstants.Z_CONTAINER_SURFACE,
         )
         # Subtle architectural border frame
         Entity(
             parent=root,
             model="quad",
-            scale=(1.026, 0.746),
+            scale=MenuConstants.SETTINGS_BORDER_SCALE,
             color=color.hex(Palette.SURFACE_BORDER.hex_code),
-            z=0.9,
+            z=MenuConstants.Z_CONTAINER_BORDER,
         )
 
         # Header Title & Subtitle
         Text(
             parent=root,
             text="SETTINGS",
-            position=(0.0, 0.30),
-            scale=2.2,
+            position=MenuConstants.SETTINGS_TITLE_POS,
+            scale=MenuConstants.SETTINGS_TITLE_SCALE,
             color=color.hex(Palette.TEXT_PRIMARY.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
         Text(
             parent=root,
             text="AUDIO, SOUND EFFECTS & STEERING CONFIGURATION",
-            position=(0.0, 0.245),
-            scale=0.95,
+            position=MenuConstants.SETTINGS_SUBTITLE_POS,
+            scale=MenuConstants.SETTINGS_SUBTITLE_SCALE,
             color=color.hex(Palette.TEXT_MUTED.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         # Divider line
         Entity(
             parent=root,
             model="quad",
-            scale=(0.88, 0.002),
-            position=(0.0, 0.205),
+            scale=MenuConstants.SETTINGS_DIVIDER_SCALE,
+            position=(0.0, MenuConstants.SETTINGS_DIVIDER_1_Y),
             color=color.hex(Palette.SURFACE_BORDER.hex_code),
-            z=0.5,
+            z=MenuConstants.Z_DIVIDER,
         )
 
         # --- SECTION 1: BACKGROUND MUSIC (BGM) ---
         Text(
             parent=root,
             text="BACKGROUND MUSIC",
-            position=(-0.41, 0.145),
-            scale=1.05,
+            position=MenuConstants.SETTINGS_BGM_TITLE_POS,
+            scale=MenuConstants.SETTINGS_BGM_TITLE_SCALE,
             color=color.hex(Palette.TEXT_PRIMARY.hex_code),
-            origin=(-0.5, 0.0),
-            z=0,
+            origin=UIAnchor.MIDDLE_LEFT,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
         theme_name = (
             getattr(self.sound_mgr, "theme_track", "background.mp3").upper()
@@ -457,11 +483,11 @@ class MenuManager:
         Text(
             parent=root,
             text=f"THEME: {theme_name}",
-            position=(-0.41, 0.095),
-            scale=0.78,
+            position=MenuConstants.SETTINGS_BGM_THEME_POS,
+            scale=MenuConstants.SETTINGS_BGM_THEME_SCALE,
             color=color.hex(Palette.TEXT_MUTED.hex_code),
-            origin=(-0.5, 0.0),
-            z=0,
+            origin=UIAnchor.MIDDLE_LEFT,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         bgm_active = getattr(self.sound_mgr, "bgm_enabled", True) if self.sound_mgr else True
@@ -469,9 +495,9 @@ class MenuManager:
             is_active=bgm_active,
             on_toggle=self.sound_mgr.toggle_bgm if self.sound_mgr else lambda: True,
             parent=root,
-            x=0.31,
-            y=0.145,
-            scale=(0.17, 0.044),
+            x=MenuConstants.SETTINGS_BGM_TOGGLE_POS[0],
+            y=MenuConstants.SETTINGS_BGM_TOGGLE_POS[1],
+            scale=MenuConstants.SETTING_TOGGLE_BTN_SCALE,
         )
 
         # BGM Volume Gauge & Stepper
@@ -479,11 +505,11 @@ class MenuManager:
         bgm_vol_gauge = Text(
             parent=root,
             text=format_volume_gauge(initial_bgm_vol),
-            position=(0.21, 0.085),
-            scale=0.95,
+            position=MenuConstants.SETTINGS_BGM_GAUGE_POS,
+            scale=MenuConstants.SETTINGS_BGM_GAUGE_SCALE,
             color=color.hex(Palette.TEXT_PRIMARY.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         def step_bgm_vol(delta: float):
@@ -497,45 +523,45 @@ class MenuManager:
             text="-",
             on_step=lambda: step_bgm_vol(-0.1),
             parent=root,
-            x=0.06,
-            y=0.085,
+            x=MenuConstants.SETTINGS_BGM_STEP_MINUS_X,
+            y=MenuConstants.SETTINGS_BGM_STEP_Y,
         )
         SettingStepperButton(
             text="+",
             on_step=lambda: step_bgm_vol(+0.1),
             parent=root,
-            x=0.36,
-            y=0.085,
+            x=MenuConstants.SETTINGS_BGM_STEP_PLUS_X,
+            y=MenuConstants.SETTINGS_BGM_STEP_Y,
         )
 
         # Divider line
         Entity(
             parent=root,
             model="quad",
-            scale=(0.88, 0.002),
-            position=(0.0, 0.025),
+            scale=MenuConstants.SETTINGS_DIVIDER_SCALE,
+            position=(0.0, MenuConstants.SETTINGS_DIVIDER_2_Y),
             color=color.hex(Palette.SURFACE_BORDER.hex_code),
-            z=0.5,
+            z=MenuConstants.Z_DIVIDER,
         )
 
         # --- SECTION 2: SOUND EFFECTS (SFX) ---
         Text(
             parent=root,
             text="SOUND EFFECTS (SFX)",
-            position=(-0.41, -0.04),
-            scale=1.05,
+            position=MenuConstants.SETTINGS_SFX_TITLE_POS,
+            scale=MenuConstants.SETTINGS_SFX_TITLE_SCALE,
             color=color.hex(Palette.TEXT_PRIMARY.hex_code),
-            origin=(-0.5, 0.0),
-            z=0,
+            origin=UIAnchor.MIDDLE_LEFT,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
         Text(
             parent=root,
             text="TACTILE ROLLS, SWITCHES, FALLS & WIN CHORDS",
-            position=(-0.41, -0.09),
-            scale=0.78,
+            position=MenuConstants.SETTINGS_SFX_DESC_POS,
+            scale=MenuConstants.SETTINGS_SFX_DESC_SCALE,
             color=color.hex(Palette.TEXT_MUTED.hex_code),
-            origin=(-0.5, 0.0),
-            z=0,
+            origin=UIAnchor.MIDDLE_LEFT,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         sfx_active = getattr(self.sound_mgr, "sfx_enabled", True) if self.sound_mgr else True
@@ -543,9 +569,9 @@ class MenuManager:
             is_active=sfx_active,
             on_toggle=self.sound_mgr.toggle_sfx if self.sound_mgr else lambda: True,
             parent=root,
-            x=0.31,
-            y=-0.04,
-            scale=(0.17, 0.044),
+            x=MenuConstants.SETTINGS_SFX_TOGGLE_POS[0],
+            y=MenuConstants.SETTINGS_SFX_TOGGLE_POS[1],
+            scale=MenuConstants.SETTING_TOGGLE_BTN_SCALE,
         )
 
         # SFX Volume Gauge & Stepper
@@ -553,11 +579,11 @@ class MenuManager:
         sfx_vol_gauge = Text(
             parent=root,
             text=format_volume_gauge(initial_sfx_vol),
-            position=(0.21, -0.10),
-            scale=0.95,
+            position=MenuConstants.SETTINGS_SFX_GAUGE_POS,
+            scale=MenuConstants.SETTINGS_SFX_GAUGE_SCALE,
             color=color.hex(Palette.TEXT_PRIMARY.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         def step_sfx_vol(delta: float):
@@ -572,15 +598,15 @@ class MenuManager:
             text="-",
             on_step=lambda: step_sfx_vol(-0.1),
             parent=root,
-            x=0.06,
-            y=-0.10,
+            x=MenuConstants.SETTINGS_SFX_STEP_MINUS_X,
+            y=MenuConstants.SETTINGS_SFX_STEP_Y,
         )
         SettingStepperButton(
             text="+",
             on_step=lambda: step_sfx_vol(+0.1),
             parent=root,
-            x=0.36,
-            y=-0.10,
+            x=MenuConstants.SETTINGS_SFX_STEP_PLUS_X,
+            y=MenuConstants.SETTINGS_SFX_STEP_Y,
         )
 
         # Preview SFX Button
@@ -591,9 +617,9 @@ class MenuManager:
         MenuActionButton(
             text="PREVIEW SFX",
             parent=root,
-            x=-0.28,
-            y=-0.155,
-            scale=(0.24, 0.042),
+            x=MenuConstants.SETTINGS_SFX_PREVIEW_POS[0],
+            y=MenuConstants.SETTINGS_SFX_PREVIEW_POS[1],
+            scale=MenuConstants.SETTING_PREVIEW_BTN_SCALE,
             on_click=test_sfx,
         )
 
@@ -601,10 +627,10 @@ class MenuManager:
         Entity(
             parent=root,
             model="quad",
-            scale=(0.88, 0.002),
-            position=(0.0, -0.205),
+            scale=MenuConstants.SETTINGS_DIVIDER_SCALE,
+            position=(0.0, MenuConstants.SETTINGS_DIVIDER_3_Y),
             color=color.hex(Palette.SURFACE_BORDER.hex_code),
-            z=0.5,
+            z=MenuConstants.Z_DIVIDER,
         )
 
         # --- SECTION 3: STEERING CONTROLS & NAVIGATION ---
@@ -612,9 +638,9 @@ class MenuManager:
         scheme_btn = MenuActionButton(
             text=f"STEERING: {scheme}",
             parent=root,
-            x=-0.17,
-            y=-0.26,
-            scale=(0.38, 0.046),
+            x=MenuConstants.SETTINGS_STEERING_BTN_POS[0],
+            y=MenuConstants.SETTINGS_STEERING_BTN_POS[1],
+            scale=MenuConstants.SETTING_STEERING_BTN_SCALE,
         )
 
         def toggle_scheme():
@@ -628,9 +654,9 @@ class MenuManager:
         MenuActionButton(
             text="BACK TO MENU",
             parent=root,
-            x=0.25,
-            y=-0.26,
-            scale=(0.28, 0.046),
+            x=MenuConstants.SETTINGS_BACK_BTN_POS[0],
+            y=MenuConstants.SETTINGS_BACK_BTN_POS[1],
+            scale=MenuConstants.SETTING_BACK_BTN_SCALE,
             on_click=lambda: self.show_stage_select_menu(current_stage=current_stage),
         )
 
@@ -638,11 +664,11 @@ class MenuManager:
         Text(
             parent=root,
             text="[ ESC ] BACK    ·    [ M ] MASTER MUTE    ·    [ R ] RESTART STAGE",
-            position=(0.0, -0.33),
-            scale=0.90,
+            position=MenuConstants.SETTINGS_FOOTER_HINT_POS,
+            scale=MenuConstants.SETTINGS_FOOTER_HINT_SCALE,
             color=color.hex(Palette.TEXT_MUTED.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         self.settings_root = root
@@ -663,53 +689,53 @@ class MenuManager:
         Entity(
             parent=root,
             model="quad",
-            scale=(2.5, 2.0),
+            scale=MenuConstants.BACKDROP_SCALE,
             color=color.hex(Palette.SURFACE_OVERLAY.hex_code),
-            z=1,
+            z=MenuConstants.Z_BACKDROP,
         )
 
         Text(
             parent=root,
             text="STAGE CLEARED",
-            position=(0.0, 0.25),
-            scale=2.8,
+            position=MenuConstants.VICTORY_TITLE_POS,
+            scale=MenuConstants.VICTORY_TITLE_SCALE,
             color=color.hex(Palette.GOAL_RIM.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         Text(
             parent=root,
             text=f"{stage_name.upper()}  ·  {moves} MOVES",
-            position=(0.0, 0.14),
-            scale=1.35,
+            position=MenuConstants.VICTORY_INFO_POS,
+            scale=MenuConstants.VICTORY_INFO_SCALE,
             color=color.hex(Palette.TEXT_MUTED.hex_code),
-            origin=(0.0, 0.0),
-            z=0,
+            origin=UIAnchor.CENTER,
+            z=MenuConstants.Z_FOREGROUND_TEXT,
         )
 
         MinimalistButton(
             text="NEXT STAGE  [ SPACE ]",
             parent=root,
-            y=0.01,
+            y=MenuConstants.VICTORY_NEXT_BTN_Y,
             on_click=self.on_next_stage_cb,
-            scale=(0.48, 0.065),
+            scale=MenuConstants.VICTORY_NEXT_BTN_SCALE,
         )
 
         MinimalistButton(
             text="REPLAY STAGE",
             parent=root,
-            y=-0.08,
+            y=MenuConstants.VICTORY_REPLAY_BTN_Y,
             on_click=self.on_restart_cb,
-            scale=(0.42, 0.065),
+            scale=MenuConstants.VICTORY_REPLAY_BTN_SCALE,
         )
 
         MinimalistButton(
             text="STAGE SELECT",
             parent=root,
-            y=-0.17,
+            y=MenuConstants.VICTORY_SELECT_BTN_Y,
             on_click=lambda: self.show_stage_select_menu(current_stage=current_stage),
-            scale=(0.42, 0.065),
+            scale=MenuConstants.VICTORY_SELECT_BTN_SCALE,
         )
 
         self.victory_root = root

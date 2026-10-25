@@ -2,10 +2,10 @@
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Optional
 from bloxorz.core.constants import TileType, BlockOrientation
-from bloxorz.core.block import BlockState
-from bloxorz.core.split import Teleport, SplitBlockState
+from bloxorz.core.block.base import BaseBlockState
+from bloxorz.core.block.normal import NormalBlockState
 
 
 class SwitchAction(Enum):
@@ -47,6 +47,16 @@ class Switch:
     target_actions: Optional[Dict[str, SwitchAction]] = None
 
 
+@dataclass
+class Teleport:
+    """A teleport/splitter tile dividing a monolithic block into dual 1x1x1 cubes."""
+    x: int
+    y: int
+    target_1: Tuple[int, int]
+    target_2: Tuple[int, int]
+    selected: int = 0
+
+
 class Board:
     """Represents the puzzle grid, bridges, switches, and goal."""
 
@@ -54,26 +64,24 @@ class Board:
         self,
         tiles: Dict[Tuple[int, int], TileType],
         goal_pos: Tuple[int, int],
-        spawn_state: BlockState,
+        spawn_state: NormalBlockState,
         switches: Optional[List[Switch]] = None,
         bridges: Optional[Dict[str, BridgeGroup]] = None,
-        teleports: Optional[List[Teleport]] = None,
+        teleports: Optional[Dict[Tuple[int, int], Teleport]] = None,
         level_name: str = "Level",
         auto_reset: bool = True,
     ):
         self.base_tiles: Dict[Tuple[int, int], TileType] = dict(tiles)
         self.current_tiles: Dict[Tuple[int, int], TileType] = dict(tiles)
         self.goal_pos: Tuple[int, int] = goal_pos
-        self.spawn_state: BlockState = spawn_state
+        self.spawn_state: NormalBlockState = spawn_state
         self.level_name: str = level_name
 
         self.switches: Dict[Tuple[int, int], Switch] = {
             (s.x, s.y): s for s in (switches or [])
         }
         self.bridges: Dict[str, BridgeGroup] = bridges or {}
-        self.teleports: Dict[Tuple[int, int], Teleport] = {
-            (t.x, t.y): t for t in (teleports or [])
-        }
+        self.teleports: Dict[Tuple[int, int], Teleport] = teleports or {}
 
         # Precompute bounding box for camera placement
         all_coords = list(self.base_tiles.keys())
@@ -96,7 +104,7 @@ class Board:
     @property
     def has_teleports(self) -> bool:
         """Indicates if this stage contains teleport/splitter tiles."""
-        return any(tile == TileType.TELEPORT for tile in self.base_tiles.values())
+        return bool(self.teleports) or any(tile == TileType.TELEPORT for tile in self.base_tiles.values())
 
     def reset(self):
         """Resets dynamic board elements (bridges, fragile states)."""
@@ -126,10 +134,10 @@ class Board:
             b_id: BridgeGroup(b.group_id, list(b.tiles), b.initially_open, b.is_open)
             for b_id, b in self.bridges.items()
         }
-        cloned_teleports = [
-            Teleport(t.x, t.y, t.target_1, t.target_2, t.selected)
-            for t in self.teleports.values()
-        ]
+        cloned_teleports = {
+            coord: Teleport(tp.x, tp.y, tp.target_1, tp.target_2, tp.selected)
+            for coord, tp in self.teleports.items()
+        }
         new_board = Board(
             tiles=dict(self.base_tiles),
             goal_pos=self.goal_pos,
@@ -172,14 +180,12 @@ class Board:
             TileType.TELEPORT,
         )
 
-    def evaluate_block_state(
-        self, block: Union[BlockState, SplitBlockState]
-    ) -> Tuple[str, Optional[Tuple[int, int]]]:
-        """Evaluates whether the block is safe, falls off, breaks fragile, or wins.
+    def evaluate_block_state(self, block: BaseBlockState) -> Tuple[str, Optional[Tuple[int, int]]]:
+        """Evaluates whether the block is safe, falls off, breaks fragile, teleports, or wins.
 
         Returns:
             (outcome, cause_coord):
-            outcome is one of: 'SAFE', 'VICTORY', 'FELL_VOID', 'FELL_FRAGILE'
+            outcome is one of: 'SAFE', 'VICTORY', 'FELL_VOID', 'FELL_FRAGILE', 'TELEPORT'
         """
         cells = block.occupied_cells
 
@@ -189,8 +195,8 @@ class Board:
             if not self.is_tile_walkable(tile):
                 return ("FELL_VOID", cell)
 
-        # 2. Split block rules
-        if block.is_split:
+        # 2. Split state evaluation (dual 1x1x1 cubes)
+        if getattr(block, "is_split", False):
             # A 1x1x1 unit cube cannot complete the stage alone; stepping into goal hole causes fall
             for cell in cells:
                 tile = self.get_tile(cell[0], cell[1])
@@ -199,8 +205,8 @@ class Board:
             # A 1x1x1 unit cube on a fragile tile is safe (does not collapse)
             return ("SAFE", None)
 
-        # 3. Standard block standing tests
-        if block.orientation == BlockOrientation.STANDING:
+        # 3. Monolithic block standing tests
+        if getattr(block, "orientation", None) == BlockOrientation.STANDING:
             cell = next(iter(cells))
             tile = self.get_tile(cell[0], cell[1])
 
@@ -208,30 +214,39 @@ class Board:
                 return ("VICTORY", cell)
             if tile == TileType.FRAGILE:
                 return ("FELL_FRAGILE", cell)
+            if tile == TileType.TELEPORT or cell in self.teleports:
+                return ("TELEPORT", cell)
 
-        # 4. Standard block lying tests: all occupied cells are walkable (including GOAL) -> SAFE
+        # 4. Lying / safe resting state
         return ("SAFE", None)
 
-    def trigger_switches(self, block: Union[BlockState, SplitBlockState]) -> List[str]:
+    def trigger_switches(self, block: BaseBlockState) -> List[str]:
         """Triggers switches beneath the block if conditions are met.
 
         Returns list of modified bridge group IDs.
         """
         modified_bridges: List[str] = []
-        cells = block.occupied_cells
+        is_split = getattr(block, "is_split", False)
+        is_standing = (getattr(block, "orientation", None) == BlockOrientation.STANDING)
 
-        for cell in cells:
+        if is_split:
+            active_b = getattr(block, "active_block", None)
+            trigger_cells = [(active_b.x, active_b.y)] if active_b else list(block.occupied_cells)
+        else:
+            trigger_cells = list(block.occupied_cells)
+
+        for cell in trigger_cells:
             switch = self.switches.get(cell)
             if not switch:
                 continue
 
             can_trigger = False
             if switch.switch_type == TileType.SWITCH_SOFT:
-                # Any contact triggers soft switch (including split 1x1x1 cube)
+                # Any contact triggers soft switch (monolithic and split cubes)
                 can_trigger = True
             elif switch.switch_type == TileType.SWITCH_HEAVY:
-                # Heavy switch only triggers when full block is standing upright
-                can_trigger = not block.is_split and (block.orientation == BlockOrientation.STANDING)
+                # Heavy switch only triggers when monolithic block stands upright
+                can_trigger = (not is_split and is_standing)
 
             if can_trigger:
                 for bridge_id in switch.target_bridge_ids:
@@ -253,16 +268,15 @@ class Board:
 
         return modified_bridges
 
-    def trigger_teleport(
-        self, block: Union[BlockState, SplitBlockState]
-    ) -> Union[BlockState, SplitBlockState]:
+    def trigger_teleport(self, block: BaseBlockState) -> BaseBlockState:
         """Splits and teleports the block if standing upright on a teleport switch."""
-        if not block.is_split and block.orientation == BlockOrientation.STANDING:
+        if not getattr(block, "is_split", False) and getattr(block, "orientation", None) == BlockOrientation.STANDING:
             teleport = self.teleports.get((block.x, block.y))
             if teleport:
-                return SplitBlockState(
-                    cube1=teleport.target_1,
-                    cube2=teleport.target_2,
-                    active_cube=teleport.selected,
+                from bloxorz.core.block.split import SplitBlockState
+                return SplitBlockState.from_targets(
+                    teleport.target_1,
+                    teleport.target_2,
+                    teleport.selected,
                 )
         return block

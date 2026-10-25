@@ -59,25 +59,26 @@ class BaseSolver(ABC):
 
     @staticmethod
     def get_state_key(
-        block: Union[BlockState, SplitBlockState], board: Board
-    ) -> Tuple[Union[BlockState, SplitBlockState], Tuple[Tuple[str, bool], ...]]:
+        block: Any, board: Board
+    ) -> Tuple[Any, Tuple[Tuple[str, bool], ...]]:
         """Generates a canonical hashable key for state-space graph search.
 
         Combines the immutable BlockState/SplitBlockState with the hashable tuple of all bridge states.
         """
-        return (block, board.get_bridge_state_key())
+        block_key = block.canonical_key() if hasattr(block, "canonical_key") else block
+        return (block_key, board.get_bridge_state_key())
 
     @staticmethod
-    def is_goal(block: Union[BlockState, SplitBlockState], board: Board) -> bool:
+    def is_goal(block: Any, board: Board) -> bool:
         """Determines if the block is standing upright on the goal hole."""
-        if block.is_split:
+        if getattr(block, "is_split", False):
             return False
         outcome, _ = board.evaluate_block_state(block)
         return outcome == "VICTORY"
 
     @classmethod
     def get_successors(
-        cls, block: Union[BlockState, SplitBlockState], board: Board
+        cls, block: Any, board: Board
     ) -> List[Successor]:
         """Calculates all legal next states from the current block and board configuration.
 
@@ -85,7 +86,7 @@ class BaseSolver(ABC):
         """
         successors: List[Successor] = []
 
-        if block.is_split:
+        if getattr(block, "is_split", False):
             directions = (
                 Direction.UP,
                 Direction.RIGHT,
@@ -100,11 +101,19 @@ class BaseSolver(ABC):
             next_block = block.roll(direction)
             outcome, _ = board.evaluate_block_state(next_block)
 
-            if outcome in ("SAFE", "VICTORY"):
+            if outcome in ("SAFE", "VICTORY", "TELEPORT"):
                 next_board = board.clone()
                 if outcome == "SAFE":
                     next_board.trigger_switches(next_block)
+                    if getattr(next_block, "is_split", False):
+                        merged = next_block.check_merge()
+                        if merged is not None:
+                            next_block = merged
+                            next_board.trigger_switches(merged)
                     next_block = next_board.trigger_teleport(next_block)
+                elif outcome == "TELEPORT":
+                    next_block = next_board.trigger_teleport(next_block)
+                    outcome = "SAFE"
 
                 successors.append(
                     Successor(

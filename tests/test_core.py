@@ -187,3 +187,54 @@ class TestBoardMechanics(unittest.TestCase):
         # Test Undo restores bridge state
         assert game.undo() is True
         assert board.get_tile(3, 0) == TileType.BRIDGE_CLOSED
+
+    def test_teleport_split_switch_merge_and_undo(self):
+        board_data = {
+            "layout": [
+                "11111111",
+                "11181111",
+                "11111112",
+            ],
+            "spawn": {"x": 0, "y": 1, "orientation": "STANDING"},
+            "teleports": [
+                {"x": 3, "y": 1, "target_1": [3, 0], "target_2": [5, 0], "selected": 0}
+            ]
+        }
+        board = parse_level_data(board_data)
+        game = Game(board)
+
+        # Move 1: Roll right to (1, 1), (2, 1) lying_x -> SAFE
+        res1, state1, _ = game.roll(Direction.RIGHT)
+        assert res1 == "SAFE"
+        assert state1.orientation == BlockOrientation.LYING_X
+        assert game.move_count == 1
+
+        # Move 2: Roll right onto teleport tile at (3, 1) standing -> triggers TELEPORT
+        res2, state2, targets = game.roll(Direction.RIGHT)
+        assert res2 == "TELEPORT"
+        assert getattr(state2, "is_split", False) is True
+        assert state2.active_index == 0
+        assert state2.active_block.x == 3 and state2.active_block.y == 0
+        assert state2.passive_block.x == 5 and state2.passive_block.y == 0
+        assert game.move_count == 2
+
+        # Switch active block
+        assert game.switch_block() is True
+        assert game.block.active_index == 1
+        assert game.block.active_block.x == 5 and game.block.active_block.y == 0
+        assert game.move_count == 2  # switch does not increment move count
+
+        # Undo switch
+        assert game.undo() is True
+        assert game.block.active_index == 0
+        assert game.move_count == 2
+
+        # Move active block (3, 0) RIGHT to (4, 0)
+        res3, state3, _ = game.roll(Direction.RIGHT)
+        # Block 1 is now at (4, 0), Block 2 is at (5, 0).
+        # Manhattan distance = 1 -> automatically MERGES!
+        assert res3 == "MERGED"
+        assert getattr(state3, "is_split", False) is False
+        assert state3.x == 4 and state3.y == 0
+        assert state3.orientation == BlockOrientation.LYING_X
+        assert game.move_count == 3

@@ -6,8 +6,7 @@ Assignment: Project 1 - Bloxorz Solver (Introduction to Artificial Intelligence)
 
 from typing import List, Tuple, Set, Dict, Optional, Union
 from bloxorz.core.constants import Direction
-from bloxorz.core.block import BlockState
-from bloxorz.core.split import SplitBlockState
+from bloxorz.core.block import BlockState, SplitBlockState
 from bloxorz.core.board import Board
 from bloxorz.solvers.base import BaseSolver, SolverResult
 

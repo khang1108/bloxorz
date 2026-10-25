@@ -541,7 +541,7 @@ class BlockView(Entity):
                 self._is_teleporting = False
                 self.is_animating = False
                 # Update animation for the block when applying solver with split feature
-                final_state = self._teleport_final_state    
+                final_state = self._teleport_final_state
                 on_complete = self._on_teleport_complete
                 self._teleport_final_state = None
                 self._on_teleport_complete = None

@@ -14,21 +14,20 @@ if str(root_dir) not in sys.path:
 
 from bloxorz.core.level_loader import load_level_from_file
 from bloxorz.core.game import Game
-from bloxorz.solvers.dfs import DFSSolver, IDSSolver
+from bloxorz.solvers.dfs import DFSSolver
 
 
-def print_stage_demo(stage_num: int, use_ids: bool = False):
+def print_stage_demo(stage_num: int):
     stage_file = root_dir / "bloxorz" / "levels" / f"stage_{stage_num:02d}.json"
     if not stage_file.exists():
         print(f"Error: Stage {stage_num:02d} not found at {stage_file}")
         return
 
     board = load_level_from_file(stage_file)
-    algo_name = "IDS (Iterative Deepening)" if use_ids else "DFS (Depth-First Search)"
-    solver = IDSSolver(max_depth=30) if use_ids else DFSSolver(max_depth=5000)
+    solver = DFSSolver(max_depth=5000)
 
     print("=" * 70)
-    print(f"  DEMO: {board.level_name.upper()} | THUẬT TOÁN: {algo_name}")
+    print(f"  DEMO: {board.level_name.upper()} | THUẬT TOÁN: DFS (Depth-First Search)")
     print(f"  Số lượng ô: {len(board.base_tiles)} | Cầu: {len(board.bridges)} | Switch: {len(board.switches)} | Teleport: {len(board.teleports)}")
     print("=" * 70)
 
@@ -64,14 +63,14 @@ def main():
     print("#  BLOXORZ SOLVER - DEMO CHẠY THỬ NHIỆM VỤ MEMBER 3 (DFS & SPLIT)")
     print("#" * 70 + "\n")
 
-    # Demo 1: Màn cơ bản Stage 01 bằng IDS (tối ưu 7 bước)
-    print_stage_demo(stage_num=1, use_ids=True)
+    # Demo 1: Màn cơ bản Stage 01 bằng DFS
+    print_stage_demo(stage_num=1)
 
-    # Demo 2: Màn cầu & switch phức tạp Stage 05 bằng DFS (vừa sửa lỗi)
-    print_stage_demo(stage_num=5, use_ids=False)
+    # Demo 2: Màn cầu & switch phức tạp Stage 05 bằng DFS
+    print_stage_demo(stage_num=5)
 
     # Demo 3: Màn phân tách khối Stage 08 bằng DFS
-    print_stage_demo(stage_num=8, use_ids=False)
+    print_stage_demo(stage_num=8)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Unit and regression tests for DFSSolver and IDSSolver."""
+"""Unit and regression tests for DFSSolver."""
 
 import unittest
 from pathlib import Path
@@ -7,11 +7,11 @@ from bloxorz.core.block import BlockState
 from bloxorz.core.board import Board
 from bloxorz.core.game import Game
 from bloxorz.core.level_loader import load_level_from_file
-from bloxorz.solvers.dfs import DFSSolver, IDSSolver
+from bloxorz.solvers.dfs import DFSSolver
 
 
 class TestDFSSolver(unittest.TestCase):
-    """Verifies that DFS and IDS solvers find correct and valid solutions."""
+    """Verifies that DFS solver finds correct and valid solutions."""
 
     def setUp(self):
         self.levels_dir = Path(__file__).parent.parent / "bloxorz" / "levels"
@@ -38,15 +38,13 @@ class TestDFSSolver(unittest.TestCase):
 
         self.assertEqual(final_outcome, "VICTORY")
 
-    def test_ids_solves_stage_01_optimally(self):
-        stage_file = self.levels_dir / "stage_01.json"
+    def test_dfs_solves_bridge_stage_02(self):
+        stage_file = self.levels_dir / "stage_02.json"
         board = load_level_from_file(stage_file)
-        solver = IDSSolver(max_depth=15)
+        solver = DFSSolver(max_depth=3000)
 
         result = solver.solve(board)
-        self.assertTrue(result.is_solved, "IDS must solve Stage 01")
-        # Optimal solution length for Stage 01 is exactly 7
-        self.assertEqual(len(result.moves), 7, "IDS must find optimal 7-move solution for Stage 01")
+        self.assertTrue(result.is_solved, "DFS must solve Stage 02 with bridges and switches")
 
         game = Game(board)
         final_outcome = None

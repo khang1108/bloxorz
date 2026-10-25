@@ -222,8 +222,8 @@ class BloxorzApp:
             return
 
         if not self.registered_solver:
-            from bloxorz.solvers.dfs import IDSSolver
-            self.registered_solver = IDSSolver()
+            from bloxorz.solvers.dfs import DFSSolver
+            self.registered_solver = DFSSolver()
 
         # If player made manual moves, reset to spawn before executing solver path
         if self.game.move_count > 0:

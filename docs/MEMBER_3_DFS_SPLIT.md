@@ -16,7 +16,6 @@ Theo phân công công việc của nhóm, Member 3 chịu trách nhiệm các h
 2. **Cài đặt thuật toán tìm kiếm DFS (`dfs.py`)**:
    - Hiện thực hóa **Depth-First Search (DFS)** với cấu trúc dữ liệu ngăn xếp hiển thị (Explicit LIFO Stack) tránh tràn bộ nhớ đệm đệ quy (`RecursionError`).
    - Kỹ thuật chống chu trình lặp (Cycle Detection) thông qua bảng băm chữ ký trạng thái (`visited set`).
-   - Hỗ trợ thêm biến thể **Iterative Deepening Search (IDS)** theo đúng đặc tả đề bài để đảm bảo tìm ra lời giải tối ưu về số bước.
    - Đo đạc đầy đủ 4 chỉ số thực nghiệm: **Thời gian tìm kiếm (Search Time)**, **Bộ nhớ đỉnh (Peak Memory)** thông qua thư viện `tracemalloc`, **Số nút mở rộng (Expanded Nodes)** và **Độ dài lời giải (Solution Length)**.
 3. **Thiết kế & Phân cấp bộ Test Cases JSON từ cơ bản đến nâng cao**:
    - Phân loại toàn bộ hệ thống màn chơi thành **5 nhóm độ khó** theo đúng yêu cầu mục 3.6 của đề bài và giải đáp Q&A của Giảng viên.
@@ -81,9 +80,8 @@ $$D_{\text{Manhattan}}(c_1, c_2) = |x_1 - x_2| + |y_1 - y_2|$$
 
 ---
 
-## 3. Thuật toán Tìm kiếm DFS & IDS (`bloxorz/solvers/dfs.py`)
+## 3. Thuật toán Tìm kiếm DFS (`bloxorz/solvers/dfs.py`)
 
-### 3.1. Thuật toán Depth-First Search (DFS)
 Trong bài toán Bloxorz, không gian trạng thái chứa vô số chu trình (ví dụ: lăn phải rồi lăn trái trở về vị trí cũ). Nếu áp dụng DFS ngây thơ không có cơ chế phát hiện lặp, thuật toán sẽ rơi vào vòng lặp vô tận.
 
 #### Cấu trúc thuật toán DFS đã hiện thực:
@@ -97,13 +95,6 @@ Trong bài toán Bloxorz, không gian trạng thái chứa vô số chu trình (
    Khi một nút con được sinh ra, nếu chữ ký $K$ đã tồn tại trong `visited`, bước đi đó bị cắt tỉa (pruning) ngay lập tức.
 4. **Kiểm tra đích sớm (Early Goal Test)**:
    Ngay khi sinh nút con, nếu nút con đạt trạng thái `VICTORY`, thuật toán lập tức dừng và trả về đường đi, giúp tiết kiệm thời gian duyệt không cần thiết.
-
-### 3.2. Thuật toán Iterative Deepening Search (IDS)
-Đề bài cho phép nhóm sử dụng IDS thay thế hoặc bổ trợ cho DFS. IDS kết hợp ưu điểm của cả hai thuật toán:
-- **Tiết kiệm bộ nhớ của DFS**: Không gian bộ nhớ chỉ tỉ lệ thuận với độ sâu tìm kiếm $O(b \cdot d)$.
-- **Tính tối ưu lời giải của BFS**: Đảm bảo tìm ra đường đi ngắn nhất (ít bước nhất) tới đích vì độ sâu duyệt được tăng dần từ $L = 1, 2, 3, \dots, d$.
-
-Trong `bloxorz/solvers/dfs.py`, lớp `IDSSolver` kế thừa từ `DFSSolver` và hiện thực hàm `_depth_limited_search(board, limit)` với bảng nhớ độ sâu tối thiểu `visited_depth[state_key] = current_depth`.
 
 ---
 
@@ -149,7 +140,7 @@ OK
    - `test_stage_08_ground_truth_solution`: Chạy diễn hoạt chính xác chuỗi bước đi chuẩn `RRDDDD_UURR` trên Stage 08 và đạt `VICTORY` tuyệt đối.
 2. `tests/test_dfs.py`:
    - `test_dfs_solves_stage_01`: DFS giải thành công Stage 01, đo đạc đầy đủ thời gian và Peak Memory.
-   - `test_ids_solves_stage_01_optimally`: IDS giải Stage 01 và tìm ra đúng lời giải tối ưu độ dài **7 bước**.
+   - `test_dfs_solves_bridge_stage_02`: DFS giải thành công màn chơi có mạng lưới cầu và công tắc (Stage 02).
    - `test_dfs_solves_split_stage_08`: DFS tự động tìm đường giải thành công màn chơi có phân tách khối (Stage 08).
    - `test_dfs_cycle_prevention`: Kiểm tra thuật toán phát hiện chu trình trên bản đồ vòng tròn, kết thúc an toàn không bị treo.
 3. `tests/test_core.py` & `tests/test_levels.py`:

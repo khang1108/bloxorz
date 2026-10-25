@@ -147,6 +147,11 @@ class Board:
         )
         new_board.bridges = cloned_bridges
         new_board.current_tiles = dict(self.current_tiles)
+        # Cloned bridge for new_board to save bridge state
+        for bridge_id, bridge in self.bridges.items():
+            cloned_bridge = new_board.bridges[bridge_id]
+            cloned_bridge.is_open = bridge.is_open
+            new_board._sync_bridge_tiles(cloned_bridge)
         return new_board
 
     def _sync_bridge_tiles(self, bridge: BridgeGroup):

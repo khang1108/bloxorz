@@ -189,6 +189,33 @@ class TestTeleportSplitFlightAnimation:
         assert bv.split_mesh_2.visible is True
         assert bv.mesh.visible is False
 
+    def test_teleport_completion_callback_runs_after_state_sync(self, monkeypatch):
+        from bloxorz.core.block.normal import NormalBlockState
+        from bloxorz.core.block.split import SplitBlockState, SingleBlock
+
+        bv = BlockView()
+        standing = NormalBlockState(4, 4, BlockOrientation.STANDING)
+        split_target = SplitBlockState(
+            SingleBlock(10, 1),
+            SingleBlock(10, 7),
+            active_index=1,
+        )
+        completed = []
+        bv.animate_teleport_split(
+            standing,
+            split_target,
+            on_complete=lambda: completed.append(True),
+        )
+        bv._teleport_time = bv._teleport_duration
+        monkeypatch.setattr("bloxorz.graphics.block_view.time.dt", 0)
+
+        bv.update()
+
+        assert completed == [True]
+        assert bv.current_state == split_target
+        assert bv.is_animating is False
+        assert bv._is_teleporting is False
+
 
 class TestSplitCubeRollAnimation:
     """Verifies that 1x1x1 split cubes roll with physical edge-pivot rotation."""

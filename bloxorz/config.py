@@ -94,11 +94,11 @@ class BoardConfig:
     goal_floor_y: float = -0.98   # Y-coordinate of glowing core floor at bottom of goal well
     goal_floor_ratio: float = 0.75  # Scale ratio of glowing goal floor (75%)
     goal_floor_height: float = 0.04  # Thickness of glowing goal floor plate
-    switch_soft_radius: float = 0.48  # Diameter of round soft-touch switch disc (cyan)
+    switch_soft_radius: float = 0.52  # Diameter of round soft-touch switch disc (cyan)
     switch_soft_height: float = 0.08  # Height / thickness of soft switch disc
     switch_soft_y: float = 0.04   # Y-coordinate elevation of soft switch plate above tile
-    switch_heavy_long: float = 0.54  # Length of heavy-pressure crossbar plate (crimson rose)
-    switch_heavy_short: float = 0.18  # Width of heavy-pressure crossbar plate
+    switch_heavy_long: float = 0.64  # Length of heavy-pressure crossbar plate (crimson rose)
+    switch_heavy_short: float = 0.20  # Width of heavy-pressure crossbar plate
     switch_heavy_height: float = 0.08  # Thickness of heavy-pressure crossbar plate
     switch_heavy_y: float = 0.04  # Y-coordinate elevation of heavy switch plate above tile
     bridge_open_y: float = -0.06  # Y-coordinate of bridge planks when deployed/flush with grid

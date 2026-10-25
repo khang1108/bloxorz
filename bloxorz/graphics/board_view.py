@@ -141,7 +141,14 @@ class BoardView:
                 self.tile_entities[(x, y)] = base_slab
 
                 if tile_type == TileType.SWITCH_SOFT:
-                    # Circular elevated disc with subtle glowing halo
+                    # Circular elevated disc with dark recessed bezel (Soft switch)
+                    Entity(
+                        parent=self.root,
+                        model=Cylinder(resolution=24),
+                        position=(pos_x, cfg.switch_soft_y - 0.02, pos_z),
+                        scale=(cfg.switch_soft_radius + 0.08, 0.04, cfg.switch_soft_radius + 0.08),
+                        color=c_inset,
+                    )
                     plate = Entity(
                         parent=self.root,
                         model=Cylinder(resolution=24),
@@ -151,22 +158,34 @@ class BoardView:
                     )
                     self.switch_entities[(x, y)] = plate
                 else:
-                    # Heavy switch: Intersecting cross bars
-                    plate = Entity(
+                    # Heavy switch: Iconic diagonal 'X' cross (Rotated 45 degrees, Vivid Red)
+                    Entity(
                         parent=self.root,
                         model='cube',
+                        position=(pos_x, cfg.switch_heavy_y - 0.02, pos_z),
+                        scale=(0.74, 0.04, 0.74),
+                        color=c_inset,
+                    )
+                    x_root = Entity(
+                        parent=self.root,
                         position=(pos_x, cfg.switch_heavy_y, pos_z),
+                        rotation_y=45,
+                    )
+                    Entity(
+                        parent=x_root,
+                        model='cube',
+                        position=(0, 0, 0),
                         scale=(cfg.switch_heavy_long, cfg.switch_heavy_height, cfg.switch_heavy_short),
                         color=c_switch_heavy,
                     )
                     Entity(
-                        parent=self.root,
+                        parent=x_root,
                         model='cube',
-                        position=(pos_x, cfg.switch_heavy_y, pos_z),
+                        position=(0, 0, 0),
                         scale=(cfg.switch_heavy_short, cfg.switch_heavy_height, cfg.switch_heavy_long),
                         color=c_switch_heavy,
                     )
-                    self.switch_entities[(x, y)] = plate
+                    self.switch_entities[(x, y)] = x_root
 
             elif tile_type == TileType.TELEPORT:
                 # Teleport/splitter slab with twin architectural cyan insets

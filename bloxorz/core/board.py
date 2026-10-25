@@ -146,6 +146,12 @@ class Board:
             level_name=self.level_name,
         )
         new_board.current_tiles = dict(self.current_tiles)
+
+        # Recover state of the board
+        for b_id, b in self.bridges.items():
+            new_board.bridges[b_id].is_open = b.is_open
+            new_board._sync_bridge_tiles(new_board.bridges[b_id])
+
         return new_board
 
     def _sync_bridge_tiles(self, bridge: BridgeGroup):

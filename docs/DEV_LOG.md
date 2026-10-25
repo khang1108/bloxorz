@@ -1,77 +1,76 @@
-# Nhật Ký Phát Triển & Quản Lý Vấn Đề Kỹ Thuật (Development Log & Issue Backlog)
-**Dự án:** Bloxorz Solver - Project 1 (CSC14003 - Nhập môn Trí tuệ Nhân tạo)  
-**Nhánh:** `feat/member-3-dfs` (Member 3)  
-**Cập nhật lần cuối:** 25/10/2026  
+# Nhật Ký Phát Triển & Quản Lý Vấn Đề Kỹ Thuật (Development Log)
+Dự án: Bloxorz Solver - Project 1 (CSC14003 - Nhập môn Trí tuệ Nhân tạo)  
+Nhánh: feat/member-3-dfs (Member 3)  
+Cập nhật lần cuối: 25/10/2026  
 
 ---
 
-## 1. Tổng quan mục đích
-Tài liệu này đóng vai trò là sổ ghi nhận kỹ thuật (Dev Log) tập trung cho toàn nhóm, ghi lại:
-- Các lỗi phát sinh trong mã nguồn gốc (Root Cause & Solution).
-- Trạng thái giải quyết trên các nhánh làm việc.
-- Các vấn đề trải nghiệm người dùng (UX/UI Backlog) được phát hiện để các thành viên liên quan tham khảo và hoàn thiện.
+## 1. Những công việc đã làm
+
+Phần này tóm tắt ngắn gọn các hạng mục công việc mà Member 3 đã thực hiện và hoàn thành trên nhánh:
+
+1. Thuật toán tìm kiếm DFS (bloxorz/solvers/dfs.py):
+   - Cài đặt thuật toán tìm kiếm theo chiều sâu (Depth-First Search) để giải quyết các màn chơi Bloxorz.
+   - Quản lý tập các trạng thái đã duyệt (visited) dựa trên khóa chuẩn hóa (canonical_key) kết hợp trạng thái khối và trạng thái các cây cầu, giúp tránh lặp vô tận trên đồ thị có chu trình.
+   - Hỗ trợ đầy đủ các bước đi hợp lệ: lăn khối bình thường, kích hoạt các loại công tắc và cầu, chuyển đổi điều khiển giữa hai khối lập phương (SWITCH_CUBE), và đi qua cổng dịch chuyển.
+
+2. Cơ chế phân tách khối và dịch chuyển (Split Block & Teleport):
+   - Xây dựng lớp trạng thái SplitBlockState (trong bloxorz/core/block/split.py và bloxorz/core/split.py).
+   - Mô phỏng chính xác các quy tắc vật lý khi khối bị tách thành hai khối lập phương 1x1x1:
+     + Kích hoạt công tắc chữ X (Soft switch).
+     + Đứng an toàn trên các ô màu cam (Fragile tile) mà không làm sập ô.
+     + Di chuyển qua ô đích (Goal tile) an toàn (không bị rơi nhưng không chiến thắng một mình; chỉ thắng khi hai khối đã ghép lại thành khối 1x1x2 đứng thẳng trên ô đích).
+     + Tự động ghép lại (Merge) thành khối 1x1x2 khi hai khối 1x1x1 di chuyển đến vị trí kề sát nhau.
+
+3. Phân loại bộ dữ liệu kiểm thử (Test Cases Catalog):
+   - Xây dựng tệp dữ liệu data/test_cases_catalog.json, phân loại 33 màn chơi theo 5 nhóm độ khó để đánh giá hiệu năng và tính đúng đắn của thuật toán.
+
+4. Bộ kiểm thử tự động (Unit Tests):
+   - Viết các ca kiểm thử tự động trong tests/test_dfs.py và tests/test_split.py, đảm bảo kiểm thử toàn diện thuật toán DFS, cơ chế phân tách và các tương tác đặc thù. Toàn bộ 26/26 ca kiểm thử đều vượt qua.
+
+5. Tài liệu kỹ thuật và kịch bản mô phỏng:
+   - Soạn thảo báo cáo kỹ thuật chi tiết tại docs/MEMBER_3_DFS_SPLIT.md và xây dựng tệp demo.py để chạy thử nghiệm các màn chơi tiêu biểu.
 
 ---
 
-## 2. Danh sách các vấn đề kỹ thuật (Technical Issues & Backlog)
+## 2. Các lỗi đã xảy ra và đề xuất xử lý
 
-### 📌 Vấn đề 1: Lỗi "Mất trí nhớ trạng thái cầu" trong nhân bản bàn cờ (`Board.clone()`)
-* **Mức độ nghiêm trọng:** Nghiêm trọng (Critical Bug) - Ảnh hưởng trực tiếp đến kết quả tìm kiếm của tất cả các thuật toán AI (BFS, DFS, IDS, UCS, A*).
-* **Mô tả triệu chứng:**
-  - Ở các màn chơi có mạng lưới công tắc và cầu liên kết (như Stage 05, Stage 14, Stage 20), khi thuật toán tìm kiếm rẽ nhánh, khối dẫm lên công tắc làm cầu chuyển trạng thái (Mở $\leftrightarrow$ Đóng).
-  - Tuy nhiên, ngay bước tính toán kế tiếp, thuật toán không thể đi qua cây cầu vừa mở và kết luận là không tìm được đường đi (hoặc rơi vào bế tắc lặp lại).
-* **Nguyên nhân kỹ thuật (Root Cause):**
-  - Trong tệp `bloxorz/core/board.py`, hàm khởi tạo `Board.__init__()` tự động gọi lệnh `self.reset()`.
-  - Khi thuật toán tìm kiếm gọi `new_board = board.clone()` để tạo trạng thái mới, hàm `reset()` vô tình đè lại toàn bộ thuộc tính `bridge.is_open = bridge.initially_open` (trạng thái lúc mới vào màn). Cầu bị đưa về trạng thái xuất phát, làm mất trí nhớ mọi thay đổi công tắc trước đó.
-* **Phân công trách nhiệm:**
-  - Nghiệp vụ Cầu & Công tắc thuộc trách nhiệm của **Member 2**.
-  - Khung kiến trúc bàn cờ và lớp `Board` thuộc trách nhiệm của **Member 1**.
-* **Trạng thái xử lý:**
-  - ✅ **ĐÃ SỬA XONG TRONG CODE CỦA BRANCH MEMBER 3 (`feat/member-3-dfs`)**.
-  - **Giải pháp kỹ thuật đã áp dụng:**
-    1. Bổ sung tham số `auto_reset: bool = True` vào `Board.__init__()`. Khi `Board.clone()` được gọi, truyền `auto_reset=False` để bỏ qua việc reset cầu.
-    2. Trong `Board.clone()`, khôi phục chính xác trạng thái thực tế `new_board.bridges[b_id].is_open = bridge.is_open` và gọi `_sync_bridge_tiles()` để cập nhật ma trận ô sàn.
-  - **Ghi chú cho nhóm:** Các thành viên (Member 1, Member 2, Member 4) có thể trực tiếp tham khảo cách sửa trong `bloxorz/core/board.py` trên branch này để tích hợp vào nhánh của mình.
+Phần này ghi nhận các lỗi kỹ thuật và vấn đề trải nghiệm phát sinh trong quá trình phát triển, nguyên nhân, giải pháp gợi ý, cũng như tình trạng thực hiện (đã sửa hay chưa sửa).
 
----
+### Vấn đề 1: Lỗi mất trạng thái cầu khi nhân bản bàn cờ (Board.clone())
+- Mô tả vấn đề:
+  Trong các màn chơi có công tắc và cầu (như Stage 05, Stage 14, Stage 20), khi thuật toán tìm kiếm rẽ nhánh và gọi lệnh sao chép trạng thái bàn cờ (board.clone()), cây cầu vừa mở lại bị đặt lại về trạng thái ban đầu của màn chơi. Do đó, thuật toán không thể đi qua cây cầu vừa mở và kết luận là không tìm được đường đi.
+- Nguyên nhân:
+  Hàm khởi tạo Board.__init__() tự động gọi lệnh self.reset(). Khi gọi clone(), bàn cờ mới được tạo ra và vô tình chạy lại hàm reset(), làm đè mất các thay đổi công tắc trước đó.
+- Giải pháp gợi ý:
+  Bổ sung tham số auto_reset=False vào hàm khởi tạo Board.__init__(). Trong hàm Board.clone(), truyền tham số này để không reset bàn cờ, đồng thời sao chép chính xác thuộc tính is_open của từng cây cầu và đồng bộ lại các ô sàn liên quan.
+- Tình trạng xử lý:
+  Đã sửa xong trong mã nguồn của Member 3 (tại bloxorz/core/board.py trên nhánh feat/member-3-dfs). Các thành viên khác có thể trực tiếp tham khảo cách xử lý này để đưa vào nhánh của mình.
 
-### 📌 Vấn đề 2: Tối ưu trải nghiệm khi AI chạy lời giải có số bước lớn (Ví dụ: Stage 9 có 762 bước)
-* **Mức độ:** Cải thiện trải nghiệm người dùng (UX Enhancement).
-* **Mô tả triệu chứng:**
-  - Thuật toán DFS thuần túy tìm kiếm theo chiều sâu đầu tiên nên không đảm bảo tính tối ưu độ dài. Ở một số màn chơi (như Stage 09), DFS tìm ra chuỗi lời giải dài tới 762 bước (trong khi số bước tối ưu của IDS chỉ là 24 bước).
-  - Với tốc độ diễn hoạt đồ họa mặc định (khoảng 0.15s - 0.25s / bước), 762 bước khiến hoạt cảnh diễn ra kéo dài gần 3 phút, người chơi không thể can thiệp hay thoát ra được.
-* **Đề xuất giải pháp (Backlog cho Member 1 - Phụ trách GUI):**
-  1. **Nút "Dừng AI" (Stop / Cancel Solver):** Bổ sung nút bấm trên HUD hoặc gán phím tắt `ESC` / `Space` để người chơi có thể hủy ngang diễn hoạt (`app.stop_solution()`) bất cứ lúc nào.
-  2. **Thanh chỉnh tốc độ (Playback Speed):** Cung cấp các mức tốc độ `1x`, `2x`, `5x`, `10x` trong lúc AI diễn hoạt để người chơi tua nhanh.
-  3. **Nút "Bỏ qua diễn hoạt" (Skip to End):** Lập tức đưa khối về trạng thái chiến thắng mà không cần chờ diễn hoạt từng bước.
-  4. **Ưu tiên giải pháp tối ưu:** Trong menu chọn thuật toán, khuyến nghị người dùng chọn **IDS** (của Member 3), **BFS** (của Member 2) hoặc **A\*** (của Member 1) đối với các màn chơi có không gian trạng thái rộng.
-* **Trạng thái:** 📋 **ĐANG LƯU LOG / CHỜ TRIỂN KHAI TẦNG GUI (Backlog)** (Chưa sửa trực tiếp vào code GUI theo yêu cầu giữ nguyên hiện trạng).
+### Vấn đề 2: Lỗi không hiển thị đầy đủ hai khối khi phân tách (Stage 08)
+- Mô tả vấn đề:
+  Khi khối đi vào ô phân tách (Teleport), khối được tách thành hai khối lập phương 1x1x1 độc lập. Tuy nhiên, trên giao diện đồ họa, người chơi không nhìn thấy được cả hai khối đang ở đâu trên bàn cờ. Hệ thống chỉ vẽ duy nhất khối đang được chọn để điều khiển, còn khối thụ động còn lại bị ẩn đi, khiến người chơi không thể nắm bắt được toàn bộ bàn cờ.
+- Giải pháp gợi ý:
+  Cập nhật tầng đồ họa 3D để render đồng thời cả hai khối khi trạng thái khối là SplitBlockState, đồng thời gắn phím Space (hoặc nút bấm trên giao diện) để người chơi có thể chuyển đổi qua lại giữa hai khối.
+- Tình trạng xử lý:
+  - Tầng logic và thuật toán: Member 3 đã cài đặt hoàn chỉnh và hỗ trợ đầy đủ.
+  - Tầng giao diện 3D: Đã được bổ sung trong bản cập nhật mới nhất trên nhánh main. Nhánh feat/member-3-dfs đã tích hợp thành công. Các thành viên khác cần đồng bộ mã nguồn mới từ main về để có phần hiển thị đầy đủ cả hai khối.
 
----
+### Vấn đề 3: Lời giải thuật toán DFS quá dài và thiếu công cụ điều khiển trên giao diện
+- Mô tả vấn đề:
+  Thuật toán DFS duyệt theo chiều sâu nên không đảm bảo tìm được đường đi ngắn nhất. Ở một số màn chơi (như Stage 09), DFS tìm ra chuỗi hành động dài tới 762 bước (trong khi đường đi tối ưu chỉ khoảng 24 bước). Khi giao diện diễn hoạt từng bước, người chơi phải chờ gần 3 phút và hoàn toàn không thể dừng lại hay đẩy nhanh tiến độ.
+- Giải pháp gợi ý cho giao diện (GUI):
+  1. Thêm nút Dừng AI (Stop / Cancel): Cho phép người chơi dừng diễn hoạt ngay lập tức bằng nút bấm hoặc phím tắt.
+  2. Thêm thanh chỉnh tốc độ diễn hoạt: Cung cấp các mức tốc độ (ví dụ 1x, 2x, 5x, 10x) để người chơi có thể tua nhanh.
+  3. Thêm nút Bỏ qua (Skip to End): Lập tức đưa khối đến vị trí kết thúc mà không cần xem từng bước.
+  4. Cho phép người chơi lựa chọn thuật toán phù hợp trên giao diện: Giúp người chơi linh hoạt chọn giữa DFS, BFS, hay A* tùy theo đặc điểm màn chơi.
+- Tình trạng xử lý:
+  Chưa làm trên giao diện (đây là phần việc thuộc về tầng giao diện người dùng của Member 1; đã được ghi nhận vào danh sách công việc tồn đọng để phối hợp hoàn thiện).
 
-### 📌 Vấn đề 3: Khóa tương tác Menu / Reset / Settings trong lúc đang diễn hoạt hoạt cảnh
-* **Mức độ:** Cải thiện logic giao diện (UI Logic).
-* **Mô tả triệu chứng:**
-  - Khi khối đang lăn hoặc khi AI Solver đang diễn hoạt, hệ thống kích hoạt cờ `self.block_view.is_animating = True` để bảo vệ đồng bộ khung hình đồ họa.
-  - Tuy nhiên, điều này vô tình chặn luôn các phím điều hướng hệ thống như `R` (Restart), `O` (Settings), `ESC` (Chọn màn / Pause). Người chơi có cảm giác game bị treo hoặc không bấm được gì khi màn chơi đang diễn hoạt.
-* **Đề xuất giải pháp (Backlog cho Member 1):**
-  - Trong hàm `handle_input()`, nếu nhận phím `ESC` hoặc `R` trong lúc `self._is_playing_solution == True`, hệ thống cần tự động gọi `self.stop_solution()` để ngắt hoạt cảnh an toàn trước khi chuyển qua hiển thị menu hoặc khởi động lại màn chơi.
-* **Trạng thái:** 📋 **ĐANG LƯU LOG / CHỜ TRIỂN KHAI TẦNG GUI (Backlog)**.
-
----
-
-### 📌 Vấn đề 4: Hiển thị cả 2 khối và chuyển đổi điều khiển khi phân tách khối (Stage 08)
-* **Mô tả:**
-  - Ở màn chơi có công tắc phân tách (Teleport), khối tách thành 2 khối lập phương $1 \times 1 \times 1$.
-  - Người chơi cần nhìn thấy cả 2 khối trên bản đồ và dùng phím `Space` để đổi quyền điều khiển giữa 2 khối.
-* **Trạng thái xử lý:**
-  - ✅ **ĐÃ HOÀN TẤT VÀ TÍCH HỢP**:
-    - Tầng Core & Thuật toán: Member 3 đã cài đặt đầy đủ cấu trúc `SplitBlockState`, lệnh `Direction.SWITCH_CUBE`, kiểm tra an toàn trên ô fragile và cơ chế tự động hợp nhất khi kề cận.
-    - Tầng Đồ họa 3D & Phím Space: Member 1 (bạn Khang) đã cập nhật trong commit `332344a` trên `main` và nhánh `feat/member-3-dfs` đã kéo về tích hợp thành công.
-
----
-
-## 3. Lịch sử đồng bộ Git (Git Sync History)
-- **Commit `7b3f9a0`:** Lưu trữ toàn bộ mã nguồn DFS/IDS Solver, Split mechanics, Test catalog và bản vá lỗi `Board.clone()`.
-- **Cập nhật từ `origin/main` (commit `332344a`):** Kéo các cập nhật đồ họa 3D, animation phân tách khối và tái cấu trúc module `block/` từ bạn Khang về nhánh.
-- **Commit `8b89f9f` & Merge:** Giải quyết xung đột hợp nhất, đảm bảo toàn bộ mã nguồn và bài test của Member 3 (cùng bản vá lỗi cầu) hoạt động hài hòa 100% với phiên bản mới nhất từ `main`.
+### Vấn đề 4: Bị khóa các phím điều hướng (Menu / Chơi lại / Cài đặt) khi đang diễn hoạt
+- Mô tả vấn đề:
+  Khi hoạt cảnh di chuyển của khối hoặc diễn hoạt lời giải của AI đang chạy, hệ thống khóa nhận tín hiệu để bảo vệ khung hình. Điều này khiến các phím chức năng như R (chơi lại màn), O (mở cài đặt), ESC (quay về menu chính) không phản hồi, tạo cảm giác game bị đơ.
+- Giải pháp gợi ý cho giao diện (GUI):
+  Trong hàm xử lý sự kiện phím, nếu người chơi bấm ESC hoặc R trong lúc đang diễn hoạt, hệ thống cần tự động ngắt diễn hoạt an toàn trước khi chuyển màn hình hoặc nạp lại màn chơi.
+- Tình trạng xử lý:
+  Chưa làm trên giao diện (đây là phần việc thuộc về tầng giao diện người dùng của Member 1; đã được ghi nhận vào danh sách công việc tồn đọng để phối hợp hoàn thiện).

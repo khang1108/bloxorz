@@ -18,9 +18,11 @@ def test_solver_registry_completeness():
     assert "UCS" in SOLVER_REGISTRY
     assert "A*" in SOLVER_REGISTRY
 
+    from bloxorz.solvers.ucs import UCSSolver
+
     assert isinstance(get_solver("BFS"), BFSSolver)
     assert get_solver("DFS") is None
-    assert get_solver("UCS") is None
+    assert isinstance(get_solver("UCS"), UCSSolver)
 
 
 def test_solver_widget_initial_state():

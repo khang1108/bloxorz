@@ -141,10 +141,11 @@ class Board:
             goal_pos=self.goal_pos,
             spawn_state=self.spawn_state,
             switches=cloned_switches,
-            bridges=cloned_bridges,
+            bridges=None,
             teleports=cloned_teleports,
             level_name=self.level_name,
         )
+        new_board.bridges = cloned_bridges
         new_board.current_tiles = dict(self.current_tiles)
         # Cloned bridge for new_board to save bridge state
         for bridge_id, bridge in self.bridges.items():

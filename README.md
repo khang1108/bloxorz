@@ -27,8 +27,11 @@ bloxorz_solvers/
 │   │   ├── stage_01.json
 │   │   ├── ...
 │   │   └── stage_33.json
-│   ├── solvers/            # Pluggable solver architecture
-│   │   └── base.py         # BaseSolver, SolverResult, and Successor contracts
+│   ├── solvers/            # Headless search algorithms and shared cost functions
+│   │   ├── base.py         # Solver contract and search-state helpers
+│   │   ├── costs.py        # Shared fragile-tile route preference
+│   │   ├── ucs.py          # Uniform-cost search
+│   │   └── astar.py        # A* search skeleton
 │   ├── ui/                 # Typography-driven interface system
 │   │   ├── hud.py          # Real-time move counter, status banners, hotkeys
 │   │   ├── menu.py         # Pause, stage selector, and victory overlays
@@ -142,6 +145,33 @@ state = app.get_state()
 # Execute single step
 app.step(Direction.UP, on_done=lambda outcome: print("Result:", outcome))
 ```
+
+### 4. Uniform-Cost Solver
+
+UCS supports normal and split blocks, teleportation, selecting either cube, and
+merging. Each legal roll costs 1, plus 2 for fragile contact at the destination.
+For split movement, only the moving cube incurs this surcharge. Selecting another
+cube costs 0 and does not count as a roll. This is a deterministic route preference.
+
+The action list may contain `"SWITCH"`, which playback executes like Space.
+Use `result.solution_length` for the number of rolls; `len(result.moves)` also
+counts these control actions.
+
+The standard launcher registers UCS for 3D playback:
+
+```bash
+python run.py
+```
+
+Press **P** to restart the stage and animate its UCS solution. The solver does not
+accept a mid-game block position, so the controller resets the stage before solving.
+Restarting or selecting another stage cancels the previous playback. A failed search
+displays `SOLVER FOUND NO SOLUTION` instead of silently returning.
+Search rejects states that lose support after switch/teleport effects. Missing
+teleport destinations raise `ValueError`; the controller displays `SOLVER ERROR`.
+See the [UCS algorithm description](docs/algo/ucs/README.md) for the state model,
+cost function, pseudocode and correctness arguments, or the
+[UCS usage guide](docs/ucs.md) for API details, tests and integration limitations.
 
 ---
 

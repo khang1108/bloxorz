@@ -12,7 +12,7 @@ class SolverWidget:
     """A compact, collapsible neo-minimalist solver widget for selecting and executing search algorithms."""
 
     ALGORITHMS = ("BFS", "DFS", "UCS", "A*")
-    COMING_SOON = ("DFS", "UCS", "A*")
+    COMING_SOON = ("DFS", "A*")
 
     def __init__(
         self,

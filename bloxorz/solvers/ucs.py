@@ -6,26 +6,23 @@ import math
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
-from bloxorz.core.block import BlockState
+from bloxorz.core.block import BaseBlockState, SplitBlockState
 from bloxorz.core.board import Board
 from bloxorz.core.constants import Direction, TileType
-from bloxorz.solvers.base import BaseSolver, SolverResult
+from bloxorz.solvers.base import BaseSolver, SolverAction, SolverResult, StateKey
 from bloxorz.solvers.costs import CostFunction, fragile_cost
-
-
-StateKey = Tuple[BlockState, Tuple[Tuple[str, bool], ...]]
 
 
 @dataclass(frozen=True)
 class _SearchNode:
     """An immutable path record so improved routes cannot overwrite old parents."""
 
-    block: BlockState
+    block: BaseBlockState
     board: Board
     cost: float = 0.0
     depth: int = 0
     parent: Optional["_SearchNode"] = None
-    direction: Optional[Direction] = None
+    direction: Optional[SolverAction] = None
 
 
 class UCSSolver(BaseSolver):
@@ -33,9 +30,8 @@ class UCSSolver(BaseSolver):
 
     State identity includes both block placement and every bridge configuration.
     Costs must be finite and non-negative; the default charges 1 or 3 per roll.
-    The caller's board is not mutated. Successor generation is delegated to the
-    shared core, so its bridge-cloning bug must be fixed before bridge levels can
-    be certified. Teleport/split levels are explicitly unsupported for now.
+    The caller's board is not mutated. Successors use the shared core's teleport,
+    active-cube selection and merge rules. Default control switches cost zero.
     """
 
     def __init__(self, cost_fn: CostFunction = fragile_cost) -> None:
@@ -46,30 +42,31 @@ class UCSSolver(BaseSolver):
         """Search from spawn, returning a path only when its goal is dequeued.
 
         Raises:
-            NotImplementedError: The board contains teleport/split tiles.
-            ValueError: Spawn is invalid, or a supplied cost is invalid.
+            ValueError: Teleport targets are missing, spawn is invalid, or a cost is invalid.
 
         ``visited_count`` counts discovered state keys, ``expanded_nodes`` counts
         calls to successor generation, and ``max_depth`` is the deepest expanded
-        path. Goals and stale heap entries are not counted as expanded nodes.
+        path in physical rolls. Goals and stale heap entries are not expanded.
         """
-        if TileType.TELEPORT in board.base_tiles.values() or TileType.TELEPORT in board.current_tiles.values():
-            raise NotImplementedError("UCS cannot solve teleport/split levels until the core supports split states.")
+        for tiles in (board.base_tiles, board.current_tiles):
+            for coordinate, tile in tiles.items():
+                if tile == TileType.TELEPORT and coordinate not in board.teleports:
+                    raise ValueError(f"Invalid teleport at {coordinate}: destination targets are missing.")
 
         outcome, _ = board.evaluate_block_state(board.spawn_state)
-        if outcome not in ("SAFE", "VICTORY"):
+        if outcome not in ("SAFE", "VICTORY", "TELEPORT"):
             raise ValueError(f"Invalid spawn state: {outcome}")
 
         start = _SearchNode(board.spawn_state, board)
         counter = itertools.count()
         frontier: List[Tuple[float, int, _SearchNode]] = [(0.0, next(counter), start)]
-        best_cost: Dict[StateKey, float] = {self.get_state_key(start.block, board): 0.0}
+        best_cost: Dict[StateKey, float] = {self._search_state_key(start.block, board): 0.0}
         expanded_nodes = 0
         max_depth = 0
 
         while frontier:
             _, _, node = heapq.heappop(frontier)
-            key = self.get_state_key(node.block, node.board)
+            key = self._search_state_key(node.block, node.board)
             if node.cost != best_cost[key]:
                 continue
 
@@ -98,14 +95,14 @@ class UCSSolver(BaseSolver):
                 candidate_cost = node.cost + step_cost
                 if not math.isfinite(candidate_cost):
                     raise ValueError("Accumulated path cost must remain finite.")
-                successor_key = self.get_state_key(successor.block, successor.board)
+                successor_key = self._search_state_key(successor.block, successor.board)
                 if candidate_cost >= best_cost.get(successor_key, math.inf):
                     continue
 
                 best_cost[successor_key] = candidate_cost
                 child = _SearchNode(
                     successor.block, successor.board, candidate_cost,
-                    node.depth + 1, node, successor.direction,
+                    node.depth + int(isinstance(successor.direction, Direction)), node, successor.direction,
                 )
                 heapq.heappush(frontier, (candidate_cost, next(counter), child))
 
@@ -116,10 +113,21 @@ class UCSSolver(BaseSolver):
             expanded_nodes=expanded_nodes,
         )
 
+    def _search_state_key(self, block: BaseBlockState, board: Board) -> StateKey:
+        """Preserve cube labels for arbitrary costs that may depend on active_index.
+
+        The default cost is invariant under relabeling, so its smaller canonical
+        state space remains safe. A caller-supplied function has no such guarantee.
+        """
+        key = self.get_state_key(block, board)
+        if self.cost_fn is not fragile_cost and isinstance(block, SplitBlockState):
+            return ((True, block.b1, block.b2, block.active_index), key[1])
+        return key
+
     @staticmethod
-    def _reconstruct_moves(node: _SearchNode) -> List[Direction]:
+    def _reconstruct_moves(node: _SearchNode) -> List[SolverAction]:
         """Follow the selected goal's parent chain back to the spawn state."""
-        moves: List[Direction] = []
+        moves: List[SolverAction] = []
         while node.parent is not None:
             if node.direction is None:
                 raise RuntimeError("A non-root search node must have an incoming direction.")

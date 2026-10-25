@@ -3,17 +3,23 @@
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple, Union
 
 from bloxorz.core.constants import Direction
-from bloxorz.core.block import BlockState
+from bloxorz.core.block import BaseBlockState
 from bloxorz.core.board import Board
+from bloxorz.core.game import Game
+
+
+SWITCH_ACTION: Literal["SWITCH"] = "SWITCH"
+SolverAction = Union[Direction, Literal["SWITCH"]]
+StateKey = Tuple[tuple, Tuple[Tuple[str, bool], ...]]
 
 
 @dataclass
 class SolverResult:
     """Encapsulates the output and performance metrics of a solver execution."""
-    moves: List[Direction] = field(default_factory=list)
+    moves: List[SolverAction] = field(default_factory=list)
     is_solved: bool = False
     visited_count: int = 0
     execution_time_ms: float = 0.0
@@ -22,12 +28,17 @@ class SolverResult:
     expanded_nodes: int = 0
     solution_cost: Optional[float] = None
 
+    @property
+    def solution_length(self) -> int:
+        """Number of physical rolls, excluding control switches as in Game.move_count."""
+        return sum(isinstance(action, Direction) for action in self.moves)
+
     def summary(self) -> str:
         """Returns a formatted one-line performance summary."""
         status = "SOLVED" if self.is_solved else "FAILED"
         cost = "N/A" if self.solution_cost is None else f"{self.solution_cost:g}"
         return (
-            f"[{status}] Moves: {len(self.moves)} | "
+            f"[{status}] Moves: {self.solution_length} | "
             f"Cost: {cost} | "
             f"Visited States: {self.visited_count} | "
             f"Expanded Nodes: {self.expanded_nodes} | "
@@ -39,10 +50,10 @@ class SolverResult:
 @dataclass(frozen=True)
 class Successor:
     """Represents a valid transition in the state-space graph."""
-    direction: Direction
-    block: BlockState
+    direction: SolverAction
+    block: BaseBlockState
     board: Board
-    outcome: str  # 'SAFE' or 'VICTORY'
+    outcome: str  # 'SAFE', 'TELEPORT', 'MERGED' or 'VICTORY'
 
 
 class BaseSolver(ABC):
@@ -57,46 +68,52 @@ class BaseSolver(ABC):
         self.name: str = name
 
     @staticmethod
-    def get_state_key(block: BlockState, board: Board) -> Tuple[BlockState, Tuple[Tuple[str, bool], ...]]:
+    def get_state_key(block: BaseBlockState, board: Board) -> StateKey:
         """Generates a canonical hashable key for state-space graph search.
 
-        Combines the immutable BlockState with the hashable tuple of all bridge states.
+        Canonical block keys remove equivalent cube labels while preserving which
+        cube is active. Bridge configurations remain part of the state identity.
         """
-        return (block, board.get_bridge_state_key())
+        return (block.canonical_key(), board.get_bridge_state_key())
 
     @staticmethod
-    def is_goal(block: BlockState, board: Board) -> bool:
+    def is_goal(block: BaseBlockState, board: Board) -> bool:
         """Determines if the block is standing upright on the goal hole."""
         outcome, _ = board.evaluate_block_state(block)
         return outcome == "VICTORY"
 
     @classmethod
-    def get_successors(cls, block: BlockState, board: Board) -> List[Successor]:
+    def get_successors(cls, block: BaseBlockState, board: Board) -> List[Successor]:
         """Calculates all legal next states from the current block and board configuration.
 
-        Iterates over all 4 directions (UP, RIGHT, DOWN, LEFT). For any move resulting
-        in 'SAFE' or 'VICTORY', creates a cloned board, applies switch triggers,
-        and yields the successor.
+        Delegate all move effects to Game on independent board snapshots so search
+        and playback agree about teleports, switches and merging. Split states also
+        offer a SWITCH action. Recheck support after effects such as closing bridges
+        or teleporting a cube; never return a floating or collapsed successor.
         """
         successors: List[Successor] = []
 
-        for direction in (Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT):
-            next_block = block.roll(direction)
-            outcome, _ = board.evaluate_block_state(next_block)
+        actions: List[SolverAction] = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
+        if block.is_split:
+            actions.append(SWITCH_ACTION)
 
-            if outcome in ("SAFE", "VICTORY"):
-                next_board = board.clone()
-                if outcome == "SAFE":
-                    next_board.trigger_switches(next_block)
+        for action in actions:
+            branch = Game(board.clone())
+            branch.block = block
+            if action == SWITCH_ACTION:
+                if not branch.switch_block():
+                    continue
+                outcome = "SAFE"
+            else:
+                outcome, _, _ = branch.roll(action)
 
-                successors.append(
-                    Successor(
-                        direction=direction,
-                        block=next_block,
-                        board=next_board,
-                        outcome=outcome,
-                    )
-                )
+            if outcome not in ("SAFE", "VICTORY", "TELEPORT", "MERGED"):
+                continue
+            final_outcome, _ = branch.board.evaluate_block_state(branch.block)
+            if final_outcome not in ("SAFE", "VICTORY"):
+                continue
+
+            successors.append(Successor(action, branch.block, branch.board, outcome))
 
         return successors
 
@@ -120,7 +137,7 @@ class BaseSolver(ABC):
         """
         pass
 
-    def __call__(self, board: Board) -> List[Direction]:
-        """Enables passing the solver instance directly as a callback to BloxorzApp."""
+    def __call__(self, board: Board) -> List[SolverAction]:
+        """Return movement/control actions for the BloxorzApp playback callback."""
         result = self.solve(board)
         return result.moves if result.is_solved else []

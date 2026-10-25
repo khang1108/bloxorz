@@ -148,21 +148,14 @@ app.step(Direction.UP, on_done=lambda outcome: print("Result:", outcome))
 
 ### 4. Uniform-Cost Solver
 
-UCS minimizes total route cost: each legal roll costs 1, plus 2 if the destination
-touches at least one fragile tile. For example, in Stage 03 it chooses a 9-move
-route costing 9 over an 8-move route costing 10. This is a deterministic route
-preference, not a probability of falling.
+UCS supports normal and split blocks, teleportation, selecting either cube, and
+merging. Each legal roll costs 1, plus 2 for fragile contact at the destination.
+For split movement, only the moving cube incurs this surcharge. Selecting another
+cube costs 0 and does not count as a roll. This is a deterministic route preference.
 
-```python
-from pathlib import Path
-from bloxorz.core.level_loader import load_level_from_file
-from bloxorz.solvers import UCSSolver
-
-board = load_level_from_file(Path("bloxorz/levels/stage_03.json"))
-result = UCSSolver().solve(board)
-print(result.summary())
-print([move.name for move in result.moves])
-```
+The action list may contain `"SWITCH"`, which playback executes like Space.
+Use `result.solution_length` for the number of rolls; `len(result.moves)` also
+counts these control actions.
 
 The standard launcher registers UCS for 3D playback:
 
@@ -174,10 +167,11 @@ Press **P** to restart the stage and animate its UCS solution. The solver does n
 accept a mid-game block position, so the controller resets the stage before solving.
 Restarting or selecting another stage cancels the previous playback. A failed search
 displays `SOLVER FOUND NO SOLUTION` instead of silently returning.
-Bridge-level correctness awaits the shared
-`Board.clone()` fix; Stage 04 currently fails to solve because of this core bug.
-Teleport/split levels raise `NotImplementedError` until the core supports them.
-See [UCS documentation](docs/ucs.md) for the algorithm, metrics, tests and limitations.
+Search rejects states that lose support after switch/teleport effects. Missing
+teleport destinations raise `ValueError`; the controller displays `SOLVER ERROR`.
+See the [UCS algorithm description](docs/algo/ucs/README.md) for the state model,
+cost function, pseudocode and correctness arguments, or the
+[UCS usage guide](docs/ucs.md) for API details, tests and integration limitations.
 
 ---
 

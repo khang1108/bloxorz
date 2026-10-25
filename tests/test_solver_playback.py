@@ -2,18 +2,21 @@
 
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Callable, List, Optional, Tuple
 from unittest.mock import Mock
 
 import pytest
 
 import bloxorz.main as app_module
+import bloxorz.graphics.block_view as view_module
 import run as launcher
-from bloxorz.core.block import BlockState
+from bloxorz.core.block import BlockState, SingleBlock, SplitBlockState
 from bloxorz.core.constants import Direction, GameStatus
 from bloxorz.core.game import Game
 from bloxorz.core.level_loader import load_level_from_file, parse_level_data
 from bloxorz.main import BloxorzApp
+from bloxorz.graphics.block_view import BlockView
 from bloxorz.solvers import UCSSolver
 
 
@@ -133,13 +136,13 @@ def test_failed_search_is_visible(runtime: Tuple[BloxorzApp, List[Callable[[], N
     assert not pending
 
 
-def test_unsupported_stage_is_visible(runtime: Tuple[BloxorzApp, List[Callable[[], None]]]) -> None:
+def test_invalid_teleport_is_visible(runtime: Tuple[BloxorzApp, List[Callable[[], None]]]) -> None:
     app, pending = runtime
     app.game = Game(parse_level_data({
         "layout": ["1112"], "spawn": {"x": 0, "y": 0}, "tiles": {"1,0": 8},
     }))
     app.handle_input("p")
-    app.hud.show_banner.assert_called_once_with("SOLVER DOES NOT SUPPORT THIS STAGE")
+    app.hud.show_banner.assert_called_once_with("SOLVER ERROR")
     assert not pending
 
 
@@ -188,3 +191,39 @@ def test_stage_change_cancels_playback_and_allows_p_again(
     app.handle_input("p")
     drain(pending)
     assert app.game.status == GameStatus.VICTORY
+
+
+def test_teleport_completion_survives_state_sync_and_fires_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Only geometry is replaced: exercise the real animation update and state sync.
+    final = SplitBlockState(SingleBlock(10, 1), SingleBlock(10, 7), 0)
+    completed: List[SplitBlockState] = []
+    view = SimpleNamespace(
+        _is_rolling=False, _is_teleporting=True, _teleport_time=0.0,
+        _teleport_duration=0.7, _teleport_src=(4.0, 4.0),
+        _teleport_dst_1=(10.0, 1.0), _teleport_dst_2=(10.0, 7.0),
+        _teleport_final_state=final, _on_teleport_complete=lambda: completed.append(final),
+        mesh=SimpleNamespace(), pivot=SimpleNamespace(),
+        split_mesh_1=SimpleNamespace(), split_mesh_2=SimpleNamespace(),
+    )
+    view.sync_to_state = partial(BlockView.sync_to_state, view)
+    monkeypatch.setattr(view_module.time, "dt", 0.8, raising=False)
+    BlockView.update(view)
+    assert view.current_state == final
+    assert completed == [final]
+    BlockView.update(view)
+    assert completed == [final]
+
+
+def test_p_replays_split_solution_to_victory_and_counts_only_rolls(
+    runtime: Tuple[BloxorzApp, List[Callable[[], None]]],
+) -> None:
+    app, pending = runtime
+    app.game = Game(load_level_from_file(LEVELS_DIR / "stage_08.json"))
+    messages: List[str] = []
+    app.hud.show_banner = lambda message, **kwargs: messages.append(message)
+    app.handle_input("p")
+    drain(pending)
+    assert app.game.status == GameStatus.VICTORY
+    assert app.game.move_count == 10
+    assert not app._is_playing_solution
+    assert messages[0] == "SOLVER: 10 MOVES"

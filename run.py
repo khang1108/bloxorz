@@ -11,13 +11,13 @@ if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
 from ursina import Ursina  # noqa: E402
-from bloxorz.core.constants import Direction  # noqa: E402
 from bloxorz.core.board import Board  # noqa: E402
 from bloxorz.main import BloxorzApp  # noqa: E402
 from bloxorz.solvers import UCSSolver  # noqa: E402
+from bloxorz.solvers.base import SolverAction  # noqa: E402
 
 
-def launch(solver: Optional[Callable[[Board], List[Direction]]] = None) -> BloxorzApp:
+def launch(solver: Optional[Callable[[Board], List[SolverAction]]] = None) -> BloxorzApp:
     """Launches the 3D Bloxorz app, optionally binding a custom solver function."""
     app = Ursina()
     bloxorz = BloxorzApp()

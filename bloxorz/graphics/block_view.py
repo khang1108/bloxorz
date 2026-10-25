@@ -548,8 +548,7 @@ class BlockView(Entity):
                 if final_state:
                     self.sync_to_state(final_state)
                 if on_complete:
-                    cb = on_complete
-                    cb()
+                    on_complete()
 
         # Handle 1x1x1 cube edge-pivot rolling
         elif self._is_cube_rolling:

@@ -13,6 +13,7 @@ from bloxorz.core.constants import Direction, GameStatus
 from bloxorz.core.board import Board
 from bloxorz.core.game import Game
 from bloxorz.core.level_loader import load_level_from_file
+from bloxorz.solvers.base import SolverAction, SWITCH_ACTION
 from bloxorz.ui.theme import Palette
 from bloxorz.ui.hud import HUD
 from bloxorz.ui.menu import MenuManager
@@ -51,9 +52,9 @@ class BloxorzApp:
         self.hud = HUD()
 
         # Solver & programmatic automation interface
-        self.registered_solver: Optional[Callable[[Board], List[Direction]]] = None
+        self.registered_solver: Optional[Callable[[Board], List[SolverAction]]] = None
         self._is_playing_solution: bool = False
-        self._active_solution: List[Direction] = []
+        self._active_solution: List[SolverAction] = []
         self._solution_idx: int = 0
         self._solution_delay: float = CONFIG.solver.default_delay
         self._on_solution_complete: Optional[Callable[[], None]] = None
@@ -213,8 +214,8 @@ class BloxorzApp:
     # SOLVER COMMUNICATION & AUTOMATION API
     # =========================================================================
 
-    def register_solver(self, solver_callback: Callable[[Board], List[Direction]]):
-        """Registers a user solver function: solver_fn(board) -> List[Direction]."""
+    def register_solver(self, solver_callback: Callable[[Board], List[SolverAction]]):
+        """Register a callback returning Direction moves and optional SWITCH actions."""
         self.registered_solver = solver_callback
 
     def trigger_solver(self) -> None:
@@ -234,8 +235,12 @@ class BloxorzApp:
         except NotImplementedError:
             self.hud.show_banner("SOLVER DOES NOT SUPPORT THIS STAGE")
             return
+        except ValueError:
+            self.hud.show_banner("SOLVER ERROR")
+            return
         if moves:
-            self.hud.show_banner(f"SOLVER: {len(moves)} MOVES", duration=1.2)
+            move_count = sum(isinstance(action, Direction) for action in moves)
+            self.hud.show_banner(f"SOLVER: {move_count} MOVES", duration=1.2)
             self.play_solution(moves)
         elif self.game.board.evaluate_block_state(self.game.block)[0] == "VICTORY":
             self.hud.show_banner("ALREADY AT GOAL")
@@ -244,7 +249,7 @@ class BloxorzApp:
 
     def play_solution(
         self,
-        moves: List[Direction],
+        moves: List[SolverAction],
         delay_between_moves: float = 0.08,
         on_complete: Optional[Callable[[], None]] = None,
     ):
@@ -275,7 +280,7 @@ class BloxorzApp:
         self._solution_idx += 1
         generation = self._solution_generation
 
-        if next_dir is None or next_dir == "SWITCH" or next_dir == "_":
+        if next_dir is None or next_dir == SWITCH_ACTION or next_dir == "_":
             if getattr(self.game.block, "is_split", False):
                 self.game.switch_block()
                 self.sound_mgr.play("switch")

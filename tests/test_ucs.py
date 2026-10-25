@@ -145,11 +145,11 @@ def test_invalid_spawn_is_not_reported_as_unsolvable() -> None:
         UCSSolver().solve(board)
 
 
-def test_teleport_is_explicitly_unsupported() -> None:
+def test_teleport_without_target_configuration_is_invalid() -> None:
     board = parse_level_data({
         "layout": ["1112"], "tiles": {"1,0": 8}, "spawn": {"x": 0, "y": 0},
     })
-    with pytest.raises(NotImplementedError, match="teleport/split"):
+    with pytest.raises(ValueError, match="teleport.*targets"):
         UCSSolver().solve(board)
 
 

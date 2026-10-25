@@ -121,13 +121,13 @@ class BloxorzApp:
             self.solver_widget.set_running_state(False)
             self.solver_widget.set_visible(True)
 
-    def restart_stage(self):
+    def restart_stage(self, show_banner: bool = True):
         """Resets the current stage."""
         self.stop_solution()
         if getattr(self, "solver_widget", None):
             self.solver_widget.set_visible(True)
         if self.game:
-            if hasattr(self, "sound_mgr") and self.sound_mgr:
+            if hasattr(self, "sound_mgr") and self.sound_mgr and show_banner:
                 self.sound_mgr.play("restart")
             self.game.restart()
             if getattr(self, "board_view", None) and hasattr(self.board_view, "update_bridges"):
@@ -137,10 +137,12 @@ class BloxorzApp:
             if getattr(self, "hud", None):
                 if hasattr(self.hud, "update_moves"):
                     self.hud.update_moves(0)
-                if hasattr(self.hud, "hide_banner"):
-                    self.hud.hide_banner()
                 if hasattr(self.hud, "set_split_mode"):
                     self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
+                if show_banner and hasattr(self.hud, "show_banner"):
+                    self.hud.show_banner("Argghhh let's try again", duration=2.5)
+                elif hasattr(self.hud, "hide_banner"):
+                    self.hud.hide_banner()
             if getattr(self, "menu_mgr", None) and hasattr(self.menu_mgr, "close_all"):
                 self.menu_mgr.close_all()
             if getattr(self, "camera_ctrl", None):
@@ -293,7 +295,7 @@ class BloxorzApp:
             return
 
         # The callback accepts a Board and solves from spawn, not the current block.
-        self.restart_stage()
+        self.restart_stage(show_banner=False)
         try:
             moves = self.registered_solver(self.game.board)
         except NotImplementedError:

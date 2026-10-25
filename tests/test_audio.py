@@ -151,3 +151,17 @@ def test_play_sfx_helper(tmp_path: Path):
 
     play_sfx("click")
     mock_click.clip.play.assert_called_once()
+
+
+def test_restart_shows_banner_and_plays_sound():
+    """Verify that restarting stage triggers restart sfx and Argghhh banner."""
+    from bloxorz.main import BloxorzApp
+    app = BloxorzApp.__new__(BloxorzApp)
+    app.stop_solution = MagicMock()
+    app.game = MagicMock()
+    app.sound_mgr = MagicMock()
+    app.hud = MagicMock()
+    app.restart_stage(show_banner=True)
+
+    app.sound_mgr.play.assert_called_once_with("restart")
+    app.hud.show_banner.assert_called_once_with("Argghhh let's try again", duration=2.5)

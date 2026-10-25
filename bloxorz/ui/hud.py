@@ -90,7 +90,7 @@ class HUD:
         self._banner_id += 1
         current_id = self._banner_id
 
-        self.banner_text.text = message.upper()
+        self.banner_text.text = str(message)
         self.banner_text.color = color.hex(color_token)
         self.banner_text.visible = True
 

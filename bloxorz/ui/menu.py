@@ -6,6 +6,7 @@ from ursina import Entity, Button, Text, color, camera, destroy, application
 from bloxorz.config import CONFIG
 from bloxorz.ui.theme import Palette
 from bloxorz.ui.constants import MenuConstants, UIAnchor
+from bloxorz.audio.sound_manager import play_sfx
 
 
 def format_volume_gauge(volume: float) -> str:
@@ -30,9 +31,14 @@ class MinimalistButton(Button):
         c_text = color.hex(Palette.TEXT_MUTED.hex_code)
         c_hover = color.hex(Palette.TEXT_PRIMARY.hex_code)
 
+        def _click_wrapper():
+            play_sfx("click")
+            if callable(on_click):
+                on_click()
+
         kwargs = {}
         if callable(on_click):
-            kwargs["on_click"] = on_click
+            kwargs["on_click"] = _click_wrapper
 
         super().__init__(
             parent=parent,
@@ -94,9 +100,14 @@ class StageCardButton(Button):
         )
         c_hover = color.hex(Palette.TEXT_PRIMARY.hex_code)
 
+        def _click_wrapper():
+            play_sfx("click")
+            if callable(on_click):
+                on_click()
+
         kwargs = {}
         if callable(on_click):
-            kwargs["on_click"] = on_click
+            kwargs["on_click"] = _click_wrapper
 
         super().__init__(
             parent=parent,
@@ -141,9 +152,14 @@ class MenuActionButton(Button):
         on_click: Optional[Callable[[], None]] = None,
         scale: tuple = MenuConstants.MENU_ACTION_BTN_SCALE,
     ):
+        def _click_wrapper():
+            play_sfx("click")
+            if callable(on_click):
+                on_click()
+
         kwargs = {}
         if callable(on_click):
-            kwargs["on_click"] = on_click
+            kwargs["on_click"] = _click_wrapper
 
         super().__init__(
             parent=parent,
@@ -216,6 +232,7 @@ class SettingToggleButton(Button):
                 self.text_entity.color = color.hex(Palette.TEXT_MUTED.hex_code)
 
     def _handle_click(self):
+        play_sfx("click")
         self.is_active = self.on_toggle_cb()
         self._update_label()
 
@@ -232,6 +249,11 @@ class SettingStepperButton(Button):
         y: float,
         scale: tuple = MenuConstants.SETTING_STEPPER_BTN_SCALE,
     ):
+        def _step_wrapper():
+            play_sfx("click")
+            if callable(on_step):
+                on_step()
+
         super().__init__(
             parent=parent,
             text=text,
@@ -245,7 +267,7 @@ class SettingStepperButton(Button):
             highlight_text_color=color.hex(Palette.TEXT_PRIMARY.hex_code),
             text_size=MenuConstants.SETTING_STEPPER_TEXT_SCALE_FACTOR,
             highlight_text_size=MenuConstants.SETTING_STEPPER_TEXT_SCALE_FACTOR,
-            on_click=on_step,
+            on_click=_step_wrapper,
         )
 
 

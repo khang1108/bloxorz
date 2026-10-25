@@ -8,7 +8,10 @@ from bloxorz.config import CONFIG
 class SoundManager:
     """Manages audio generation, background music theme, and tactile SFX playback for Bloxorz."""
 
+    _instance: Optional["SoundManager"] = None
+
     def __init__(self, assets_dir: Optional[Path] = None):
+        SoundManager._instance = self
         self.enabled: bool = CONFIG.audio.enabled
         self.bgm_enabled: bool = getattr(CONFIG.audio, "bgm_enabled", True)
         self.bgm_volume: float = getattr(CONFIG.audio, "bgm_volume", 0.50)
@@ -29,7 +32,7 @@ class SoundManager:
         """Loads Ursina Audio objects once the engine is running."""
         try:
             from ursina import Audio
-            sfx_names = ["roll", "switch", "fall", "win", "undo"]
+            sfx_names = ["roll", "switch", "fall", "win", "undo", "restart", "click", "merge"]
             self.sounds = {}
             for name in sfx_names:
                 wav_path = self.assets_dir / f"{name}.wav"
@@ -39,6 +42,7 @@ class SoundManager:
                     )
 
             theme_path = self.assets_dir / self.theme_track
+
             if theme_path.is_file():
                 self.bgm = Audio(theme_path, autoplay=False, loop=True, volume=self.bgm_volume)
                 if self.enabled and self.bgm_enabled:
@@ -119,3 +123,9 @@ class SoundManager:
             audio.volume = self.sfx_volume
             audio.clip.stop()
             audio.clip.play()
+
+
+def play_sfx(sound_name: str):
+    """Global convenience helper to play a sound effect if SoundManager is active."""
+    if SoundManager._instance is not None:
+        SoundManager._instance.play(sound_name)

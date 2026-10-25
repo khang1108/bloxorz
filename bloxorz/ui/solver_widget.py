@@ -5,6 +5,7 @@ from ursina import Entity, Button, Text, color, camera
 
 from bloxorz.ui.theme import Palette
 from bloxorz.ui.constants import SolverWidgetConstants, UIAnchor, MenuConstants
+from bloxorz.audio.sound_manager import play_sfx
 
 
 class SolverWidget:
@@ -185,12 +186,14 @@ class SolverWidget:
 
     def expand(self):
         """Expands the algorithm selection panel."""
+        play_sfx("click")
         self.is_expanded = True
         self.collapsed_btn.visible = False
         self.expanded_root.visible = True
 
     def collapse(self):
         """Collapses into a single minimal pill button."""
+        play_sfx("click")
         self.is_expanded = False
         self.expanded_root.visible = False
         self.collapsed_btn.visible = True
@@ -204,6 +207,7 @@ class SolverWidget:
 
     def select_algorithm(self, algo: str):
         """Selects an algorithm, updates visual radio buttons, and calls callback."""
+        play_sfx("click")
         algo_clean = algo.upper().strip()
         if algo_clean not in self.option_buttons:
             return
@@ -233,6 +237,7 @@ class SolverWidget:
                 self.action_btn.text_entity.color = color.hex(Palette.TEXT_PRIMARY.hex_code)
 
     def _handle_action_click(self):
+        play_sfx("click")
         if callable(self.on_run_solver):
             self.on_run_solver()
 

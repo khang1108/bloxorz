@@ -131,3 +131,23 @@ def test_toggle_master_audio(tmp_path: Path):
     # Attempt to play SFX while master is off -> ignored
     sm.play("switch")
     mock_sound.clip.play.assert_not_called()
+
+
+def test_audio_assets_exist():
+    """Verify that all expected sound files exist on disk."""
+    sounds_dir = Path(__file__).parent.parent / "bloxorz" / "assets" / "sounds"
+    for sfx in ["roll", "win", "restart", "click", "merge", "switch", "fall", "undo"]:
+        assert (sounds_dir / f"{sfx}.wav").is_file(), f"Missing audio asset: {sfx}.wav"
+
+
+def test_play_sfx_helper(tmp_path: Path):
+    """Verify that play_sfx delegates to SoundManager._instance."""
+    from bloxorz.audio import play_sfx
+    sm = SoundManager(assets_dir=tmp_path)
+    mock_click = MagicMock()
+    sm.sounds = {"click": mock_click}
+    sm.enabled = True
+    sm.sfx_enabled = True
+
+    play_sfx("click")
+    mock_click.clip.play.assert_called_once()

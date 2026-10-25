@@ -131,6 +131,8 @@ class BloxorzApp:
             self.solver_widget.set_visible(True)
 
         if self.game:
+            if hasattr(self, "sound_mgr") and self.sound_mgr:
+                self.sound_mgr.play("restart")
             self.game.restart()
             self.board_view.update_bridges(self.game.board)
             self.block_view.sync_to_state(self.game.board.spawn_state)
@@ -192,7 +194,7 @@ class BloxorzApp:
                     self.sound_mgr.play("switch")
                     self.hud.show_banner("TELEPORT SPLIT")
                 elif outcome == "MERGED":
-                    self.sound_mgr.play("switch")
+                    self.sound_mgr.play("merge")
                     self.hud.show_banner("BLOCKS MERGED")
 
                 if detail and outcome in ("SAFE", "MERGED"):  # Toggled bridges

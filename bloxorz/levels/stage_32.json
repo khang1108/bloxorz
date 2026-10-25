@@ -1,0 +1,119 @@
+{
+  "name": "Stage 32",
+  "passcode": "879021",
+  "spawn": {
+    "x": 10,
+    "y": 6,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "............1H",
+    "..111111...111",
+    ".111BB11..1H11",
+    ".121...11111..",
+    ".111....111...",
+    ".........11...",
+    "....111..11...",
+    "11BB1H1..11...",
+    "11BB1111111..."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          2,
+          7
+        ],
+        [
+          3,
+          7
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b4",
+      "tiles": [
+        [
+          2,
+          8
+        ],
+        [
+          3,
+          8
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 13,
+      "y": 0,
+      "type": "HEAVY",
+      "targets": [
+        "b1",
+        "b3"
+      ],
+      "actions": {
+        "b1": "TOGGLE",
+        "b3": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "type": "HEAVY",
+      "targets": [
+        "b4"
+      ],
+      "actions": {
+        "b4": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "type": "HEAVY",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

@@ -1,0 +1,84 @@
+{
+  "name": "Stage 27",
+  "passcode": "660141",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "111....11111111",
+    "11111111111..11",
+    "111....11....11",
+    "............1H1",
+    "............11.",
+    "111..33331..SS.",
+    "1213333333..111",
+    "111333333333111",
+    ".....3333333111",
+    "......1111....."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          6,
+          9
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          9,
+          9
+        ]
+      ],
+      "initially_open": true
+    }
+  ],
+  "switches": [
+    {
+      "x": 13,
+      "y": 3,
+      "type": "HEAVY",
+      "targets": [
+        "b1",
+        "b2"
+      ],
+      "actions": {
+        "b1": "CLOSE",
+        "b2": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 12,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 13,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "CLOSE"
+      },
+      "action": "CLOSE"
+    }
+  ],
+  "teleports": []
+}

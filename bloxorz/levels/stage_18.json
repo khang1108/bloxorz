@@ -1,0 +1,155 @@
+{
+  "name": "Stage 18",
+  "passcode": "284933",
+  "spawn": {
+    "x": 2,
+    "y": 3,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    ".......S.......",
+    "11S1...1.......",
+    "11111..1.......",
+    "1S111111BB11BB1",
+    "11111B..1...1..",
+    "11S1....1...1..",
+    "1.......S..111.",
+    "1.........1121.",
+    "1BBH......1111."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          8,
+          3
+        ],
+        [
+          9,
+          3
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          12,
+          3
+        ],
+        [
+          13,
+          3
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          5,
+          4
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b4",
+      "tiles": [
+        [
+          1,
+          8
+        ],
+        [
+          2,
+          8
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 7,
+      "y": 0,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "b2",
+        "b4"
+      ],
+      "actions": {
+        "b2": "CLOSE",
+        "b4": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 1,
+      "y": 3,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 2,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "b2",
+        "b4"
+      ],
+      "actions": {
+        "b2": "CLOSE",
+        "b4": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 8,
+      "y": 6,
+      "type": "SOFT",
+      "targets": [
+        "b2",
+        "b4"
+      ],
+      "actions": {
+        "b2": "OPEN",
+        "b4": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 3,
+      "y": 8,
+      "type": "HEAVY",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

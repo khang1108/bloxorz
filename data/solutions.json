@@ -1,0 +1,233 @@
+{
+  "01": {
+    "stage": 1,
+    "name": "Stage 01",
+    "passcode": "780464",
+    "length": 7,
+    "moves": "RDDRRDR"
+  },
+  "02": {
+    "stage": 2,
+    "name": "Stage 02",
+    "passcode": "290299",
+    "length": 17,
+    "moves": "URDRRRRUUDRDRRURU"
+  },
+  "03": {
+    "stage": 3,
+    "name": "Stage 03",
+    "passcode": "918660",
+    "length": 19,
+    "moves": "RURRRULDRUURRRDDDRU"
+  },
+  "04": {
+    "stage": 4,
+    "name": "Stage 04",
+    "passcode": "520967",
+    "length": 28,
+    "moves": "ULURRURRRRRRDRDDDDDRULLLLLLD"
+  },
+  "05": {
+    "stage": 5,
+    "name": "Stage 05",
+    "passcode": "028431",
+    "length": 33,
+    "moves": "LLLRLLLLLDRDDRRRRDRRRRLLLLDLLLLLL"
+  },
+  "06": {
+    "stage": 6,
+    "name": "Stage 06",
+    "passcode": "524383",
+    "length": 35,
+    "moves": "RRRDDRDDRDRULLLUULUUURRDRRULDDRRDDR"
+  },
+  "07": {
+    "stage": 7,
+    "name": "Stage 07",
+    "passcode": "189493",
+    "length": 44,
+    "moves": "DLURRRRRDRLULLLLLDRDRDRRRUURDLURUURRRDRDRDLU"
+  },
+  "08": {
+    "stage": 8,
+    "name": "Stage 08",
+    "passcode": "499707",
+    "length": 10,
+    "moves": "RRDDDD_UURR"
+  },
+  "09": {
+    "stage": 9,
+    "name": "Stage 09",
+    "passcode": "074355",
+    "length": 24,
+    "moves": "RDRRRRRRUR_D_D_RRRRRU_LLLLLD"
+  },
+  "10": {
+    "stage": 10,
+    "name": "Stage 10",
+    "passcode": "300590",
+    "length": 57,
+    "moves": "RR_DDRRDRDDDDD_LDDDRDDDL_LL_D_L_D_LULLLDURRRDR_LRURUUUULLULDLLLLL"
+  },
+  "11": {
+    "stage": 11,
+    "name": "Stage 11",
+    "passcode": "291709",
+    "length": 47,
+    "moves": "RRRRULDDDRRRDLULLLUURURRDRULLLDDLLLUURUULDRURDL"
+  },
+  "12": {
+    "stage": 12,
+    "name": "Stage 12",
+    "passcode": "958640",
+    "length": 65,
+    "moves": "LDRURDLURURURURRRDDDLURUUULLLRRRDDDLDRURDLURUURUDLDDDLURULULLLDDL"
+  },
+  "13": {
+    "stage": 13,
+    "name": "Stage 13",
+    "passcode": "448106",
+    "length": 46,
+    "moves": "UULDRDRDLUUUULLLLLLLDDDRULDRDDRDDRURRRRRULDLUU"
+  },
+  "14": {
+    "stage": 14,
+    "name": "Stage 14",
+    "passcode": "210362",
+    "length": 67,
+    "moves": "RRRRULLDRRRDDDDLLLDRRDRRLLUURRULUDDLLDLURRRUUUULLLLLLURDLLLLLDDDRDR"
+  },
+  "15": {
+    "stage": 15,
+    "name": "Stage 15",
+    "passcode": "098598",
+    "length": 57,
+    "moves": "RRRRUU_UUUUURRRUURRRDRDU_LLL_D_L_ULULLLD_LLLLLDLLDDDLDRURRRRRRR"
+  },
+  "16": {
+    "stage": 16,
+    "name": "Stage 16",
+    "passcode": "000241",
+    "length": 28,
+    "moves": "RRRR_RD_RU_RLLLRRRRLLLLLD_RU_RRRR"
+  },
+  "17": {
+    "stage": 17,
+    "name": "Stage 17",
+    "passcode": "683596",
+    "length": 106,
+    "moves": "DDDDDLURRRRRURRRLLLDLLLLUUUUUURRRRDRRRRDLURDURDLUURDLLURDLLLLULLLLDDDDDDRRRRURRRDDULULLLDLLLUUULURRRRRDRRR"
+  },
+  "18": {
+    "stage": 18,
+    "name": "Stage 18",
+    "passcode": "284933",
+    "length": 85,
+    "moves": "DLURRRRUUDDLLLDRULLDRURRRDDUULLLULDRULLDDDDRRLLUUUURRDRULDDRULDRURRRRRDDDRULDDRULDLUR"
+  },
+  "19": {
+    "stage": 19,
+    "name": "Stage 19",
+    "passcode": "119785",
+    "length": 67,
+    "moves": "RRRRRRRRDRULLLLLLDRURRRRRDDDDDLLLLLDLURRRRRRULDLLLLLDDDDRRRLLLLLLUU"
+  },
+  "20": {
+    "stage": 20,
+    "name": "Stage 20",
+    "passcode": "543019",
+    "length": 56,
+    "moves": "DLDRDLUURUULLLDLLURDDLDDLDURUURUURRRDLD_U_LLLLDDDDD_LD_RRRRD"
+  },
+  "21": {
+    "stage": 21,
+    "name": "Stage 21",
+    "passcode": "728724",
+    "length": 71,
+    "moves": "RDLULDRURRURRRULDDDUUURDLLLDLLDLURDRULDRULDRDDRDDRRRUUDDLLULDRRRUUUURRR"
+  },
+  "22": {
+    "stage": 22,
+    "name": "Stage 22",
+    "passcode": "987319",
+    "length": 65,
+    "moves": "RURRRRDRDDDLDURUUULURDLULULLDLLLDRURDLDDDRDULUUURULDRURURRRDRRRRU"
+  },
+  "23": {
+    "stage": 23,
+    "name": "Stage 23",
+    "passcode": "293486",
+    "length": 75,
+    "moves": "RDDRURRRRRULDRULLLUUUURRRRUDLLLLDDDDLLLLLLLLLUUURRUDLURDDRDDDRRDRUUUUUURDLU"
+  },
+  "24": {
+    "stage": 24,
+    "name": "Stage 24",
+    "passcode": "088198",
+    "length": 57,
+    "moves": "DLDRDLUUDDRULURDRRUURULDRURRRRLLLLLDRLURDLURRRRRRRDLRURRR"
+  },
+  "25": {
+    "stage": 25,
+    "name": "Stage 25",
+    "passcode": "250453",
+    "length": 55,
+    "moves": "URDLURDLURRRRULULLURLDRRDDLLLLDRRURRRUURRRURDLUURDLURDL"
+  },
+  "26": {
+    "stage": 26,
+    "name": "Stage 26",
+    "passcode": "426329",
+    "length": 104,
+    "moves": "UULLLDLLLDRURRUURRDRRDRRUU_UUULLLDLLLLLDD_LLULLLDLLLLLL_LD_DDDUURURRRURRRDRRUU_UUULLLDLDDDDRRR_LLULLLDLDDDDRRL"
+  },
+  "27": {
+    "stage": 27,
+    "name": "Stage 27",
+    "passcode": "660141",
+    "length": 71,
+    "moves": "RRRRRULDRURDLLLLLLDRULLDRURRRRURRRRDDDLDDDLLLDLUUUURDLLLLLLLULDDRULDRUL"
+  },
+  "28": {
+    "stage": 28,
+    "name": "Stage 28",
+    "passcode": "769721",
+    "length": 100,
+    "moves": "LDDDRDLURDDRRDDRRRUUULULULULDRRDRDRDRRDLDLLUUULULULLULLDLURRRDRDRDRDRDLL_L_D_L_D_LLLLUULLLLD_LLLLLLUULLLLU"
+  },
+  "29": {
+    "stage": 29,
+    "name": "Stage 29",
+    "passcode": "691859",
+    "length": 104,
+    "moves": "RDLULDRURDDRRLLUULDRULDLULUULLRRDDRDRURDLURUURRLLDDDDDDRRLLUUUULLLLLLRRRRDLURRRRRRLLLLLULDDDDLLLDRULDRUL"
+  },
+  "30": {
+    "stage": 30,
+    "name": "Stage 30",
+    "passcode": "280351",
+    "length": 114,
+    "moves": "DRDDRRURRDRRRRUDLLLLULLLDDLURRRRRRUUURRRURDDDLLDLDRUURDLDLLLLULLDLLULDLURUDLDRURDRRULDDLURRRRRRRULUUURRRURULLLLLDL"
+  },
+  "31": {
+    "stage": 31,
+    "name": "Stage 31",
+    "passcode": "138620",
+    "length": 91,
+    "moves": "ULDLLUUUUDDDDRRRULDRUUUURULDDRULDLLLDDDLDDUURUUULLLLDRULDDDDDLURLURDRURRURRDRRRULDRUUUUURDL"
+  },
+  "32": {
+    "stage": 32,
+    "name": "Stage 32",
+    "passcode": "879021",
+    "length": 129,
+    "moves": "UULDRURURDLRULDLDLURDLURURURDLLDDDLDLLULDRRRUUUUURURRUDLLDLDDDDDLLLLURLDRRRRUUUUURURRUDLLDLDDDDDLLLURDRRURUUURRULDLDLDRULLULLLLLD"
+  },
+  "33": {
+    "stage": 33,
+    "name": "Stage 33",
+    "passcode": "614955",
+    "length": 65,
+    "moves": "RRRRULDDLURUURRDRDRULLURDRDDRDLDDRRUDLLUURULUULULDRULLLDDDLDLLDLU"
+  }
+}

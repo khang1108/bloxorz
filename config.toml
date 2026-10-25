@@ -1,0 +1,106 @@
+# =============================================================================
+# BLOXORZ 3D CONFIGURATION
+# =============================================================================
+# Centralized configuration file for window, camera, physics, graphics,
+# audio, motion curves, and solver automation.
+
+[window]
+title = "BLOXORZ 3D  ·  ARCHITECTURAL MINIMALISM"
+width = 1280
+height = 720
+borderless = false
+fullscreen = false
+vsync = true
+
+[camera]
+fov = 34.0                      # Field of view in degrees
+angle_x = 52.0                  # Pitch elevation angle (dimetric architectural view)
+angle_y = -40.0                 # Azimuthal yaw angle
+min_distance = 15.0             # Minimum camera standoff distance
+distance_diagonal_scale = 1.85  # Standoff multiplier per diagonal board unit
+distance_offset = 4.0           # Standoff baseline margin
+transition_duration = 0.4       # Camera auto-framing transition duration in seconds
+orbit_speed_x = 120.0           # Orbit yaw sensitivity (degrees / screen drag)
+orbit_speed_y = 100.0           # Orbit pitch sensitivity (degrees / screen drag)
+zoom_speed = 1.8                # Zoom delta distance per scroll tick
+min_pitch = 15.0                # Minimum pitch angle in degrees
+max_pitch = 85.0                # Maximum pitch angle in degrees
+min_distance_factor = 0.45      # Minimum zoom multiplier
+max_distance_factor = 2.2       # Maximum zoom multiplier
+smoothing = 12.0                # Exponential damping factor for 60-120fps motion
+step_orbit_angle = 45.0         # Step rotation angle for Q/E keys (degrees)
+
+[motion]
+roll_duration = 0.20            # Block roll duration in seconds (200ms)
+fall_duration = 1.30            # Fall animation duration (see-saw tipping + free fall) in seconds
+victory_fall_duration = 4.50    # Goal plunge descent duration before victory menu in seconds (4-8s)
+victory_pulse_duration = 4.50   # Backward-compatible alias
+fade_transition = 0.25          # UI scene fade duration
+
+[graphics.block]
+unit_scale_1 = 0.86             # Visual scale for 1-unit block edge (leaves 0.14 gap)
+unit_scale_2 = 1.86             # Visual scale for 2-unit block edge
+fall_gravity = 9.8              # Downward gravitational acceleration g = 9.8 m/s^2
+fall_rot_x = 120.0              # Tumbling rotation speed on X (deg/sec)
+fall_rot_y = 80.0               # Tumbling rotation speed on Y (deg/sec)
+fall_rot_z = 60.0               # Tumbling rotation speed on Z (deg/sec)
+victory_sink_depth = 16.0       # Depth the block plunges through the goal hole into abyss
+
+[graphics.board]
+tile_size = 0.86                # Standard tile width/length (leaving 0.14 void gap)
+pedestal_y = -0.22              # Pedestal base Y position
+pedestal_height = 0.32          # Pedestal vertical height
+pedestal_inset = 0.04           # Inset margin from tile boundary
+normal_slab_y = -0.06           # Top slab Y position
+normal_slab_height = 0.12       # Top slab thickness
+normal_inset_y = -0.005         # Inner decorative plate Y position
+normal_inset_ratio = 0.72       # Decorative plate scale ratio
+fragile_slab_y = -0.04          # Fragile tile top slab Y position
+fragile_slab_height = 0.08      # Fragile tile thickness (thinner)
+fragile_inset_y = 0.005         # Fragile warning plate Y position
+fragile_inset_ratio = 0.70      # Fragile warning plate scale ratio
+goal_well_y = -0.55             # Goal void well depth position
+goal_well_height = 0.90         # Goal void well depth height
+goal_rim_y = -0.02              # Goal golden rim Y position
+goal_rim_height = 0.04          # Goal golden rim thickness
+goal_rim_offset = 0.04          # Goal golden rim outer margin
+goal_floor_y = -0.98            # Goal glowing inner floor Y position
+goal_floor_ratio = 0.75         # Goal glowing inner floor scale ratio
+goal_floor_height = 0.04        # Goal glowing inner floor thickness
+switch_soft_radius = 0.48       # Soft switch circular radius
+switch_soft_height = 0.08       # Soft switch plate thickness
+switch_soft_y = 0.04            # Soft switch plate elevated Y position
+switch_heavy_long = 0.54        # Heavy switch cross bar length
+switch_heavy_short = 0.18       # Heavy switch cross bar width
+switch_heavy_height = 0.08      # Heavy switch plate thickness
+switch_heavy_y = 0.04           # Heavy switch plate elevated Y position
+bridge_open_y = -0.06           # Bridge slab Y position when raised/open
+bridge_closed_y = -1.50         # Bridge slab Y position when lowered/closed
+bridge_anim_duration = 0.25     # Bridge raising/lowering duration in seconds
+switch_press_depth = 0.04       # Switch depression depth on contact
+switch_press_down_time = 0.08   # Switch depression duration in seconds
+switch_press_up_time = 0.12     # Switch rebound duration in seconds
+
+[audio]
+enabled = true
+sample_rate = 44100             # CD quality sample rate in Hz
+master_headroom = 0.75          # 75% master headroom to prevent clipping
+bgm_enabled = true              # Background theme music enabled
+bgm_volume = 0.50               # Background music playback volume (0.0 to 1.0)
+sfx_enabled = true              # Sound effects enabled
+sfx_volume = 0.80               # Sound effects playback volume (0.0 to 1.0)
+theme_track = "background.mp3"  # BGM theme filename located in assets/sounds/
+roll_duration = 0.07            # Roll tap sound length in seconds
+switch_duration = 0.045         # Mechanical click sound length in seconds
+fall_duration = 0.40            # Fall whoosh sound length in seconds
+win_duration = 0.60             # Victory chord sound length in seconds
+undo_duration = 0.04            # Rewind pop sound length in seconds
+
+[solver]
+default_delay = 0.08            # Delay in seconds between animated solver moves
+
+[controls]
+# Directional control scheme for arrow keys and WASD:
+# "isometric": Up/W = +X, Down/S = -X, Left/A = -Y, Right/D = +Y (screen isometric diagonals)
+# "classic": Up = -Y, Down = +Y, Left = -X, Right = +X (cardinal 2D grid coordinates)
+arrow_scheme = "isometric"

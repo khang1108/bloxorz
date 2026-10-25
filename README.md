@@ -12,7 +12,7 @@ The project maintains a strict decoupling between pure Python game logic and the
 bloxorz_solvers/
 ├── bloxorz/
 │   ├── audio/              # Zero-dependency procedural 16-bit WAV synthesizer
-│   │   └── sound_manager.py
+│   ├── config.py           # Central configuration loader (TOML / JSON parsing)
 │   ├── core/               # Pure Python game logic (Engine-agnostic)
 │   │   ├── block.py        # Spatial coordinates, 12 rolling states, occupied cells
 │   │   ├── board.py        # Grid structures, bridges, switches, state cloning
@@ -23,24 +23,33 @@ bloxorz_solvers/
 │   │   ├── block_view.py   # Frame-perfect delta-time rotation hierarchy
 │   │   ├── board_view.py   # Procedural tile generation and bridge animation
 │   │   └── camera_ctrl.py  # Golden-ratio isometric camera positioning
-│   ├── levels/             # Packaged stages (Stages 1 through 5)
+│   ├── levels/             # Packaged stages (All 33 canonical stages: stage_01 to stage_33)
 │   │   ├── stage_01.json
-│   │   ├── stage_02.json
-│   │   ├── stage_03.json
-│   │   ├── stage_04.json
-│   │   └── stage_05.json
+│   │   ├── ...
+│   │   └── stage_33.json
 │   ├── solvers/            # Headless search algorithms and shared cost functions
 │   │   ├── base.py         # Solver contract and search-state helpers
 │   │   ├── costs.py        # Shared fragile-tile route preference
-│   │   └── ucs.py          # Uniform-cost search
+│   │   ├── ucs.py          # Uniform-cost search
+│   │   └── astar.py        # A* search skeleton
 │   ├── ui/                 # Typography-driven interface system
 │   │   ├── hud.py          # Real-time move counter, status banners, hotkeys
 │   │   ├── menu.py         # Pause, stage selector, and victory overlays
 │   │   └── theme.py        # Central design tokens and motion easing constants
 │   └── main.py             # Application coordinator and runtime event loop
+├── data/                   # Data archive and ground-truth benchmark suite
+│   ├── coolmath.json       # Canonical 33-stage dataset from Coolmath Games
+│   ├── solutions.json      # Ground-truth minimal-move solution sequences (1,999 moves total)
+│   ├── external_maps/      # 33 raw text maps from phamquiluan/BloxorzSolver
+│   └── SOURCES.md          # Upstream repository credits, schemas, and stage catalog
 ├── tests/                  # Automated verification suite (100% pass)
+│   ├── test_config.py      # Configuration parsing and fallback tests
 │   ├── test_core.py        # Mathematical verification of rolling and tile mechanics
-│   └── test_levels.py      # Schema and solvability checks for packaged levels
+│   ├── test_input.py       # Arrow key schemes, debouncing, and event listeners
+│   ├── test_levels.py      # Schema and ground-truth solution checks across all 33 levels
+│   └── test_solvers_base.py# Solver base contract verification
+├── config.toml             # Central configuration file (display, camera, physics, audio, controls)
+├── CONTRIBUTING.md         # Architecture and contribution guidelines
 ├── requirements.txt        # Runtime and development dependencies
 ├── run.py                  # CLI entry point and solver execution launcher
 └── pytest.ini              # Test runner configuration
@@ -74,7 +83,7 @@ next_block = block.roll(Direction.RIGHT)
 
 # Evaluate against board rules
 outcome, cause = board.evaluate_block_state(next_block)
-# outcome in ("SAFE", "VICTORY", "FELL_VOID", "FELL_FRAGILE", "FELL_HALF_GOAL")
+# outcome in ("SAFE", "VICTORY", "FELL_VOID", "FELL_FRAGILE")
 
 # State-space exploration utilities
 cloned_board = board.clone()

@@ -2,10 +2,12 @@
 
 from typing import Dict, Tuple
 from ursina import Entity, color, destroy, curve, invoke
+from ursina.models.procedural.cylinder import Cylinder
 
 from bloxorz.core.constants import TileType
 from bloxorz.core.board import Board
 from bloxorz.ui.theme import Palette
+from bloxorz.config import CONFIG
 
 
 class BoardView:
@@ -44,7 +46,8 @@ class BoardView:
         c_goal_void = color.hex(Palette.TILE_GOAL.hex_code)
         c_goal_glow = color.hex(Palette.GOAL_GLOW.hex_code)
 
-        tile_size = 0.86  # Wide 0.14 gap exposing the void between tiles
+        cfg = CONFIG.board
+        tile_size = cfg.tile_size
 
         for (x, y), tile_type in board.base_tiles.items():
             pos_x = float(x)
@@ -55,8 +58,8 @@ class BoardView:
                 Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.22, pos_z),
-                    scale=(tile_size - 0.04, 0.32, tile_size - 0.04),
+                    position=(pos_x, cfg.pedestal_y, pos_z),
+                    scale=(tile_size - cfg.pedestal_inset, cfg.pedestal_height, tile_size - cfg.pedestal_inset),
                     color=c_pedestal,
                 )
 
@@ -65,16 +68,16 @@ class BoardView:
                 top_slab = Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.06, pos_z),
-                    scale=(tile_size, 0.12, tile_size),
+                    position=(pos_x, cfg.normal_slab_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
                     color=c_normal,
                 )
                 # Inner recessed architectural plate
                 Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.005, pos_z),
-                    scale=(tile_size * 0.72, 0.02, tile_size * 0.72),
+                    position=(pos_x, cfg.normal_inset_y, pos_z),
+                    scale=(tile_size * cfg.normal_inset_ratio, 0.02, tile_size * cfg.normal_inset_ratio),
                     color=c_inset,
                 )
                 self.tile_entities[(x, y)] = top_slab
@@ -84,16 +87,16 @@ class BoardView:
                 slab = Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.04, pos_z),
-                    scale=(tile_size, 0.08, tile_size),
+                    position=(pos_x, cfg.fragile_slab_y, pos_z),
+                    scale=(tile_size, cfg.fragile_slab_height, tile_size),
                     color=c_fragile,
                 )
                 # Warning center notch / crossbar pattern
                 Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, 0.005, pos_z),
-                    scale=(tile_size * 0.70, 0.02, tile_size * 0.70),
+                    position=(pos_x, cfg.fragile_inset_y, pos_z),
+                    scale=(tile_size * cfg.fragile_inset_ratio, 0.02, tile_size * cfg.fragile_inset_ratio),
                     color=c_fragile_inset,
                 )
                 self.tile_entities[(x, y)] = slab
@@ -103,24 +106,24 @@ class BoardView:
                 well = Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.55, pos_z),
-                    scale=(tile_size, 0.90, tile_size),
+                    position=(pos_x, cfg.goal_well_y, pos_z),
+                    scale=(tile_size, cfg.goal_well_height, tile_size),
                     color=c_goal_void,
                 )
                 # Luminous golden halo rim frame
                 Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.02, pos_z),
-                    scale=(tile_size + 0.04, 0.04, tile_size + 0.04),
+                    position=(pos_x, cfg.goal_rim_y, pos_z),
+                    scale=(tile_size + cfg.goal_rim_offset, cfg.goal_rim_height, tile_size + cfg.goal_rim_offset),
                     color=c_goal_rim,
                 )
                 # Glowing inner floor
                 Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.98, pos_z),
-                    scale=(tile_size * 0.75, 0.04, tile_size * 0.75),
+                    position=(pos_x, cfg.goal_floor_y, pos_z),
+                    scale=(tile_size * cfg.goal_floor_ratio, cfg.goal_floor_height, tile_size * cfg.goal_floor_ratio),
                     color=c_goal_glow,
                 )
                 self.goal_entity = well
@@ -131,8 +134,8 @@ class BoardView:
                 base_slab = Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.06, pos_z),
-                    scale=(tile_size, 0.12, tile_size),
+                    position=(pos_x, cfg.normal_slab_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
                     color=c_normal,
                 )
                 self.tile_entities[(x, y)] = base_slab
@@ -141,9 +144,9 @@ class BoardView:
                     # Circular elevated disc with subtle glowing halo
                     plate = Entity(
                         parent=self.root,
-                        model='cylinder',
-                        position=(pos_x, 0.04, pos_z),
-                        scale=(0.48, 0.08, 0.48),
+                        model=Cylinder(resolution=24),
+                        position=(pos_x, cfg.switch_soft_y, pos_z),
+                        scale=(cfg.switch_soft_radius, cfg.switch_soft_height, cfg.switch_soft_radius),
                         color=c_switch_soft,
                     )
                     self.switch_entities[(x, y)] = plate
@@ -152,18 +155,48 @@ class BoardView:
                     plate = Entity(
                         parent=self.root,
                         model='cube',
-                        position=(pos_x, 0.04, pos_z),
-                        scale=(0.54, 0.08, 0.18),
+                        position=(pos_x, cfg.switch_heavy_y, pos_z),
+                        scale=(cfg.switch_heavy_long, cfg.switch_heavy_height, cfg.switch_heavy_short),
                         color=c_switch_heavy,
                     )
                     Entity(
                         parent=self.root,
                         model='cube',
-                        position=(pos_x, 0.04, pos_z),
-                        scale=(0.18, 0.08, 0.54),
+                        position=(pos_x, cfg.switch_heavy_y, pos_z),
+                        scale=(cfg.switch_heavy_short, cfg.switch_heavy_height, cfg.switch_heavy_long),
                         color=c_switch_heavy,
                     )
                     self.switch_entities[(x, y)] = plate
+
+            elif tile_type == TileType.TELEPORT:
+                # Teleport/splitter slab with twin architectural cyan insets
+                top_slab = Entity(
+                    parent=self.root,
+                    model='cube',
+                    position=(pos_x, cfg.normal_slab_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
+                    color=c_normal,
+                )
+                c_teleport_accent = color.hex(Palette.TEXT_ACCENT.hex_code)
+                inset_w = tile_size * 0.36
+                inset_h = tile_size * 0.36
+                offset_x = tile_size * 0.22
+                # Dual square plates symbolizing block division
+                Entity(
+                    parent=self.root,
+                    model='cube',
+                    position=(pos_x - offset_x, cfg.normal_inset_y, pos_z),
+                    scale=(inset_w, 0.02, inset_h),
+                    color=c_teleport_accent,
+                )
+                Entity(
+                    parent=self.root,
+                    model='cube',
+                    position=(pos_x + offset_x, cfg.normal_inset_y, pos_z),
+                    scale=(inset_w, 0.02, inset_h),
+                    color=c_teleport_accent,
+                )
+                self.tile_entities[(x, y)] = top_slab
 
         # Build bridge entities (slatted architectural planks)
         for group in board.bridges.values():
@@ -173,8 +206,8 @@ class BoardView:
                 bridge_tile = Entity(
                     parent=self.root,
                     model='cube',
-                    position=(pos_x, -0.06 if group.is_open else -1.5, pos_z),
-                    scale=(tile_size, 0.12, tile_size),
+                    position=(pos_x, cfg.bridge_open_y if group.is_open else cfg.bridge_closed_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
                     color=c_bridge,
                     visible=group.is_open,
                 )
@@ -182,6 +215,7 @@ class BoardView:
 
     def update_bridges(self, board: Board):
         """Smoothly animates bridge states when switched."""
+        cfg = CONFIG.board
         for group in board.bridges.values():
             for (bx, by) in group.tiles:
                 ent = self.bridge_entities.get((bx, by))
@@ -189,17 +223,21 @@ class BoardView:
                     continue
                 if group.is_open:
                     ent.visible = True
-                    ent.animate_y(-0.06, duration=0.25, curve=curve.out_cubic)
+                    ent.animate_y(cfg.bridge_open_y, duration=cfg.bridge_anim_duration, curve=curve.out_cubic)
                 else:
                     def hide_after_sink(e=ent):
                         e.visible = False
-                    ent.animate_y(-1.5, duration=0.25, curve=curve.in_cubic)
-                    invoke(hide_after_sink, delay=0.25)
+                    ent.animate_y(cfg.bridge_closed_y, duration=cfg.bridge_anim_duration, curve=curve.in_cubic)
+                    invoke(hide_after_sink, delay=cfg.bridge_anim_duration)
 
     def animate_switch_press(self, x: int, y: int):
         """Micro-animation depressing switch plate when stepped on."""
+        cfg = CONFIG.board
         plate = self.switch_entities.get((x, y))
         if plate:
             orig_y = plate.y
-            plate.animate_y(orig_y - 0.04, duration=0.08, curve=curve.out_sine)
-            invoke(lambda: plate.animate_y(orig_y, duration=0.12, curve=curve.out_sine), delay=0.1)
+            plate.animate_y(orig_y - cfg.switch_press_depth, duration=cfg.switch_press_down_time, curve=curve.out_sine)
+            invoke(
+                lambda: plate.animate_y(orig_y, duration=cfg.switch_press_up_time, curve=curve.out_sine),
+                delay=cfg.switch_press_down_time + 0.02,
+            )

@@ -1,0 +1,142 @@
+{
+  "name": "Stage 20",
+  "passcode": "543019",
+  "spawn": {
+    "x": 8,
+    "y": 2,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "............111",
+    "..11111111BB111",
+    "..111..S11..111",
+    "..111..111.....",
+    "..1S1..81S.....",
+    "..111..111.....",
+    "1111...111BBS11",
+    "1S..........111",
+    "............121",
+    "............111"
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b3",
+      "tiles": [
+        [
+          10,
+          6
+        ],
+        [
+          11,
+          6
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 7,
+      "y": 2,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 3,
+      "y": 4,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 9,
+      "y": 4,
+      "type": "SOFT",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "CLOSE"
+      },
+      "action": "CLOSE"
+    },
+    {
+      "x": 12,
+      "y": 6,
+      "type": "SOFT",
+      "targets": [
+        "b3"
+      ],
+      "actions": {
+        "b3": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 1,
+      "y": 7,
+      "type": "SOFT",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": [
+    {
+      "x": 7,
+      "y": 4,
+      "target_1": [
+        13,
+        1
+      ],
+      "target_2": [
+        13,
+        7
+      ],
+      "selected": 0
+    }
+  ]
+}

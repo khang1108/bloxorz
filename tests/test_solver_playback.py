@@ -32,6 +32,8 @@ def runtime(monkeypatch: pytest.MonkeyPatch) -> Tuple[BloxorzApp, List[Callable[
     app._solution_delay = 0.08
     app._on_solution_complete = None
     app._solution_generation = 0
+    app._last_input_time = 0.0
+    app._last_input_key = ""
     app.stage_files = [LEVELS_DIR / "stage_01.json"]
     app.current_stage_idx = 1
     app.hud = Mock()
@@ -42,8 +44,9 @@ def runtime(monkeypatch: pytest.MonkeyPatch) -> Tuple[BloxorzApp, List[Callable[
     app.block_view = Mock(is_animating=False)
 
     def roll_animated(
-        prev_state: BlockState, next_state: BlockState, direction: Direction,
+        prev_state: Any, next_state: Any, direction: Direction,
         on_complete: Optional[Callable[[], None]] = None,
+        *args: Any, **kwargs: Any,
     ) -> None:
         if on_complete:
             on_complete()
@@ -74,7 +77,7 @@ def test_standard_launcher_registers_ucs(monkeypatch: pytest.MonkeyPatch) -> Non
     solver = launch.call_args.kwargs["solver"]
     assert isinstance(solver, UCSSolver)
     board = load_level_from_file(LEVELS_DIR / "stage_03.json")
-    assert len(solver(board)) == 9
+    assert len(solver(board)) == 19
 
 
 def test_module_launcher_registers_ucs(
@@ -113,7 +116,17 @@ def test_missing_solver_is_visible(runtime: Tuple[BloxorzApp, List[Callable[[], 
 
 def test_failed_search_is_visible(runtime: Tuple[BloxorzApp, List[Callable[[], None]]]) -> None:
     app, pending = runtime
-    app.game = Game(load_level_from_file(LEVELS_DIR / "stage_05.json"))
+    app.game = Game(parse_level_data({
+        "layout": [
+            "1111........",
+            "..1111......",
+            "....1111....",
+            "......1111..",
+            "........1111",
+            "..........12",
+        ],
+        "spawn": {"x": 0, "y": 0, "orientation": "STANDING"},
+    }))
     app.handle_input("p")
     app.hud.show_banner.assert_called_once_with("SOLVER FOUND NO SOLUTION")
     assert not app._is_playing_solution
@@ -171,6 +184,7 @@ def test_stage_change_cancels_playback_and_allows_p_again(
     drain(pending)
     assert app.game.move_count == 0
     assert not app._is_playing_solution
+    app._last_input_key = ""  # reset debounce
     app.handle_input("p")
     drain(pending)
     assert app.game.status == GameStatus.VICTORY

@@ -167,7 +167,17 @@ def test_packaged_solutions_replay_without_mutating_input(stage: int) -> None:
 
 
 def test_stage_three_prefers_lower_cost_over_fewer_moves() -> None:
-    board = load_level_from_file(LEVELS_DIR / "stage_03.json")
+    board = parse_level_data({
+        "layout": [
+            "...111111...",
+            "111111111111",
+            "111333333111",
+            "111333333111",
+            "111111111211",
+            "...111111...",
+        ],
+        "spawn": {"x": 1, "y": 1, "orientation": "STANDING"},
+    })
     shorter_path = [
         Direction.DOWN, Direction.RIGHT, Direction.RIGHT, Direction.DOWN,
         Direction.RIGHT, Direction.RIGHT, Direction.RIGHT, Direction.RIGHT,
@@ -179,8 +189,18 @@ def test_stage_three_prefers_lower_cost_over_fewer_moves() -> None:
     assert result.solution_cost == replay(board, result.moves) == 9
 
 
-def test_stage_five_has_no_solution_and_callback_is_empty() -> None:
-    board = load_level_from_file(LEVELS_DIR / "stage_05.json")
+def test_unsolvable_level_returns_no_solution_and_callback_is_empty() -> None:
+    board = parse_level_data({
+        "layout": [
+            "1111........",
+            "..1111......",
+            "....1111....",
+            "......1111..",
+            "........1111",
+            "..........12",
+        ],
+        "spawn": {"x": 0, "y": 0, "orientation": "STANDING"},
+    })
     solver = UCSSolver()
     result = solver.solve(board)
     assert not result.is_solved
@@ -194,7 +214,7 @@ def test_stage_five_has_no_solution_and_callback_is_empty() -> None:
 def test_bridge_configurations_have_distinct_state_keys() -> None:
     board = load_level_from_file(LEVELS_DIR / "stage_02.json")
     changed = deepcopy(board)
-    changed.trigger_switches(BlockState(3, 2, BlockOrientation.STANDING))
+    changed.trigger_switches(BlockState(2, 2, BlockOrientation.STANDING))
     assert UCSSolver.get_state_key(board.spawn_state, board) != UCSSolver.get_state_key(board.spawn_state, changed)
 
 
@@ -219,21 +239,19 @@ def test_switch_route_revisits_spawn_with_changed_bridge_state(
     assert board.get_bridge_state_key() == (("b1", False),)
 
 
-@pytest.mark.xfail(strict=True, reason="Known core bug: Board.clone resets bridge flags but copies current tiles.")
-def test_bridge_clone_preserves_dynamic_state_pending_core_fix() -> None:
+def test_bridge_clone_preserves_dynamic_state() -> None:
     board = load_level_from_file(LEVELS_DIR / "stage_02.json")
-    board.trigger_switches(BlockState(3, 2, BlockOrientation.STANDING))
+    board.trigger_switches(BlockState(2, 2, BlockOrientation.STANDING))
     cloned = board.clone()
     assert cloned.get_bridge_state_key() == board.get_bridge_state_key()
     assert cloned.current_tiles == board.current_tiles
 
 
-@pytest.mark.xfail(strict=True, reason="Stage 04 integration awaits the shared Board.clone bridge-state fix.")
-def test_stage_four_solution_pending_core_fix() -> None:
+def test_stage_four_solution() -> None:
     board = load_level_from_file(LEVELS_DIR / "stage_04.json")
     result = UCSSolver().solve(board)
     assert result.is_solved
-    assert result.solution_cost == replay(board, result.moves) == 12
+    assert result.solution_cost == replay(board, result.moves) == 56
 
 
 def test_solver_result_remains_compatible_with_old_positional_arguments() -> None:

@@ -1,0 +1,70 @@
+{
+  "name": "Stage 21",
+  "passcode": "728724",
+  "spawn": {
+    "x": 1,
+    "y": 3,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "........11.....",
+    ".......111.....",
+    "11..111111.....",
+    "111111..1......",
+    "1111....1...111",
+    ".11.....H111121",
+    "..1.....H1..111",
+    "..111B..11.....",
+    "...111..11.....",
+    "...B111111....."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          5,
+          7
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          3,
+          9
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 8,
+      "y": 5,
+      "type": "HEAVY",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 8,
+      "y": 6,
+      "type": "HEAVY",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

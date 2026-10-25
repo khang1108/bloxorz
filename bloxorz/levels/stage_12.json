@@ -1,0 +1,70 @@
+{
+  "name": "Stage 12",
+  "passcode": "958640",
+  "spawn": {
+    "x": 2,
+    "y": 6,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "............H",
+    ".....111..111",
+    ".....1H11111B",
+    "...11111..11.",
+    "...121B...11.",
+    ".11111...1111",
+    "1111.....1111",
+    "1111..11111..",
+    ".....111.....",
+    ".....111....."
+  ],
+  "bridges": [
+    {
+      "id": "b1",
+      "tiles": [
+        [
+          12,
+          2
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "b2",
+      "tiles": [
+        [
+          6,
+          4
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 12,
+      "y": 0,
+      "type": "HEAVY",
+      "targets": [
+        "b2"
+      ],
+      "actions": {
+        "b2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "type": "HEAVY",
+      "targets": [
+        "b1"
+      ],
+      "actions": {
+        "b1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

@@ -1,7 +1,7 @@
 """Bloxorz solvers package."""
 
 from typing import Dict, Optional, Type
-from bloxorz.solvers.base import BaseSolver, SolverAction, SolverResult, StateKey, Successor, SWITCH_ACTION
+from bloxorz.solvers.base import BaseSolver, SearchNode, SolverAction, SolverResult, StateKey, Successor, SWITCH_ACTION
 from bloxorz.solvers.bfs import BFSSolver, BFSSolverResult
 from bloxorz.solvers.astar import AstarSolver
 from bloxorz.solvers.costs import CostFunction, fragile_cost
@@ -25,6 +25,7 @@ def get_solver(name: str) -> Optional[BaseSolver]:
 
 __all__ = [
     "BaseSolver",
+    "SearchNode",
     "SolverAction",
     "SolverResult",
     "StateKey",

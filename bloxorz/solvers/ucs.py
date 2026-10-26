@@ -3,26 +3,15 @@
 import heapq
 import itertools
 import math
-from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from bloxorz.core.block import BaseBlockState, SplitBlockState
 from bloxorz.core.board import Board
 from bloxorz.core.constants import Direction, TileType
-from bloxorz.solvers.base import BaseSolver, SolverAction, SolverResult, StateKey
+from bloxorz.solvers.base import BaseSolver, SearchNode, SolverAction, SolverResult, StateKey
 from bloxorz.solvers.costs import CostFunction, fragile_cost
 
-
-@dataclass(frozen=True)
-class _SearchNode:
-    """An immutable path record so improved routes cannot overwrite old parents."""
-
-    block: BaseBlockState
-    board: Board
-    cost: float = 0.0
-    depth: int = 0
-    parent: Optional["_SearchNode"] = None
-    direction: Optional[SolverAction] = None
+_SearchNode = SearchNode
 
 
 class UCSSolver(BaseSolver):
@@ -57,9 +46,9 @@ class UCSSolver(BaseSolver):
         if outcome not in ("SAFE", "VICTORY", "TELEPORT"):
             raise ValueError(f"Invalid spawn state: {outcome}")
 
-        start = _SearchNode(board.spawn_state, board)
+        start = SearchNode(board.spawn_state, board)
         counter = itertools.count()
-        frontier: List[Tuple[float, int, _SearchNode]] = [(0.0, next(counter), start)]
+        frontier: List[Tuple[float, int, SearchNode]] = [(0.0, next(counter), start)]
         best_cost: Dict[StateKey, float] = {self._search_state_key(start.block, board): 0.0}
         expanded_nodes = 0
         max_depth = 0
@@ -100,7 +89,7 @@ class UCSSolver(BaseSolver):
                     continue
 
                 best_cost[successor_key] = candidate_cost
-                child = _SearchNode(
+                child = SearchNode(
                     successor.block, successor.board, candidate_cost,
                     node.depth + int(isinstance(successor.direction, Direction)), node, successor.direction,
                 )
@@ -125,13 +114,6 @@ class UCSSolver(BaseSolver):
         return key
 
     @staticmethod
-    def _reconstruct_moves(node: _SearchNode) -> List[SolverAction]:
+    def _reconstruct_moves(node: SearchNode) -> List[SolverAction]:
         """Follow the selected goal's parent chain back to the spawn state."""
-        moves: List[SolverAction] = []
-        while node.parent is not None:
-            if node.direction is None:
-                raise RuntimeError("A non-root search node must have an incoming direction.")
-            moves.append(node.direction)
-            node = node.parent
-        moves.reverse()
-        return moves
+        return node.reconstruct_moves()

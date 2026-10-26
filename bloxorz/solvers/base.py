@@ -56,6 +56,34 @@ class Successor:
     outcome: str  # 'SAFE', 'TELEPORT', 'MERGED' or 'VICTORY'
 
 
+@dataclass(frozen=True)
+class SearchNode:
+    """An immutable search tree node shared across pathfinding algorithms (UCS, A*, BFS, DFS).
+
+    Immutable path records ensure that improved routes or alternative search branches
+    cannot overwrite old parent pointers or corrupt priority queue order.
+    """
+
+    block: BaseBlockState
+    board: Board
+    cost: float = 0.0
+    depth: int = 0
+    parent: Optional["SearchNode"] = None
+    direction: Optional[SolverAction] = None
+
+    def reconstruct_moves(self) -> List[SolverAction]:
+        """Follow the parent chain back to the root search node to extract action sequence."""
+        moves: List[SolverAction] = []
+        curr: Optional["SearchNode"] = self
+        while curr is not None and curr.parent is not None:
+            if curr.direction is None:
+                raise RuntimeError("A non-root search node must have an incoming direction.")
+            moves.append(curr.direction)
+            curr = curr.parent
+        moves.reverse()
+        return moves
+
+
 class BaseSolver(ABC):
     """Abstract base class for all Bloxorz search algorithms.
 

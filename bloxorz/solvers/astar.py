@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 from bloxorz.core.block import BlockState
 from bloxorz.core.board import Board
-from bloxorz.solvers import SolverResult, BaseSolver
+from bloxorz.solvers import SolverResult, BaseSolver, SearchNode
 
 
 class AstarSolver(BaseSolver):

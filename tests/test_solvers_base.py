@@ -52,3 +52,57 @@ def test_base_solver_contracts():
 
     # 5. Test is_goal helper
     assert BaseSolver.is_goal(board.spawn_state, board) is False
+
+
+def test_search_node():
+    """Verifies that SearchNode is immutable and reconstructs action sequences properly."""
+    import pytest
+    from dataclasses import FrozenInstanceError
+    from bloxorz.solvers.base import SearchNode
+    from bloxorz.solvers.ucs import _SearchNode
+
+    # Verify backward-compatible alias
+    assert _SearchNode is SearchNode
+
+    board = load_level_from_file(Path("bloxorz/levels/stage_01.json"))
+    root = SearchNode(block=board.spawn_state, board=board, cost=0.0, depth=0)
+    assert root.reconstruct_moves() == []
+
+    # Child step 1
+    child_1 = SearchNode(
+        block=board.spawn_state,
+        board=board,
+        cost=1.0,
+        depth=1,
+        parent=root,
+        direction=Direction.RIGHT,
+    )
+    assert child_1.reconstruct_moves() == [Direction.RIGHT]
+
+    # Child step 2
+    child_2 = SearchNode(
+        block=board.spawn_state,
+        board=board,
+        cost=2.0,
+        depth=2,
+        parent=child_1,
+        direction=Direction.DOWN,
+    )
+    assert child_2.reconstruct_moves() == [Direction.RIGHT, Direction.DOWN]
+
+    # Immutability check
+    with pytest.raises(FrozenInstanceError):
+        child_2.cost = 99.0  # type: ignore
+
+    # Error when a non-root search node has missing direction
+    invalid_node = SearchNode(
+        block=board.spawn_state,
+        board=board,
+        cost=3.0,
+        depth=3,
+        parent=child_2,
+        direction=None,
+    )
+    with pytest.raises(RuntimeError, match="must have an incoming direction"):
+        invalid_node.reconstruct_moves()
+

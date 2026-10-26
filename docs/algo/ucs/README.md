@@ -152,7 +152,7 @@ Successors are generated in the order `UP`, `RIGHT`, `DOWN`, `LEFT`, followed
 by `SWITCH` for split states. Equal-cost solutions have no secondary ranking
 by movement count or control-switch count.
 
-Each immutable `_SearchNode` stores its parent and incoming action. On
+Each immutable `SearchNode` (aliased as `_SearchNode`) stores its parent and incoming action. On
 success, the solver follows the parent chain and reverses its actions to
 reconstruct the playback sequence. Improved routes do not overwrite parent
 records belonging to previously created nodes.

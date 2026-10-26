@@ -59,10 +59,6 @@ def test_search_node():
     import pytest
     from dataclasses import FrozenInstanceError
     from bloxorz.solvers.base import SearchNode
-    from bloxorz.solvers.ucs import _SearchNode
-
-    # Verify backward-compatible alias
-    assert _SearchNode is SearchNode
 
     board = load_level_from_file(Path("bloxorz/levels/stage_01.json"))
     root = SearchNode(block=board.spawn_state, board=board, cost=0.0, depth=0)

@@ -11,9 +11,6 @@ from bloxorz.core.constants import Direction, TileType
 from bloxorz.solvers.base import BaseSolver, SearchNode, SolverAction, SolverResult, StateKey
 from bloxorz.solvers.costs import CostFunction, fragile_cost
 
-_SearchNode = SearchNode
-
-
 class UCSSolver(BaseSolver):
     """Find a minimum-cost solution from a freshly loaded stage's spawn state.
 

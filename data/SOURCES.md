@@ -9,6 +9,7 @@ This directory catalogs the datasets, maps, and optimal solution benchmarks harv
 | Repository | Author | Key Contributions & Artifacts |
 |---|---|---|
 | [**`tkoz0/bloxorz-solver`**](https://github.com/tkoz0/bloxorz-solver) | `@tkoz0` | Canonical 33-stage CoolMath Bloxorz data (`coolmath.json`), bridge & switch mechanics, and verified minimal move counts totaling **1,999 moves** (`solution.txt`). |
+| [**`KrishnaKumarSoni/bloxorz-3d`**](https://github.com/KrishnaKumarSoni/bloxorz-3d) | `@KrishnaKumarSoni` | 50 hand-crafted, BFS-verified stages (`stage_34.json` .. `stage_83.json`) incorporating floor, switches, bridges, fragile tiles, and split-block teleports (`data/bloxorz_3d_levels.json`). |
 | [**`phamquiluan/BloxorzSolver`**](https://github.com/phamquiluan/BloxorzSolver) | `@phamquiluan` | 33 ASCII text level maps (`map01.txt` .. `map33.txt`), BFS / DFS / Best-First Search pathfinders. |
 | [**`sethbfey/Bloxorz-DDQN`**](https://github.com/sethbfey/Bloxorz-DDQN) | `@sethbfey` | Reinforcement Learning gymnasium environment with level layouts and bridge metadata. |
 | [**`Erroler/Bloxorz`**](https://github.com/Erroler/Bloxorz) | `@Erroler` | Python graphical recreation and state transition algorithms. |
@@ -17,8 +18,9 @@ This directory catalogs the datasets, maps, and optimal solution benchmarks harv
 
 ## 2. Data Structure in this Repository
 
-- **[`bloxorz/levels/`](file:///home/phuckhang/MyWorkspace/boxorz_solvers/bloxorz/levels):** Production stage definitions (`stage_01.json` through `stage_33.json`) parsed and loaded directly by the game engine and external solvers.
+- **[`bloxorz/levels/`](file:///home/phuckhang/MyWorkspace/boxorz_solvers/bloxorz/levels):** Production stage definitions (`stage_01.json` through `stage_83.json`) parsed and loaded directly by the game engine and external solvers.
 - **[`data/coolmath.json`](file:///home/phuckhang/MyWorkspace/boxorz_solvers/data/coolmath.json):** Full upstream dataset of all 33 original stages with CoolMath passcodes, grid representations, bridge groupings, and multi-action switches.
+- **[`data/bloxorz_3d_levels.json`](file:///home/phuckhang/MyWorkspace/boxorz_solvers/data/bloxorz_3d_levels.json):** Full upstream dataset of 50 newly imported hand-designed stages with BFS-verified solvability.
 - **[`data/solutions.json`](file:///home/phuckhang/MyWorkspace/boxorz_solvers/data/solutions.json):** Ground-truth optimal solution move sequences (`U`, `D`, `L`, `R`) and minimal step counts for every stage.
 - **[`data/external_maps/`](file:///home/phuckhang/MyWorkspace/boxorz_solvers/data/external_maps):** Raw text map benchmarks (`map01.txt` .. `map33.txt`) from `phamquiluan/BloxorzSolver`.
 
@@ -118,3 +120,63 @@ All stage files in `bloxorz/levels/` adhere to the following schema:
 - `H` / `X` : HEAVY switch (cross plate, triggers only when standing upright)
 - `B` : BRIDGE tile (initially closed)
 - `8` / `T` : TELEPORT / Splitter tile
+
+---
+
+## 4. Community 50 Stages Master Catalog (Stages 34 - 83)
+
+Harvested from [`KrishnaKumarSoni/bloxorz-3d`](https://github.com/KrishnaKumarSoni/bloxorz-3d). All stages verified solvable by BFS with minimum move par.
+
+| Stage | Name | Category | Par (Min Moves) |
+|:---:|:---|:---|:---:|
+| **34** | WAKE UP | Movement Basics | 9 |
+| **35** | THE BEND | Movement Basics | 7 |
+| **36** | NARROWS | Movement Basics | 8 |
+| **37** | T JUNCTION | Movement Basics | 6 |
+| **38** | SWITCHBACK | Movement Basics | 10 |
+| **39** | CAUSEWAY | Movement Basics | 8 |
+| **40** | ORANGE ALERT | Fragile Tiles | 15 |
+| **41** | THIN ICE | Fragile Tiles | 13 |
+| **42** | PATCHWORK | Fragile Tiles | 7 |
+| **43** | TIGHTROPE | Fragile Tiles | 16 |
+| **44** | BUTTON | Switches & Bridges | 6 |
+| **45** | HEAVYWEIGHT | Switches & Bridges | 15 |
+| **46** | ROUND TRIP | Switches & Bridges | 14 |
+| **47** | DOUBLE TAP | Switches & Bridges | 8 |
+| **48** | SEESAW | Switches & Bridges | 19 |
+| **49** | CROSSROADS | Switches & Bridges | 12 |
+| **50** | DRAWBRIDGE | Switches & Bridges | 13 |
+| **51** | PISTON | Switches & Bridges | 14 |
+| **52** | LOCKSTEP | Switches & Bridges | 14 |
+| **53** | GAUNTLET | Switches & Bridges | 13 |
+| **54** | SPLIT ENDS | Split-Cubes & Teleports | 7 |
+| **55** | TWINS | Split-Cubes & Teleports | 17 |
+| **56** | HALF MEASURES | Split-Cubes & Teleports | 11 |
+| **57** | REUNION | Split-Cubes & Teleports | 12 |
+| **58** | GEMINI | Split-Cubes & Teleports | 13 |
+| **59** | MESA | Advanced Puzzles | 11 |
+| **60** | THE VAULT | Advanced Puzzles | 5 |
+| **61** | CHECKERS | Advanced Puzzles | 9 |
+| **62** | TOLLGATE | Advanced Puzzles | 16 |
+| **63** | ARCHIPELAGO | Advanced Puzzles | 17 |
+| **64** | SPLITWORK | Advanced Puzzles | 15 |
+| **65** | CATWALKS | Advanced Puzzles | 16 |
+| **66** | FLIPFLOP | Advanced Puzzles | 14 |
+| **67** | ORANGE GROVE | Advanced Puzzles | 12 |
+| **68** | RELAY | Advanced Puzzles | 12 |
+| **69** | THE LADDER | Advanced Puzzles | 18 |
+| **70** | AIRLOCK | Advanced Puzzles | 26 |
+| **71** | STEPPING STONES | Advanced Puzzles | 17 |
+| **72** | LONG HAUL | Advanced Puzzles | 22 |
+| **73** | CRUCIBLE | Advanced Puzzles | 27 |
+| **74** | CLOCKWORK | Advanced Puzzles | 26 |
+| **75** | LABYRINTH | Advanced Puzzles | 21 |
+| **76** | PRESSURE | Advanced Puzzles | 25 |
+| **77** | MIRROR | Advanced Puzzles | 12 |
+| **78** | THE WALL | Advanced Puzzles | 11 |
+| **79** | VERTIGO | Advanced Puzzles | 15 |
+| **80** | JUGGERNAUT | Advanced Puzzles | 22 |
+| **81** | NIGHTMARE | Advanced Puzzles | 23 |
+| **82** | PENULTIMA | Advanced Puzzles | 18 |
+| **83** | OMEGA | Endgame Masterwork | 23 |
+

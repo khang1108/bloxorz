@@ -1,0 +1,108 @@
+{
+  "name": "Stage 68 - RELAY",
+  "passcode": "145028",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111....11111",
+    "11181....11S11",
+    "11111....11111",
+    ".1111....1111.",
+    ".1S11....1BB1.",
+    ".1111....1BB1.",
+    ".1111BBBB1111.",
+    ".1111...11111.",
+    ".1111...11211.",
+    ".1111...11111."
+  ],
+  "bridges": [
+    {
+      "id": "7",
+      "tiles": [
+        [
+          10,
+          4
+        ],
+        [
+          11,
+          4
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          11,
+          5
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "8",
+      "tiles": [
+        [
+          5,
+          6
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          7,
+          6
+        ],
+        [
+          8,
+          6
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 11,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "7"
+      ],
+      "actions": {
+        "7": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 2,
+      "y": 4,
+      "type": "SOFT",
+      "targets": [
+        "8"
+      ],
+      "actions": {
+        "8": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": [
+    {
+      "x": 3,
+      "y": 1,
+      "target_1": [
+        2,
+        4
+      ],
+      "target_2": [
+        11,
+        1
+      ],
+      "selected": 0
+    }
+  ]
+}

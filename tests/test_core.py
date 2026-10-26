@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from bloxorz.core.constants import Direction, BlockOrientation, TileType, GameStatus
 from bloxorz.core.block import BlockState
+from bloxorz.core.block.split import SplitBlockState
 from bloxorz.core.game import Game
 from bloxorz.core.level_loader import parse_level_data, load_level_from_file
 
@@ -238,3 +239,58 @@ class TestBoardMechanics(unittest.TestCase):
         assert state3.x == 4 and state3.y == 0
         assert state3.orientation == BlockOrientation.LYING_X
         assert game.move_count == 3
+
+    def test_heavy_switch_vs_soft_switch_mechanics(self):
+        """Verifies exact Bloxorz rules for Soft (Circle) and Heavy (X) switches."""
+        board_data = {
+            "layout": [
+                "111B1",
+                "11111",
+                "11111",
+                "11111",
+            ],
+            "spawn": {"x": 1, "y": 3, "orientation": "STANDING"},
+            "bridges": [
+                {"id": "b1", "tiles": [[3, 0]], "initially_open": False}
+            ],
+            "switches": [
+                {"x": 1, "y": 0, "type": "HEAVY", "targets": ["b1"], "action": "TOGGLE"}
+            ]
+        }
+        board = parse_level_data(board_data)
+        game = Game(board)
+
+        # 1. Roll UP -> LYING_Y covering (1, 1) and (1, 0)
+        res1, state1, toggled1 = game.roll(Direction.UP)
+        assert res1 == "SAFE"
+        assert state1.orientation == BlockOrientation.LYING_Y
+        # Heavy switch must NOT trigger when block lies flat across it!
+        assert len(toggled1) == 0
+        assert board.get_tile(3, 0) == TileType.BRIDGE_CLOSED
+
+        # 2. Roll UP again -> STANDING upright directly onto (1, 0)
+        res2, state2, toggled2 = game.roll(Direction.UP)
+        assert res2 == "SAFE"
+        assert state2.orientation == BlockOrientation.STANDING
+        # Heavy switch MUST trigger when block stands upright!
+        assert "b1" in toggled2
+        assert board.get_tile(3, 0) == TileType.BRIDGE_OPEN
+
+        # 3. Test split 1x1x1 cube stepping on HEAVY switch (too light -> must NOT trigger)
+        board_h = parse_level_data(board_data)
+        game_h = Game(board_h)
+        game_h.block = SplitBlockState.from_targets((1, 1), (4, 3), selected=0)
+        res3, _, toggled3 = game_h.roll(Direction.UP)
+        assert res3 == "SAFE"
+        assert len(toggled3) == 0
+        assert board_h.get_tile(3, 0) == TileType.BRIDGE_CLOSED
+
+        # 4. Test split 1x1x1 cube stepping on SOFT switch (must trigger)
+        board_data["switches"][0]["type"] = "SOFT"
+        board_s = parse_level_data(board_data)
+        game_s = Game(board_s)
+        game_s.block = SplitBlockState.from_targets((1, 1), (4, 3), selected=0)
+        res4, _, toggled4 = game_s.roll(Direction.UP)
+        assert res4 == "SAFE"
+        assert "b1" in toggled4
+        assert board_s.get_tile(3, 0) == TileType.BRIDGE_OPEN

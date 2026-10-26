@@ -1,0 +1,104 @@
+{
+  "name": "Stage 62 - TOLLGATE",
+  "passcode": "416654",
+  "spawn": {
+    "x": 1,
+    "y": 4,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "111....111....111",
+    "1H1....1H1....1H1",
+    "111....111....111",
+    "11111111111111111",
+    "1111BB111BB11BB21",
+    "11111111111111111"
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          4
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "2",
+      "tiles": [
+        [
+          9,
+          4
+        ],
+        [
+          10,
+          4
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "3",
+      "tiles": [
+        [
+          13,
+          4
+        ],
+        [
+          14,
+          4
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 1,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 8,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "2",
+        "1"
+      ],
+      "actions": {
+        "2": "OPEN",
+        "1": "CLOSE"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 15,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "3",
+        "2"
+      ],
+      "actions": {
+        "3": "OPEN",
+        "2": "CLOSE"
+      },
+      "action": "OPEN"
+    }
+  ],
+  "teleports": []
+}

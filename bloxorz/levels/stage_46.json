@@ -1,0 +1,57 @@
+{
+  "name": "Stage 46 - ROUND TRIP",
+  "passcode": "540990",
+  "spawn": {
+    "x": 1,
+    "y": 5,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "....1111....",
+    "....1211....",
+    "....BB......",
+    "....BB......",
+    "111111111111",
+    "1111111111S1",
+    "111111111111"
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 10,
+      "y": 5,
+      "type": "SOFT",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

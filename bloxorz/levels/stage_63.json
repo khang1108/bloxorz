@@ -1,0 +1,92 @@
+{
+  "name": "Stage 63 - ARCHIPELAGO",
+  "passcode": "521383",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "1111...1111...1111",
+    "1111BBB11S1BBB1211",
+    "1111...1111...1111",
+    ".........B........",
+    ".........B........",
+    "........111.......",
+    "........1S1.......",
+    "........111......."
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "2",
+      "tiles": [
+        [
+          11,
+          1
+        ],
+        [
+          12,
+          1
+        ],
+        [
+          13,
+          1
+        ],
+        [
+          9,
+          3
+        ],
+        [
+          9,
+          4
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 9,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "2"
+      ],
+      "actions": {
+        "2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 9,
+      "y": 6,
+      "type": "SOFT",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

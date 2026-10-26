@@ -1,0 +1,92 @@
+{
+  "name": "Stage 76 - PRESSURE",
+  "passcode": "982860",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "111111331111111",
+    "11111133111H111",
+    "111111331111111",
+    "..BB........BB.",
+    "..BB........BB.",
+    "111111......111",
+    "1S1111......121",
+    "111111......111"
+  ],
+  "bridges": [
+    {
+      "id": "4",
+      "tiles": [
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "5",
+      "tiles": [
+        [
+          12,
+          3
+        ],
+        [
+          13,
+          3
+        ],
+        [
+          12,
+          4
+        ],
+        [
+          13,
+          4
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 1,
+      "y": 6,
+      "type": "SOFT",
+      "targets": [
+        "5"
+      ],
+      "actions": {
+        "5": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 11,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "4"
+      ],
+      "actions": {
+        "4": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

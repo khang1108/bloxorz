@@ -54,7 +54,7 @@ class Palette:
     GOAL_RIM = ColorToken.from_hex("#F59E0B")            # Radiant Gold Rim
     GOAL_GLOW = ColorToken.from_hex("#D97706")
     SWITCH_SOFT = ColorToken.from_hex("#38BDF8")         # Electric Cyan (Soft Touch)
-    SWITCH_HEAVY = ColorToken.from_hex("#FB7185")        # Crimson Rose (Heavy Cross)
+    SWITCH_HEAVY = ColorToken.from_hex("#EF4444")        # Vivid Crimson (Heavy 'X' Cross)
     BRIDGE_ACTIVE = ColorToken.from_hex("#334155")       # Structural Slate Bridge
     BRIDGE_INACTIVE = ColorToken.from_hex("#0F131A", 0.2)
 

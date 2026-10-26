@@ -10,6 +10,9 @@ from bloxorz.core.block import BlockState, SplitBlockState
 from bloxorz.core.board import Board
 from bloxorz.solvers.base import BaseSolver, SolverResult
 
+DFSSolverResult = SolverResult
+__all__ = ["DFSSolver", "DFSSolverResult"]
+
 
 class DFSSolver(BaseSolver):
     """Depth-First Search (DFS) solver with cycle detection via state hashing.

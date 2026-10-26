@@ -1,0 +1,64 @@
+{
+  "name": "Stage 51 - PISTON",
+  "passcode": "164635",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111..111..11111",
+    "11111BB111BB11121",
+    "11111..111..11111",
+    ".......111.......",
+    ".......1S1.......",
+    ".......111......."
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ],
+      "initially_open": true
+    },
+    {
+      "id": "2",
+      "tiles": [
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 8,
+      "y": 4,
+      "type": "SOFT",
+      "targets": [
+        "1",
+        "2"
+      ],
+      "actions": {
+        "1": "TOGGLE",
+        "2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

@@ -1,0 +1,107 @@
+{
+  "name": "Stage 66 - FLIPFLOP",
+  "passcode": "835570",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111.....11111.....11111",
+    "111S1BBBBB1S1S1BBBBB11211",
+    "11111.....11111.....11111"
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "2",
+      "tiles": [
+        [
+          15,
+          1
+        ],
+        [
+          16,
+          1
+        ],
+        [
+          17,
+          1
+        ],
+        [
+          18,
+          1
+        ],
+        [
+          19,
+          1
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 3,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 11,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 13,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "2"
+      ],
+      "actions": {
+        "2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

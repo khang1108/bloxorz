@@ -2,7 +2,7 @@
 
 import unittest
 from pathlib import Path
-from bloxorz.core.constants import BlockOrientation, TileType
+from bloxorz.core.constants import BlockOrientation, TileType, Direction
 from bloxorz.core.block import BlockState
 from bloxorz.core.board import Board
 from bloxorz.core.game import Game
@@ -66,8 +66,11 @@ class TestDFSSolver(unittest.TestCase):
         game = Game(board)
         final_outcome = None
         for move in result.moves:
-            outcome, _, _ = game.roll(move)
-            final_outcome = outcome
+            if move == "SWITCH" or move == Direction.SWITCH_CUBE:
+                game.switch_block()
+            else:
+                outcome, _, _ = game.roll(move)
+                final_outcome = outcome
 
         self.assertEqual(final_outcome, "VICTORY")
 

@@ -23,12 +23,15 @@ bloxorz_solvers/
 │   │   ├── block_view.py   # Frame-perfect delta-time rotation hierarchy
 │   │   ├── board_view.py   # Procedural tile generation and bridge animation
 │   │   └── camera_ctrl.py  # Golden-ratio isometric camera positioning
-│   ├── levels/             # Packaged stages (All 33 canonical stages: stage_01 to stage_33)
-│   │   ├── stage_01.json
-│   │   ├── ...
-│   │   └── stage_33.json
-│   ├── solvers/            # Pluggable solver architecture
-│   │   └── base.py         # BaseSolver, SolverResult, and Successor contracts
+│   ├── levels/             # Packaged stages (83 stages: stage_01 to stage_83)
+│   │   ├── stage_01.json   # 33 canonical stages (01 - 33)
+│   │   ├── ...             # 50 verified community stages (34 - 83)
+│   │   └── stage_83.json
+│   ├── solvers/            # Headless search algorithms and shared cost functions
+│   │   ├── base.py         # Solver contract and search-state helpers
+│   │   ├── costs.py        # Shared fragile-tile route preference
+│   │   ├── ucs.py          # Uniform-cost search
+│   │   └── astar.py        # A* search skeleton
 │   ├── ui/                 # Typography-driven interface system
 │   │   ├── hud.py          # Real-time move counter, status banners, hotkeys
 │   │   ├── menu.py         # Pause, stage selector, and victory overlays
@@ -36,6 +39,7 @@ bloxorz_solvers/
 │   └── main.py             # Application coordinator and runtime event loop
 ├── data/                   # Data archive and ground-truth benchmark suite
 │   ├── coolmath.json       # Canonical 33-stage dataset from Coolmath Games
+│   ├── bloxorz_3d_levels.json # 50 community stages from KrishnaKumarSoni/bloxorz-3d
 │   ├── solutions.json      # Ground-truth minimal-move solution sequences (1,999 moves total)
 │   ├── external_maps/      # 33 raw text maps from phamquiluan/BloxorzSolver
 │   └── SOURCES.md          # Upstream repository credits, schemas, and stage catalog
@@ -142,6 +146,33 @@ state = app.get_state()
 # Execute single step
 app.step(Direction.UP, on_done=lambda outcome: print("Result:", outcome))
 ```
+
+### 4. Uniform-Cost Solver
+
+UCS supports normal and split blocks, teleportation, selecting either cube, and
+merging. Each legal roll costs 1, plus 2 for fragile contact at the destination.
+For split movement, only the moving cube incurs this surcharge. Selecting another
+cube costs 0 and does not count as a roll. This is a deterministic route preference.
+
+The action list may contain `"SWITCH"`, which playback executes like Space.
+Use `result.solution_length` for the number of rolls; `len(result.moves)` also
+counts these control actions.
+
+The standard launcher registers UCS for 3D playback:
+
+```bash
+python run.py
+```
+
+Press **P** to restart the stage and animate its UCS solution. The solver does not
+accept a mid-game block position, so the controller resets the stage before solving.
+Restarting or selecting another stage cancels the previous playback. A failed search
+displays `SOLVER FOUND NO SOLUTION` instead of silently returning.
+Search rejects states that lose support after switch/teleport effects. Missing
+teleport destinations raise `ValueError`; the controller displays `SOLVER ERROR`.
+See the [UCS algorithm description](docs/algo/ucs/README.md) for the state model,
+cost function, pseudocode and correctness arguments, or the
+[UCS usage guide](docs/ucs.md) for API details, tests and integration limitations.
 
 ---
 

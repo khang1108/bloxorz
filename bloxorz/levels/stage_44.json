@@ -1,0 +1,53 @@
+{
+  "name": "Stage 44 - BUTTON",
+  "passcode": "331532",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111....1111",
+    "111S1BBBB1211",
+    "11111....1111"
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 3,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

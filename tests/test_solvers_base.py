@@ -47,7 +47,7 @@ def test_base_solver_contracts():
 
     # 4. Test state_key helper
     key = BaseSolver.get_state_key(board.spawn_state, board)
-    assert key[0] == board.spawn_state
+    assert key[0] == board.spawn_state.canonical_key()
     assert isinstance(key[1], tuple)
 
     # 5. Test is_goal helper

@@ -214,6 +214,8 @@ class BlockView(Entity):
             axis = "x"
             angle = -90.0
         else:
+            self.is_animating = False
+            self._is_cube_rolling = False
             if on_complete:
                 on_complete()
             return
@@ -540,12 +542,15 @@ class BlockView(Entity):
             if t >= 1.0:
                 self._is_teleporting = False
                 self.is_animating = False
-                if self._teleport_final_state:
-                    self.sync_to_state(self._teleport_final_state)
-                if self._on_teleport_complete:
-                    cb = self._on_teleport_complete
-                    self._on_teleport_complete = None
-                    cb()
+                # Update animation for the block when applying solver with split feature
+                final_state = self._teleport_final_state
+                on_complete = self._on_teleport_complete
+                self._teleport_final_state = None
+                self._on_teleport_complete = None
+                if final_state:
+                    self.sync_to_state(final_state)
+                if on_complete:
+                    on_complete()
 
         # Handle 1x1x1 cube edge-pivot rolling
         elif self._is_cube_rolling:

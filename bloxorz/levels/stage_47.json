@@ -1,0 +1,71 @@
+{
+  "name": "Stage 47 - DOUBLE TAP",
+  "passcode": "645719",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111..111..1111",
+    "111S1BB1S1BB1211",
+    "11111..111..1111"
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "2",
+      "tiles": [
+        [
+          10,
+          1
+        ],
+        [
+          11,
+          1
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 3,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    },
+    {
+      "x": 8,
+      "y": 1,
+      "type": "SOFT",
+      "targets": [
+        "2"
+      ],
+      "actions": {
+        "2": "TOGGLE"
+      },
+      "action": "TOGGLE"
+    }
+  ],
+  "teleports": []
+}

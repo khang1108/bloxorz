@@ -1,0 +1,17 @@
+{
+  "name": "Stage 40 - ORANGE ALERT",
+  "passcode": "812616",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "1111331111",
+    "1111331121",
+    "1111331111"
+  ],
+  "bridges": [],
+  "switches": [],
+  "teleports": []
+}

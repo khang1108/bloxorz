@@ -1,0 +1,17 @@
+{
+  "name": "Stage 39 - CAUSEWAY",
+  "passcode": "707887",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111.....11111",
+    "111111111111121",
+    "11111.....11111"
+  ],
+  "bridges": [],
+  "switches": [],
+  "teleports": []
+}

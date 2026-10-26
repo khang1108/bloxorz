@@ -1,0 +1,17 @@
+{
+  "name": "Stage 41 - THIN ICE",
+  "passcode": "917345",
+  "spawn": {
+    "x": 1,
+    "y": 1,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "11111333311111",
+    "11111333311121",
+    "11111333311111"
+  ],
+  "bridges": [],
+  "switches": [],
+  "teleports": []
+}

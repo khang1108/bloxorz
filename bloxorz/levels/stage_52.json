@@ -1,0 +1,74 @@
+{
+  "name": "Stage 52 - LOCKSTEP",
+  "passcode": "269364",
+  "spawn": {
+    "x": 1,
+    "y": 4,
+    "orientation": "STANDING"
+  },
+  "layout": [
+    "....111....111.....",
+    "....1H1....1H1.....",
+    "....111....111.....",
+    "1111111111111111111",
+    "11111111111BBBB1211",
+    "1111111111111111111"
+  ],
+  "bridges": [
+    {
+      "id": "1",
+      "tiles": [
+        [
+          11,
+          4
+        ],
+        [
+          12,
+          4
+        ]
+      ],
+      "initially_open": false
+    },
+    {
+      "id": "2",
+      "tiles": [
+        [
+          13,
+          4
+        ],
+        [
+          14,
+          4
+        ]
+      ],
+      "initially_open": false
+    }
+  ],
+  "switches": [
+    {
+      "x": 5,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "1"
+      ],
+      "actions": {
+        "1": "OPEN"
+      },
+      "action": "OPEN"
+    },
+    {
+      "x": 12,
+      "y": 1,
+      "type": "HEAVY",
+      "targets": [
+        "2"
+      ],
+      "actions": {
+        "2": "OPEN"
+      },
+      "action": "OPEN"
+    }
+  ],
+  "teleports": []
+}

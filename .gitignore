@@ -57,4 +57,5 @@ scratch/
 *.toc
 *.out
 _minted-*
+docs/report/*.pdf
 

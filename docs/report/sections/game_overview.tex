@@ -1,0 +1,115 @@
+\section{Kiến trúc Trò chơi và Mô hình Không gian Bloxorz}
+
+\subsection{Hình học Không gian và Động học Khối Chữ nhật}
+Trò chơi Bloxorz là một bài toán điều khiển chuyển động trong không gian rời rạc, nơi người chơi tương tác với một khối hình hộp chữ nhật đồng chất có kích thước $1 \times 1 \times 2$. Bàn cờ được mô hình hóa như một lưới hai chiều $\mathcal{G} \subset \mathbb{Z}^2$. Điểm đặc trưng khiến Bloxorz trở nên phức tạp hơn các bài toán tìm đường thông thường nằm ở việc khối không phải là một chất điểm; trạng thái của nó tại bất kỳ thời điểm nào phụ thuộc chặt chẽ vào tọa độ gốc và tư thế định hướng trong không gian ba chiều.
+
+Khối chữ nhật luôn tồn tại ở một trong ba tư thế cân bằng bền vững trên mặt phẳng lưới tọa độ. Ở tư thế \textit{Dựng đứng (Standing - $S$)}, khối tiếp xúc mặt sàn bằng mặt đáy vuông kích thước $1 \times 1$, chiếm duy nhất một ô tọa độ $(x, y)$ và có chiều cao là $2$ đơn vị. Khi chuyển sang tư thế \textit{Nằm ngang (Lying Horizontally - $H$)}, khối tiếp xúc mặt sàn bằng mặt bên chữ nhật $1 \times 2$ song song với trục hoành, chiếm trọn hai ô liên tiếp $\{(x, y), (x+1, y)\}$ với chiều cao $1$ đơn vị. Cuối cùng, ở tư thế \textit{Nằm dọc (Lying Vertically - $V$)}, khối trải dài trên hai ô liên tiếp $\{(x, y), (x, y+1)\}$ song song với trục tung với chiều cao $1$ đơn vị.
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabularx}{\textwidth}{l c c X}
+        \toprule
+        \textbf{Tư thế hiện tại} & \textbf{Hướng lăn} & \textbf{Tư thế kế tiếp} & \textbf{Tọa độ các ô chiếm giữ sau khi lăn} \\
+        \midrule
+        \multirow{4}{*}{\textbf{Standing} $(x, y)$} 
+            & \texttt{Right} & Lying Horizontally & $\{(x+1, y), (x+2, y)\}$ \\
+            & \texttt{Left}  & Lying Horizontally & $\{(x-2, y), (x-1, y)\}$ \\
+            & \texttt{Up}    & Lying Vertically   & $\{(x, y-2), (x, y-1)\}$ \\
+            & \texttt{Down}  & Lying Vertically   & $\{(x, y+1), (x, y+2)\}$ \\
+        \midrule
+        \multirow{4}{*}{\textbf{Lying Horizontally} $\{(x, y), (x+1, y)\}$} 
+            & \texttt{Right} & Standing & $\{(x+2, y)\}$ \\
+            & \texttt{Left}  & Standing & $\{(x-1, y)\}$ \\
+            & \texttt{Up}    & Lying Horizontally & $\{(x, y-1), (x+1, y-1)\}$ \\
+            & \texttt{Down}  & Lying Horizontally & $\{(x, y+1), (x+1, y+1)\}$ \\
+        \midrule
+        \multirow{4}{*}{\textbf{Lying Vertically} $\{(x, y), (x, y+1)\}$} 
+            & \texttt{Right} & Lying Vertically & $\{(x+1, y), (x+1, y+1)\}$ \\
+            & \texttt{Left}  & Lying Vertically & $\{(x-1, y), (x-1, y+1)\}$ \\
+            & \texttt{Up}    & Standing & $\{(x, y-1)\}$ \\
+            & \texttt{Down}  & Standing & $\{(x, y+2)\}$ \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Ma trận chuyển đổi động học tư thế và tọa độ của khối Bloxorz}
+    \label{tab:block_kinematics}
+\end{table}
+
+Khi người chơi thực hiện thao tác lăn, khối quay một góc $90^\circ$ quanh cạnh tiếp xúc dưới đáy theo một trong bốn hướng chính hướng tâm. Bảng \ref{tab:block_kinematics} biểu diễn tường minh quy luật chuyển dịch trạng thái động học. Sau mỗi bước chuyển dịch, toàn bộ các ô mà khối chiếm giữ phải nằm hoàn toàn trên các ô sàn hợp lệ. Nếu bất kỳ phần nào của khối trượt ra ngoài phạm vi bàn cờ hoặc rơi vào ô trống (\texttt{VOID}), khối lập tức mất cân bằng trọng lực và rơi xuống vực thẳm, đồng nghĩa với việc hành động đó là bất hợp lệ hoặc dẫn tới trạng thái thua cuộc. Màn chơi chỉ đạt được điều kiện chiến thắng tối hậu (\textit{Victory}) khi khối ở tư thế \textbf{Dựng đứng} lọt chính xác vào ô đích (\textit{Goal Hole}). Mọi trường hợp khối nằm đè qua ô đích đều không được công nhận là chiến thắng và khối vẫn tiếp tục di chuyển bình thường.
+
+\subsection{Cơ chế Tương tác Địa hình và Ô Nâng cao}
+Bên cạnh các ô sàn kiên cố tiêu chuẩn, độ phức tạp của bài toán Bloxorz được gia tăng thông qua hệ thống ô tương tác đa dạng, đòi hỏi thuật toán tìm kiếm phải duy trì thông tin môi trường động trong cấu trúc trạng thái.
+
+\paragraph{Gạch cam mong manh (Fragile Tiles):}
+Được cấu tạo từ vật liệu gốm xốp đất nung, gạch cam phản ánh nguyên lý phân bổ áp suất cơ học. Khi khối lăn ở tư thế nằm ngang hoặc nằm dọc, trọng lượng phân bố trên diện tích tiếp xúc $2 \times 1$, áp lực đơn vị nằm trong ngưỡng chịu tải nên sàn nâng đỡ khối an toàn. Ngược lại, khi khối chuyển sang tư thế dựng đứng trên ô gạch cam, toàn bộ tải trọng tập trung cục bộ vào diện tích $1 \times 1$. Ứng suất vượt quá độ bền vật liệu khiến ô gạch lập tức gãy sập, kéo theo khối rơi vào hư không. Cơ chế này loại bỏ hoàn toàn khả năng dựng đứng trên các ô gạch cam, định hình các nút thắt cổ chai bắt buộc khối phải duy trì tư thế nằm khi băng qua các khu vực nguy hiểm.
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabularx}{\textwidth}{l c p{0.32\textwidth} X}
+        \toprule
+        \textbf{Loại công tắc} & \textbf{Ký hiệu} & \textbf{Điều kiện kích hoạt} & \textbf{Hiệu ứng tác động lên hệ thống cầu} \\
+        \midrule
+        \textbf{Soft Switch} & Hình tròn / Bát giác & Bất kỳ phần nào của khối tiếp xúc (cả khi nằm lẫn đứng; hoặc khối đơn vị $1 \times 1 \times 1$). & Đảo trạng thái (\texttt{TOGGLE}) hoặc mở/đóng cố định các nhóm cầu liên kết. \\
+        \midrule
+        \textbf{Heavy Switch} & Chữ X & Yêu cầu tải trọng tập trung cực đại; chỉ kích hoạt khi khối \textbf{dựng đứng} đè lên. & Kích hoạt các cây cầu chịu lực; khối nằm ngang/dọc hoặc khối đơn vị nhỏ không thể kích hoạt. \\
+        \midrule
+        \textbf{Split Switch} & Dấu ngoặc nhọn \texttt{( )} & Kích hoạt khi khối lớn $1 \times 1 \times 2$ \textbf{dựng đứng} lên trên công tắc. & Dịch chuyển tức thời và phân tách khối thành hai khối lập phương đơn vị $1 \times 1 \times 1$. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Phân loại công tắc và cơ chế kích hoạt trong hệ thống Bloxorz}
+    \label{tab:switch_mechanics}
+\end{table}
+
+\paragraph{Cầu nâng và Công tắc điều khiển (Bridges and Switches):}
+Hệ thống cầu trong Bloxorz đóng vai trò như các cổng logic phân cách không gian. Một ô cầu ở trạng thái đóng (\texttt{CLOSED}) hoạt động hoàn toàn tương tự ô vực thẳm (\texttt{VOID}), ngăn cản mọi bước di chuyển qua nó. Khi được công tắc kích hoạt sang trạng thái mở (\texttt{OPEN}), ô cầu chuyển hóa thành ô sàn hợp lệ. Các loại công tắc được thiết kế với cơ chế vật lý phân tầng như mô tả chi tiết tại Bảng \ref{tab:switch_mechanics}. Hành vi của công tắc đối với từng nhóm cầu được chia làm hai loại: hành vi đảo pha (\texttt{TOGGLE}), trong đó mỗi lần đạp lên công tắc sẽ hoán đổi trạng thái cầu từ mở sang đóng hoặc ngược lại; và hành vi thiết lập cố định (\texttt{PERMANENT}), trong đó công tắc chỉ chuyển cầu sang một trạng thái duy nhất định sẵn (chỉ mở hoặc chỉ đóng).
+
+\paragraph{Cơ chế Phân thân và Hợp nhất Lập phương (Block Splitting and Merging):}
+Khi khối lớn kích hoạt công tắc phân thân, nó biến mất và xuất hiện trở lại tại hai tọa độ mục tiêu định trước dưới dạng hai khối lập phương đơn lẻ $1 \times 1 \times 1$. Trong trạng thái phân thân, không gian điều khiển bị phân rã: người chơi chỉ được phép điều khiển duy nhất một khối tại một thời điểm, trong khi khối còn lại đứng yên tại chỗ. Thao tác chuyển đổi quyền kiểm soát giữa hai khối được thực hiện độc lập thông qua phím cách (\texttt{Spacebar}). Do kích thước chỉ là $1 \times 1 \times 1$, mỗi bước lăn của khối đơn lẻ chỉ dịch chuyển đúng $1$ ô trên mặt sàn và luôn giữ nguyên hình dạng. Khối đơn lẻ đủ trọng lượng để kích hoạt các công tắc tròn mềm nhưng không thể kích hoạt công tắc nặng chữ X và không thể tự lọt vào ô đích để chiến thắng. Hai khối đơn lẻ chỉ hợp nhất trở lại thành khối chuẩn $1 \times 1 \times 2$ khi và chỉ khi chúng di chuyển đến hai vị trí kề cạnh nhau theo khoảng cách Manhattan:
+\begin{equation}
+|x_1 - x_2| + |y_1 - y_2| = 1
+\end{equation}
+Ngay khi điều kiện kề cạnh được thỏa mãn, hai khối lập tức sáp nhập thành một khối thống nhất nằm ngang hoặc nằm dọc tùy theo hướng kề nhau, khôi phục lại toàn bộ cơ chế chuyển động của khối $1 \times 1 \times 2$.
+
+\subsection{Thiết kế Kiến trúc Phần mềm và Giao diện Đồ họa 3D}
+Chương trình được thiết kế theo mô hình phân tách tầng nghiêm ngặt (\textit{Layered Architecture}), bảo đảm tính tách biệt tuyệt đối giữa nghiệp vụ luật chơi (\textit{Core Game Logic}), các giải thuật tìm kiếm (\textit{Solvers}), và tầng trình diễn đồ họa (\textit{Graphical User Interface}) như được minh họa trong Hình \ref{fig:software_architecture}.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        layer/.style={rectangle, draw=blue!60, fill=blue!5, very thick, minimum width=0.88\textwidth, minimum height=1.1cm, align=center, rounded corners=3pt},
+        arrow/.style={<->, >=stealth, thick, color=blue!70!black}
+    ]
+        \node[layer, fill=teal!10, draw=teal!70] (pres) {\textbf{Tầng Trình diễn (Presentation Layer - Ursina 3D Engine)}\\\small Render đồ họa ba chiều, Camera Isometric, Hiệu ứng âm thanh SoundFX \& Menu chọn màn chơi};
+        \node[layer, fill=blue!10, draw=blue!70, below=0.6cm of pres] (coord) {\textbf{Tầng Điều phối Ứng dụng (Application Coordinator Layer - \texttt{BloxorzApp})}\\\small Đồng bộ hóa trạng thái bàn cờ, Đa luồng giải thuật (\textit{Worker Thread}) \& Phát lại chuỗi bước đi (\textit{Playback})};
+        \node[layer, fill=purple!10, draw=purple!70, below=0.6cm of coord] (domain) {\textbf{Tầng Nghiệp vụ Lõi \& Trí tuệ Nhân tạo (Core Game Logic \& AI Solvers)}\\\small \textbf{Solvers:} BFS, DFS/IDS, UCS, A* Search $\quad\Longleftrightarrow\quad$ \textbf{Domain:} \texttt{Board}, \texttt{BlockState}, \texttt{SearchNode}};
+        
+        \draw[arrow] (pres) -- node[right, font=\footnotesize] {Dispatch sự kiện / Render Loop} (coord);
+        \draw[arrow] (coord) -- node[right, font=\footnotesize] {Kích hoạt giải thuật / Truyền nghiệm} (domain);
+    \end{tikzpicture}
+    \caption{Sơ đồ kiến trúc phân tầng module của hệ thống Bloxorz Solver}
+    \label{fig:software_architecture}
+\end{figure}
+
+Giao diện đồ họa được hiện thực bằng thư viện Ursina trên nền tảng Panda3D, tận dụng hiệu năng đồ họa tăng tốc phần cứng. Hệ thống camera đẳng cự (\textit{Isometric}) được tinh chỉnh theo góc vàng giúp người quan sát toàn cảnh chiều sâu của bàn cờ và tư thế khối một cách trực quan như thể hiện trong Hình \ref{fig:gui_gameplay}. Hệ thống âm thanh SoundFX đồng bộ chặt chẽ với từng tương tác vật lý: tiếng lăn đầm chắc trên nền đá, tiếng cọt kẹt khi gạch cam gãy sập, tiếng va chạm kim loại khi bấm công tắc, và giai điệu hoàn thành màn chơi. Đặc biệt, bảng điều khiển HUD tích hợp trực tiếp menu chọn màn chơi với cơ chế phân trang khoa học như minh họa tại Hình \ref{fig:gui_menu}, quản trị toàn bộ danh mục 83 màn chơi phong phú từ các màn kinh điển đến các màn câu đố nâng cao.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/gameplay_bridge.png}
+        \caption{Phối cảnh 3D mô phỏng bàn cờ với cầu và công tắc}
+        \label{fig:gui_gameplay}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/menu_stages.png}
+        \caption{Giao diện chọn màn chơi tích hợp phân trang 83 màn}
+        \label{fig:gui_menu}
+    \end{subfigure}
+    \caption{Giao diện tương tác người dùng ba chiều được xây dựng trên thư viện Ursina}
+    \label{fig:gui_overview}
+\end{figure}

@@ -1,0 +1,30 @@
+\section{Bảng phân công nhiệm vụ và kế hoạch dự án}
+
+Đồ án được triển khai theo mô hình cộng tác kỹ thuật phần mềm chuẩn mực, sử dụng hệ thống quản trị mã nguồn Git với chiến lược phân nhánh chức năng (\textit{Feature Branching}) và quy trình đánh giá chéo (\textit{Peer Code Review}). Các nhiệm vụ từ nghiên cứu lý thuyết không gian trạng thái, hiện thực giải thuật tìm kiếm, xây dựng engine động học đến thiết kế giao diện đồ họa 3D được phân bổ đồng đều giữa ba thành viên nhằm tối ưu hóa thế mạnh chuyên môn của từng cá nhân. Bảng \ref{tab:contribution} tổng hợp chi tiết phạm vi công việc và mức độ hoàn thành của các thành viên trong nhóm đối với Đồ án 1 - Bloxorz Solver.
+
+\begin{table}[H]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{l p{0.22\textwidth} X c}
+        \toprule
+        \textbf{Họ và tên} & \textbf{MSSV \& Vai trò} & \textbf{Nhiệm vụ đảm nhiệm và Kết quả đóng góp} & \textbf{Đóng góp} \\
+        \midrule
+        Nguyễn Phúc Khang & 24120068 \newline (Nhóm trưởng)
+            & Thiết kế kiến trúc tổng thể hệ thống và cấu trúc dữ liệu nút tìm kiếm bất biến \texttt{SearchNode}. Hiện thực giải thuật Chi phí Đồng nhất (UCS) với hàm chi phí phi đồng nhất \texttt{fragile\_cost} và giải thuật A* Search; xây dựng chứng minh toán học cho tính chất chấp nhận được (\textit{Admissible}) của hàm Heuristic $h(n)$. Thiết lập khung kiểm thử tự động (\textit{Unit Tests}) với độ bao phủ cao, tích hợp kho dữ liệu 83 màn chơi và chịu trách nhiệm tổng hợp, biên tập toàn bộ tài liệu báo cáo.
+            & 100\% \\
+        \midrule
+        Hoàng Trọng Nghĩa & 24120103 \newline (Thành viên)
+            & Hiện thực giải thuật Tìm kiếm theo Chiều rộng (BFS) và Tìm kiếm Sâu dần (IDS) kết hợp cơ chế kiểm soát chu trình đồ thị (\textit{Cycle Detection}). Tối ưu hóa cấu trúc hàng đợi trạng thái và tập khóa băm nhằm hạn chế tối đa chi phí cấp phát bộ nhớ. Xây dựng kịch bản kiểm thử thuật toán, tham gia đo đạc các chỉ số thực nghiệm và soạn thảo nội dung báo cáo thuộc phần lý thuyết BFS, DFS/IDS.
+            & 100\% \\
+        \midrule
+        Phạm Minh Trọng & 24120151 \newline (Thành viên)
+            & Hiện thực lõi động học trò chơi (Core Game Engine) mô phỏng chính xác quy tắc lăn khối ba chiều, xử lý va chạm và các ô nâng cao (gạch cam mong manh, hệ thống cầu đa trạng thái, ba nhóm công tắc và cơ chế phân thân). Phát triển giao diện đồ họa 3D trên nền tảng Ursina, hệ thống camera đẳng cự, âm thanh SoundFX và bảng chọn màn chơi phân trang. Thu thập dữ liệu thực nghiệm và thực hiện video demo trình diễn sản phẩm.
+            & 100\% \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Bảng phân công nhiệm vụ và mức độ hoàn thành của các thành viên trong nhóm}
+    \label{tab:contribution}
+\end{table}
+
+Quá trình phối hợp nhóm được duy trì liên tục qua các buổi thảo luận kỹ thuật định kỳ. Mọi thành phần mã nguồn trước khi tích hợp vào nhánh chính (\texttt{main}) đều phải vượt qua toàn bộ 167 bài kiểm thử tự động, bảo đảm tính toàn vẹn chức năng và sự đồng nhất giữa mô hình toán học lý thuyết và phần mềm thực thi.

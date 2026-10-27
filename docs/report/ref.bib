@@ -1,0 +1,167 @@
+% Checked against available primary/official sources on 2026-10-16.
+% Plain BibTeX compatible: online links are included in note/howpublished,
+% because common .bst files may ignore 'url' and 'doi' fields.
+% Requires \usepackage{url} or \usepackage{hyperref}.
+
+@book{remzi2018ostep,
+  author    = {Arpaci-Dusseau, Remzi H. and Arpaci-Dusseau, Andrea C.},
+  title     = {Operating Systems: Three Easy Pieces},
+  publisher = {Arpaci-Dusseau Books},
+  year      = {2018},
+  note      = {Version 1.00 (August 2018). Free PDF: \url{https://pages.cs.wisc.edu/~remzi/OSTEP/}}
+}
+
+@manual{xv6book,
+  author = {Cox, Russ and Kaashoek, Frans and Morris, Robert},
+  title  = {{xv6}: A Simple, Unix-like Teaching Operating System},
+  year   = {2024},
+  note   = {RISC-V edition, revision 4 (August 31, 2024). \url{https://pdos.csail.mit.edu/6.828/2024/xv6/book-riscv-rev4.pdf}}
+}
+
+% Replaces unverified 'mcilroy1968coroutines': the underlying idea
+% dates to 1968, but this freely available RETROSPECTIVE was revised in 2022.
+@misc{mcilroy2022sieve,
+  author       = {McIlroy, M. Douglas},
+  title        = {Coroutine Prime Number Sieve},
+  year         = {2022},
+  howpublished = {Online essay, \url{https://www.cs.dartmouth.edu/doug/sieve/sieve.pdf}},
+  note         = {Recounts a 1968 Cambridge Computing Laboratory talk; last revised November 2022}
+}
+
+@article{mcilroy1978unix,
+  author  = {McIlroy, M. Douglas and Pinson, Elliot N. and Tague, Berkley A.},
+  title   = {{UNIX} Time-Sharing System: Foreword},
+  journal = {The Bell System Technical Journal},
+  volume  = {57},
+  number  = {6},
+  pages   = {1899--1904},
+  year    = {1978},
+  doi     = {10.1002/j.1538-7305.1978.tb02135.x},
+  note    = {Full text: \url{https://www.nokia.com/bell-labs/publications-and-media/publications/unix-time-sharing-system-forward/}}
+}
+
+@article{hoare1978csp,
+  author    = {Hoare, C. A. R.},
+  title     = {Communicating Sequential Processes},
+  journal   = {Communications of the ACM},
+  volume    = {21},
+  number    = {8},
+  pages     = {666--677},
+  year      = {1978},
+  publisher = {Association for Computing Machinery},
+  doi       = {10.1145/359576.359585},
+  note      = {\url{https://doi.org/10.1145/359576.359585}}
+}
+
+% Note: the 1996 date in the original key is the copyright START date,
+% not the edition year of this current manual.
+@manual{baker2026tree,
+  author       = {Baker, Steve},
+  title        = {{tree(1)}: List Contents of Directories in a Tree-like Format},
+  year         = {2026},
+  organization = {Tree Project},
+  note         = {Version 2.3.2 manual page. \url{https://oldmanprogrammer.net/source.php?dir=projects%2Ftree%2Fdoc%2F%2Ftree.1}}
+}
+
+@manual{posix2018diff,
+  author       = {{IEEE} and {The Open Group}},
+  title        = {{diff}: Compare Two Files},
+  organization = {The Open Group Base Specifications},
+  edition      = {Issue 7, 2018 Edition},
+  year         = {2018},
+  note         = {IEEE Std 1003.1-2017. \url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/diff.html}}
+}
+
+@techreport{hunt1976algorithm,
+  author      = {Hunt, James W. and McIlroy, M. Douglas},
+  title       = {An Algorithm for Differential File Comparison},
+  institution = {Bell Laboratories},
+  type        = {Computing Science Technical Report},
+  number      = {41},
+  month       = jul,
+  year        = {1976},
+  note        = {Author-hosted copy: \url{https://www.cs.dartmouth.edu/~doug/diff.pdf}}
+}
+
+@manual{posix2018du,
+  author       = {{IEEE} and {The Open Group}},
+  title        = {{du}: Estimate File Space Usage},
+  organization = {The Open Group Base Specifications},
+  edition      = {Issue 7, 2018 Edition},
+  year         = {2018},
+  note         = {IEEE Std 1003.1-2017. \url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/du.html}}
+}
+
+@manual{posix2018cp,
+  author       = {{IEEE} and {The Open Group}},
+  title        = {{cp}: Copy Files},
+  organization = {The Open Group Base Specifications},
+  edition      = {Issue 7, 2018 Edition},
+  year         = {2018},
+  note         = {IEEE Std 1003.1-2017. \url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/cp.html}}
+}
+
+@misc{mitxv6util2024,
+  author       = {{MIT CSAIL PDOS Group}},
+  title        = {Lab: {xv6} and {Unix} Utilities},
+  year         = {2024},
+  howpublished = {MIT 6.1810: Operating System Engineering, \url{https://pdos.csail.mit.edu/6.1810/2024/labs/util.html}},
+  note         = {Section: primes; accessed 2026-10-16}
+}
+
+@misc{xv6param,
+  author       = {{MIT PDOS}},
+  title        = {{xv6-riscv} Source Code: {kernel/param.h}},
+  howpublished = {GitHub repository, \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/param.h}},
+  note         = {Defines NPROC, NOFILE, and MAXPATH; branch riscv; accessed 2026-10-16}
+}
+
+@misc{xv6fs,
+  author       = {{MIT PDOS}},
+  title        = {{xv6-riscv} Source Code: {kernel/fs.h}},
+  howpublished = {GitHub repository, \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/fs.h}},
+  note         = {Defines DIRSIZ and struct dirent; branch riscv; accessed 2026-10-16}
+}
+
+@misc{xv6pipe,
+  author       = {{MIT PDOS}},
+  title        = {{xv6-riscv} Source Code: {kernel/pipe.c}},
+  howpublished = {GitHub repository, \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/pipe.c}},
+  note         = {Implements pipe read, write, and close; branch riscv; accessed 2026-10-16}
+}
+
+@manual{gnudiffmanual,
+  title        = {{GNU Diffutils Manual}: Summarizing Which Files Differ},
+  author       = {{Free Software Foundation}},
+  organization = {{GNU Project}},
+  url          = {https://www.gnu.org/software/diffutils/manual/html_node/Brief.html},
+  note         = {Section 1.6, option -q / --brief; accessed 2026-10-16}
+}
+
+
+@misc{xv6proc,
+  author       = {{MIT PDOS}},
+  title        = {{xv6-riscv} Source Code: {kernel/proc.c}},
+  howpublished = {GitHub repository,
+    \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/proc.c}},
+  note         = {Process exit, reparenting, and wait;
+                  branch riscv; accessed 2026-10-16}
+}
+
+@misc{xv6sysfile,
+  author       = {{MIT PDOS}},
+  title        = {{xv6-riscv} Source Code: {kernel/sysfile.c}},
+  howpublished = {GitHub repository,
+    \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/sysfile.c}},
+  note         = {Open system call and O\_TRUNC behavior;
+                  branch riscv; accessed 2026-10-16}
+}
+
+@misc{xv6file,
+  author       = {{MIT PDOS}},
+  title        = {{xv6-riscv} Source Code: {kernel/file.c}},
+  howpublished = {GitHub repository,
+    \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/file.c}},
+  note         = {File descriptor layer and filewrite;
+                  branch riscv; accessed 2026-10-16}
+}

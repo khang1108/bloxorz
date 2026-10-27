@@ -1,0 +1,44 @@
+\section{Tổng kết và Đánh giá Dự án}
+
+\subsection{Tổng kết Kết quả Đạt được}
+Đồ án đã hoàn thành toàn diện tất cả các yêu cầu kỹ thuật và học thuật đặt ra cho bài toán xây dựng và giải đố tự động trò chơi Bloxorz. 
+
+Về mặt mô hình hóa và cơ chế trò chơi, hệ thống đã hiện thực thành công một Game Engine hoàn chỉnh mô phỏng chính xác các tương tác vật lý trong không gian ba chiều. Toàn bộ các cơ chế phức tạp từ gạch cam mong manh, hệ thống cầu đa trạng thái, ba nhóm công tắc cơ học (công tắc tròn mềm, công tắc chữ X chịu lực và công tắc phân thân) đến logic sáp nhập hình học đều được kiểm chứng chặt chẽ qua bộ 167 bài kiểm thử tự động.
+
+Về mặt giao diện và trải nghiệm người dùng, đồ án tích hợp giao diện đồ họa đẳng cự trực quan trên nền tảng Ursina Engine. Hệ thống hỗ trợ bảng điều khiển HUD trực quan, camera mượt mà, hiệu ứng âm thanh đồng bộ tương tác và menu phân trang quản trị trọn vẹn danh mục 83 màn chơi.
+
+Về mặt giải thuật trí tuệ nhân tạo, nhóm đã hiện thực bài bản và chuẩn hóa bộ bốn thuật toán tìm kiếm cốt lõi gồm BFS, DFS/IDS, UCS và A* Search. Cấu trúc nút tìm kiếm bất biến \texttt{SearchNode} theo mô hình liên kết ngược đã tối ưu hóa triệt để tài nguyên bộ nhớ, loại trừ rò rỉ tham chiếu và cho phép truy vết lời giải trong thời gian tuyến tính. Đặc biệt, hàm chi phí phi đồng nhất \texttt{fragile\_cost} và hàm Heuristic $h(n)$ được thiết kế sáng tạo và chứng minh toán học nghiêm ngặt về tính chất chấp nhận được (\textit{Admissible}), bảo đảm tính tối ưu toàn cục của giải thuật A*.
+
+\subsection{Ưu điểm, Hạn chế và Hướng Phát triển}
+\paragraph{Ưu điểm nổi bật:}
+Hệ thống thể hiện tính module hóa cao độ (\textit{High Modularity}) thông qua việc phân tách rành mạch giữa mô hình dữ liệu lõi (\texttt{Board}, \texttt{BlockState}), hợp đồng giải thuật (\texttt{BaseSolver}, \texttt{SearchNode}) và giao diện điều khiển. Bộ kiểm thử tự động (\textit{Unit Tests}) với độ bao phủ cao giúp hệ thống vận hành ổn định, không phát sinh lỗi ngoại lệ trong suốt quá trình chạy nghiệm thử. Hàm chi phí phi đồng nhất \texttt{fragile\_cost} và hàm Heuristic $h(n)$ được chứng minh toán học chặt chẽ, bảo đảm tính Admissible và tìm ra nghiệm tối ưu.
+
+\paragraph{Hạn chế và Hướng mở rộng:}
+Đối với các màn chơi có quy mô bản đồ khổng lồ kết hợp nhiều công tắc phân thân và ma trận cầu đan xen (tiêu biểu từ Stage 70 đến Stage 83), không gian trạng thái mở rộng bùng nổ theo cấp số nhân khiến thời gian tìm kiếm của BFS và UCS gia tăng đáng kể. 
+
+Trong tương lai, hệ thống có thể được nâng cấp thông qua hai hướng tiếp cận tiên tiến:
+Thứ nhất, tích hợp kỹ thuật cơ sở dữ liệu mẫu (\textit{Pattern Databases}) và \textit{Landmark Heuristics}. Bằng cách tính toán trước khoảng cách đường đi thực tế trên bề mặt sàn thông qua phép loang ngược BFS từ ô đích, giải thuật sẽ sở hữu hàm Heuristic sắc bén hơn, phản ánh chính xác các vật cản địa hình thay vì chỉ đo khoảng cách Manhattan đường chim bay.
+Thứ hai, triển khai giải thuật Tìm kiếm Hai chiều (\textit{Bidirectional Search}) nhằm tiến hành duyệt đồng thời từ điểm xuất phát và ô đích. Kỹ thuật này cho phép giảm độ sâu tìm kiếm từ $d$ xuống $d/2$, thu hẹp độ phức tạp không gian và thời gian từ $O(b^d)$ xuống $O(b^{d/2})$, qua đó nâng cao đáng kể tốc độ giải các màn chơi quy mô lớn.
+
+\subsection{Liên kết Trình diễn Sản phẩm (YouTube Demo Video)}
+Toàn bộ quy trình trải nghiệm trò chơi và thực thi giải thuật tự động đã được ghi hình và phát hành công khai:
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|p{0.9\textwidth}|}
+        \hline
+        \centering
+        \textbf{ĐƯỜNG DẪN VIDEO DEMO TRÊN YOUTUBE} \\[0.3em]
+        \url{https://www.youtube.com/watch?v=your_video_id_here} \\[0.3em]
+        \textit{(Video bao gồm thuyết minh chi tiết về giao diện 3D, các tính năng tương tác người chơi và minh họa quá trình tự động giải quyết các màn chơi của 4 thuật toán BFS, DFS, UCS, A*)} \\
+        \hline
+    \end{tabular}
+    \caption{Thông tin liên kết video thuyết minh và trình diễn đồ án}
+    \label{tab:video_demo}
+\end{table}
+
+\section*{Phụ lục: Tuyên bố Sử dụng Công cụ Trí tuệ Nhân tạo (AI Declaration)}
+Tuân thủ quy chế liêm chính học thuật của môn học, nhóm công khai việc sử dụng các mô hình ngôn ngữ lớn (Large Language Models) với vai trò trợ lý hỗ trợ lập trình (Pair Programming Assistant).
+
+Công cụ được ứng dụng giới hạn trong phạm vi tra cứu cú pháp đồ họa 3D Ursina, rà soát lỗi kiểm thử tự động (\textit{Unit Tests}) và định dạng bảng biểu báo cáo khoa học theo chuẩn \LaTeX. Toàn bộ các thuật toán tìm kiếm (BFS, DFS/IDS, UCS, A*), mô hình hóa toán học không gian trạng thái, thiết kế hàm chi phí phi đồng nhất và các chứng minh lý thuyết Heuristic đều do nhóm sinh viên trực tiếp tư duy thiết kế, kiểm chứng và chịu trách nhiệm học thuật hoàn toàn.

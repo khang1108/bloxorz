@@ -20,11 +20,12 @@ def test_solver_registry_completeness():
 
     from bloxorz.solvers.ucs import UCSSolver
     from bloxorz.solvers.dfs import DFSSolver
+    from bloxorz.solvers.astar import AstarSolver
 
     assert isinstance(get_solver("BFS"), BFSSolver)
     assert isinstance(get_solver("DFS"), DFSSolver)
     assert isinstance(get_solver("UCS"), UCSSolver)
-    assert get_solver("A*") is None
+    assert isinstance(get_solver("A*"), AstarSolver)
 
 
 def test_solver_widget_initial_state():
@@ -144,16 +145,13 @@ def test_app_set_active_solver_integration():
     app.hud = MagicMock()
 
     from bloxorz.solvers.dfs import DFSSolver
+    from bloxorz.solvers.astar import AstarSolver
 
-    # Selecting A* (coming soon)
+    # Selecting A*
     app.set_active_solver("A*")
     assert app.active_solver_name == "A*"
-    assert app.registered_solver is None
+    assert isinstance(app.registered_solver, AstarSolver)
     app.solver_widget.select_algorithm.assert_called_with("A*")
-
-    # Triggering solver on coming soon algorithm displays coming soon banner
-    app.trigger_solver()
-    app.hud.show_banner.assert_called_with("A*: COMING SOON", duration=1.5)
 
     # Selecting DFS
     app.set_active_solver("DFS")

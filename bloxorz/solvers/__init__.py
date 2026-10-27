@@ -12,7 +12,7 @@ SOLVER_REGISTRY: Dict[str, Optional[Type[BaseSolver]]] = {
     "BFS": BFSSolver,
     "DFS": DFSSolver,
     "UCS": UCSSolver,
-    "A*": None,  # Coming soon
+    "A*": AstarSolver,
 }
 
 

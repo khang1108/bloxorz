@@ -5,7 +5,7 @@ from enum import Enum, auto
 from typing import Dict, List, Tuple, Optional
 from bloxorz.core.constants import TileType, BlockOrientation
 from bloxorz.core.block.base import BaseBlockState
-from bloxorz.core.block import BlockState
+from bloxorz.core.block.normal import NormalBlockState
 
 
 class SwitchAction(Enum):
@@ -64,16 +64,17 @@ class Board:
         self,
         tiles: Dict[Tuple[int, int], TileType],
         goal_pos: Tuple[int, int],
-        spawn_state: BlockState,
+        spawn_state: NormalBlockState,
         switches: Optional[List[Switch]] = None,
         bridges: Optional[Dict[str, BridgeGroup]] = None,
         teleports: Optional[Dict[Tuple[int, int], Teleport]] = None,
         level_name: str = "Level",
+        auto_reset: bool = True,
     ):
         self.base_tiles: Dict[Tuple[int, int], TileType] = dict(tiles)
         self.current_tiles: Dict[Tuple[int, int], TileType] = dict(tiles)
         self.goal_pos: Tuple[int, int] = goal_pos
-        self.spawn_state: BlockState = spawn_state
+        self.spawn_state: NormalBlockState = spawn_state
         self.level_name: str = level_name
 
         self.switches: Dict[Tuple[int, int], Switch] = {
@@ -92,7 +93,8 @@ class Board:
         else:
             self.min_x = self.max_x = self.min_y = self.max_y = 0
 
-        self.reset()
+        if auto_reset:
+            self.reset()
 
     @property
     def center_2d(self) -> Tuple[float, float]:
@@ -144,6 +146,7 @@ class Board:
             bridges=None,
             teleports=cloned_teleports,
             level_name=self.level_name,
+            auto_reset=False,
         )
         new_board.bridges = cloned_bridges
         new_board.current_tiles = dict(self.current_tiles)
@@ -261,3 +264,16 @@ class Board:
                         modified_bridges.append(bridge_id)
 
         return modified_bridges
+
+    def trigger_teleport(self, block: BaseBlockState) -> BaseBlockState:
+        """Splits and teleports the block if standing upright on a teleport switch."""
+        if not getattr(block, "is_split", False) and getattr(block, "orientation", None) == BlockOrientation.STANDING:
+            teleport = self.teleports.get((block.x, block.y))
+            if teleport:
+                from bloxorz.core.block.split import SplitBlockState
+                return SplitBlockState.from_targets(
+                    teleport.target_1,
+                    teleport.target_2,
+                    teleport.selected,
+                )
+        return block

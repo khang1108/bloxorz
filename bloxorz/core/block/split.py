@@ -1,7 +1,7 @@
 """Split block state representation for dual 1x1x1 cubes created by teleport tiles."""
 
 from dataclasses import dataclass
-from typing import Set, Tuple, Optional
+from typing import Set, Tuple, Optional, Any
 from bloxorz.core.constants import Direction, BlockOrientation
 from bloxorz.core.block.base import BaseBlockState
 from bloxorz.core.block.normal import NormalBlockState
@@ -40,6 +40,43 @@ class SplitBlockState(BaseBlockState):
     b2: SingleBlock
     active_index: int = 0  # 0 for b1 active, 1 for b2 active
 
+    def __init__(
+        self,
+        b1: Optional[Any] = None,
+        b2: Optional[Any] = None,
+        active_index: int = 0,
+        cube1: Optional[Tuple[int, int]] = None,
+        cube2: Optional[Tuple[int, int]] = None,
+        active_cube: Optional[int] = None,
+    ):
+        actual_b1 = cube1 if cube1 is not None else b1
+        actual_b2 = cube2 if cube2 is not None else b2
+        actual_idx = active_cube if active_cube is not None else active_index
+
+        if isinstance(actual_b1, (tuple, list)):
+            actual_b1 = SingleBlock(actual_b1[0], actual_b1[1])
+        if isinstance(actual_b2, (tuple, list)):
+            actual_b2 = SingleBlock(actual_b2[0], actual_b2[1])
+
+        object.__setattr__(self, "b1", actual_b1)
+        object.__setattr__(self, "b2", actual_b2)
+        object.__setattr__(self, "active_index", actual_idx)
+
+    @property
+    def cube1(self) -> Tuple[int, int]:
+        """Returns 2D tuple (x, y) of b1."""
+        return (self.b1.x, self.b1.y)
+
+    @property
+    def cube2(self) -> Tuple[int, int]:
+        """Returns 2D tuple (x, y) of b2."""
+        return (self.b2.x, self.b2.y)
+
+    @property
+    def active_cube(self) -> int:
+        """Returns the active cube index (alias for active_index)."""
+        return self.active_index
+
     @property
     def is_split(self) -> bool:
         """Indicates whether the block is split into separate cubes (always True for SplitBlockState)."""
@@ -56,6 +93,16 @@ class SplitBlockState(BaseBlockState):
         return self.b2 if self.active_index == 0 else self.b1
 
     @property
+    def active_coord(self) -> Tuple[int, int]:
+        """Returns 2D (x, y) coordinates of the active cube."""
+        return (self.active_block.x, self.active_block.y)
+
+    @property
+    def inactive_coord(self) -> Tuple[int, int]:
+        """Returns 2D (x, y) coordinates of the inactive cube."""
+        return (self.passive_block.x, self.passive_block.y)
+
+    @property
     def occupied_cells(self) -> Set[Tuple[int, int]]:
         """Returns the set of grid cells occupied by both cubes."""
         return {(self.b1.x, self.b1.y), (self.b2.x, self.b2.y)}
@@ -68,9 +115,15 @@ class SplitBlockState(BaseBlockState):
         """Returns (1.0, 1.0, 1.0) for the active 1x1x1 cube."""
         return self.active_block.get_dimensions_3d()
 
-    def roll(self, direction: Direction) -> "SplitBlockState":
+    def roll(self, direction: Direction) -> BaseBlockState:
         """Polymorphic alias for move_active to conform to BaseBlockState."""
-        return self.move_active(direction)
+        if direction == Direction.SWITCH_CUBE:
+            return self.switch_active()
+        next_state = self.move_active(direction)
+        merged = next_state.check_merge()
+        if merged is not None:
+            return merged
+        return next_state
 
     def move_active(self, direction: Direction) -> "SplitBlockState":
         """Moves the currently active 1x1x1 cube one cell in the given direction."""

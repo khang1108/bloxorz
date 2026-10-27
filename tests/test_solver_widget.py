@@ -12,17 +12,19 @@ from bloxorz.main import BloxorzApp
 
 
 def test_solver_registry_completeness():
-    """Verifies that BFS is implemented and DFS/UCS are marked as coming soon."""
+    """Verifies that BFS, DFS, and UCS are implemented and A* is marked as coming soon."""
     assert "BFS" in SOLVER_REGISTRY
     assert "DFS" in SOLVER_REGISTRY
     assert "UCS" in SOLVER_REGISTRY
     assert "A*" in SOLVER_REGISTRY
 
     from bloxorz.solvers.ucs import UCSSolver
+    from bloxorz.solvers.dfs import DFSSolver
 
     assert isinstance(get_solver("BFS"), BFSSolver)
-    assert get_solver("DFS") is None
+    assert isinstance(get_solver("DFS"), DFSSolver)
     assert isinstance(get_solver("UCS"), UCSSolver)
+    assert get_solver("A*") is None
 
 
 def test_solver_widget_initial_state():
@@ -141,15 +143,22 @@ def test_app_set_active_solver_integration():
     app._is_playing_solution = False
     app.hud = MagicMock()
 
-    # Selecting DFS (coming soon)
-    app.set_active_solver("DFS")
-    assert app.active_solver_name == "DFS"
+    from bloxorz.solvers.dfs import DFSSolver
+
+    # Selecting A* (coming soon)
+    app.set_active_solver("A*")
+    assert app.active_solver_name == "A*"
     assert app.registered_solver is None
-    app.solver_widget.select_algorithm.assert_called_with("DFS")
+    app.solver_widget.select_algorithm.assert_called_with("A*")
 
     # Triggering solver on coming soon algorithm displays coming soon banner
     app.trigger_solver()
-    app.hud.show_banner.assert_called_with("DFS: COMING SOON", duration=1.5)
+    app.hud.show_banner.assert_called_with("A*: COMING SOON", duration=1.5)
+
+    # Selecting DFS
+    app.set_active_solver("DFS")
+    assert app.active_solver_name == "DFS"
+    assert isinstance(app.registered_solver, DFSSolver)
 
     # Selecting BFS
     app.set_active_solver("BFS")

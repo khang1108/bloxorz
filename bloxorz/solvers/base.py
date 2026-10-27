@@ -1,12 +1,13 @@
 """Abstract base class and data contracts for Bloxorz puzzle solvers."""
 
 import time
+import tracemalloc
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, Literal, Optional, Tuple, Union
+from typing import Any, List, Literal, Optional, Tuple, Union
 
 from bloxorz.core.constants import Direction
-from bloxorz.core.block import BaseBlockState
+from bloxorz.core.block import BaseBlockState, BlockState
 from bloxorz.core.board import Board
 from bloxorz.core.game import Game
 
@@ -27,6 +28,7 @@ class SolverResult:
     message: str = ""
     expanded_nodes: int = 0
     solution_cost: Optional[float] = None
+    peak_memory_kb: float = 0.0
 
     @property
     def solution_length(self) -> int:
@@ -40,10 +42,11 @@ class SolverResult:
         return (
             f"[{status}] Moves: {self.solution_length} | "
             f"Cost: {cost} | "
-            f"Visited States: {self.visited_count} | "
-            f"Expanded Nodes: {self.expanded_nodes} | "
+            f"Visited: {self.visited_count} | "
+            f"Expanded: {self.expanded_nodes} | "
             f"Depth: {self.max_depth} | "
-            f"Time: {self.execution_time_ms:.2f} ms"
+            f"Time: {self.execution_time_ms:.2f} ms | "
+            f"Peak Mem: {self.peak_memory_kb:.2f} KB"
         )
 
 
@@ -102,11 +105,14 @@ class BaseSolver(ABC):
         Canonical block keys remove equivalent cube labels while preserving which
         cube is active. Bridge configurations remain part of the state identity.
         """
-        return (block.canonical_key(), board.get_bridge_state_key())
+        block_key = block.canonical_key() if hasattr(block, "canonical_key") else block
+        return (block_key, board.get_bridge_state_key())
 
     @staticmethod
     def is_goal(block: BaseBlockState, board: Board) -> bool:
         """Determines if the block is standing upright on the goal hole."""
+        if getattr(block, "is_split", False):
+            return False
         outcome, _ = board.evaluate_block_state(block)
         return outcome == "VICTORY"
 
@@ -147,10 +153,16 @@ class BaseSolver(ABC):
 
     def solve(self, board: Board) -> SolverResult:
         """Template execution method with automatic performance benchmarking."""
+        tracemalloc.start()
         start_time = time.perf_counter()
         result = self.search(board)
         elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+        _, peak_bytes = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
         result.execution_time_ms = elapsed_ms
+        if result.peak_memory_kb <= 0.0:
+            result.peak_memory_kb = peak_bytes / 1024.0
         return result
 
     @abstractmethod

@@ -62,7 +62,16 @@ class Game:
         # Snapshot for undo BEFORE applying the move
         pre_move_snapshot = self.snapshot_state()
 
+        # Handle switch cube direction from AI solver
+        if direction == Direction.SWITCH_CUBE:
+            if getattr(self.block, "is_split", False):
+                self.history.append(pre_move_snapshot)
+                self.block = self.block.switch_active()
+                return ("SAFE", self.block, None)
+            return ("IGNORED", self.block, None)
+
         # Compute new geometric state
+        prev_is_split = getattr(self.block, "is_split", False)
         next_block = self.block.roll(direction)
 
         # Evaluate against board
@@ -75,8 +84,13 @@ class Game:
             toggled_bridges = self.board.trigger_switches(next_block)
 
             # Check if dual cubes re-merge
-            if getattr(next_block, "is_split", False):
-                merged = next_block.check_merge()
+            if prev_is_split:
+                merged = None
+                if not getattr(next_block, "is_split", False):
+                    merged = next_block
+                elif hasattr(next_block, "check_merge"):
+                    merged = next_block.check_merge()
+
                 if merged is not None:
                     self.block = merged
                     merged_bridges = self.board.trigger_switches(merged)

@@ -288,7 +288,7 @@ class BloxorzApp:
             return
 
         algo = getattr(self, "active_solver_name", "")
-        if algo in ("DFS", "A*"):
+        if algo in ("A*",):
             self.hud.show_banner(f"{algo}: COMING SOON", duration=1.5)
             if getattr(self, "solver_widget", None):
                 self.solver_widget.set_running_state(False)
@@ -362,7 +362,7 @@ class BloxorzApp:
         self._solution_idx += 1
         current_generation = self._solution_generation
 
-        if next_dir is None or next_dir == SWITCH_ACTION or next_dir == "_":
+        if next_dir is None or next_dir == SWITCH_ACTION or next_dir == Direction.SWITCH_CUBE or next_dir == "_":
             if getattr(self.game.block, "is_split", False):
                 self.game.switch_block()
                 self.sound_mgr.play("switch")

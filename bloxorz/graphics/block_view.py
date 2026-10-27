@@ -214,6 +214,8 @@ class BlockView(Entity):
             axis = "x"
             angle = -90.0
         else:
+            self.is_animating = False
+            self._is_cube_rolling = False
             if on_complete:
                 on_complete()
             return

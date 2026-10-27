@@ -3,15 +3,16 @@
 from typing import Dict, Optional, Type
 from bloxorz.solvers.base import BaseSolver, SearchNode, SolverAction, SolverResult, StateKey, Successor, SWITCH_ACTION
 from bloxorz.solvers.bfs import BFSSolver, BFSSolverResult
+from bloxorz.solvers.dfs import DFSSolver, DFSSolverResult
 from bloxorz.solvers.astar import AstarSolver
 from bloxorz.solvers.costs import CostFunction, fragile_cost
 from bloxorz.solvers.ucs import UCSSolver
 
 SOLVER_REGISTRY: Dict[str, Optional[Type[BaseSolver]]] = {
     "BFS": BFSSolver,
-    "DFS": None,  # Coming soon
+    "DFS": DFSSolver,
     "UCS": UCSSolver,
-    "A*": AstarSolver,  # Coming soon / in progress
+    "A*": None,  # Coming soon
 }
 
 
@@ -33,6 +34,8 @@ __all__ = [
     "SWITCH_ACTION",
     "BFSSolver",
     "BFSSolverResult",
+    "DFSSolver",
+    "DFSSolverResult",
     "AstarSolver",
     "CostFunction",
     "fragile_cost",

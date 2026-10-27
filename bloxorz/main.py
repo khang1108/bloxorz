@@ -264,12 +264,24 @@ class BloxorzApp:
     def register_solver(self, solver_callback: Callable[[Board], List[SolverAction]]):
         """Register a callback returning Direction moves and optional SWITCH actions."""
         self.registered_solver = solver_callback
+        name_map = {
+            "BFSSolver": "BFS",
+            "DFSSolver": "DFS",
+            "UCSSolver": "UCS",
+            "AstarSolver": "A*",
+        }
+        cls_name = solver_callback.__class__.__name__ if solver_callback else ""
+        if cls_name in name_map:
+            target_name = name_map[cls_name]
+            self.active_solver_name = target_name
+            if getattr(self, "solver_widget", None) and self.solver_widget.current_algorithm != target_name:
+                self.solver_widget.select_algorithm(target_name)
 
     def set_active_solver(self, algo_name: str):
         """Switches the active search solver algorithm (BFS, DFS, UCS, A*)."""
         self.active_solver_name = algo_name.upper().strip()
         solver_instance = get_solver(self.active_solver_name)
-        self.register_solver(solver_instance)
+        self.registered_solver = solver_instance
         if getattr(self, "solver_widget", None) and self.solver_widget.current_algorithm != self.active_solver_name:
             self.solver_widget.select_algorithm(self.active_solver_name)
 
@@ -288,11 +300,6 @@ class BloxorzApp:
             return
 
         algo = getattr(self, "active_solver_name", "")
-        if algo in ("A*",):
-            self.hud.show_banner(f"{algo}: COMING SOON", duration=1.5)
-            if getattr(self, "solver_widget", None):
-                self.solver_widget.set_running_state(False)
-            return
 
         if self.registered_solver is None:
             self.hud.show_banner("NO SOLVER REGISTERED")

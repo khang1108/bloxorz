@@ -51,10 +51,32 @@ class CameraController(Entity):
         self.is_orbiting: bool = False
         self.enabled_controls: bool = True
         self._prev_mouse_pos: Vec3 = Vec3(0, 0, 0)
-        self._was_mouse_right_down: bool = False
+        self._was_mouse_down: bool = False
 
-    def frame_board(self, min_x: int, max_x: int, min_y: int, max_y: int, animate: bool = True):
+        # Victory goal zoom animation state
+        self._is_victory_zooming: bool = False
+        self._victory_zoom_time: float = 0.0
+        self._victory_zoom_duration: float = 4.5
+        self._victory_start_dist: float = 0.0
+        self._victory_start_pitch: float = 0.0
+        self._victory_start_yaw: float = 0.0
+        self._victory_start_center: Vec3 = Vec3(0, 0, 0)
+        self._victory_target_center: Vec3 = Vec3(0, 0, 0)
+        self._victory_target_dist: float = 0.0
+        self._victory_target_pitch: float = 0.0
+        self._victory_target_yaw: float = 0.0
+
+    def frame_board(
+        self,
+        min_x: int,
+        max_x: int,
+        min_y: int,
+        max_y: int,
+        animate: bool = True,
+        preserve_rotation: bool = False,
+    ):
         """Calculates optimal camera position to frame the board symmetrically."""
+        self._is_victory_zooming = False
         cfg = CONFIG.camera
         center_x = (min_x + max_x) / 2.0
         center_z = -((min_y + max_y) / 2.0)
@@ -73,8 +95,14 @@ class CameraController(Entity):
         self.default_center = Vec3(center_x, 0.0, center_z)
         self.target_center = Vec3(self.default_center)
         self.target_distance = self.base_distance
-        self.target_pitch = self.default_pitch
-        self.target_yaw = self.default_yaw
+
+        if not preserve_rotation:
+            self.target_pitch = self.default_pitch
+            self.target_yaw = self.default_yaw
+        else:
+            # Preserve existing user rotation angles when switching stages
+            self.target_pitch = max(self.min_pitch, min(self.max_pitch, self.current_pitch))
+            self.target_yaw = self.current_yaw
 
         if not animate:
             self.current_center = Vec3(self.target_center)
@@ -87,6 +115,7 @@ class CameraController(Entity):
         """Offsets yaw and pitch based on mouse drag coordinates."""
         if not self.enabled_controls:
             return
+        self._is_victory_zooming = False
         self.target_yaw += delta_x * self.orbit_speed_x
         new_pitch = self.target_pitch + delta_y * self.orbit_speed_y
         self.target_pitch = max(self.min_pitch, min(self.max_pitch, new_pitch))
@@ -95,6 +124,7 @@ class CameraController(Entity):
         """Zooms camera in (direction < 0) or out (direction > 0)."""
         if not self.enabled_controls:
             return
+        self._is_victory_zooming = False
         new_dist = self.target_distance + direction * self.zoom_speed
         self.target_distance = max(self.min_zoom_distance, min(self.max_zoom_distance, new_dist))
 
@@ -102,10 +132,12 @@ class CameraController(Entity):
         """Rotates camera by a fixed step (e.g. +45 deg or -45 deg) on Q/E keys."""
         if not self.enabled_controls:
             return
+        self._is_victory_zooming = False
         self.target_yaw += direction * self.step_orbit_angle
 
     def reset_view(self, animate: bool = True):
         """Smoothly returns camera to the canonical dimetric perspective."""
+        self._is_victory_zooming = False
         self.target_yaw = self.default_yaw
         self.target_pitch = self.default_pitch
         self.target_distance = self.base_distance
@@ -117,14 +149,30 @@ class CameraController(Entity):
             self.current_center = Vec3(self.target_center)
             self._apply_camera_transform()
 
-    def animate_victory_focus(self, goal_x: int, goal_y: int):
-        """Gently drifts and tilts camera toward the goal vortex during stage victory."""
+    def animate_victory_focus(self, goal_x: int, goal_y: int, duration: float = 4.5):
+        """Gently drifts, tilts, and smoothly zooms camera deep into the goal hole upon victory."""
         tile_size = getattr(getattr(CONFIG, "board", None), "tile_size", 0.86)
         goal_pos = Vec3(goal_x * tile_size, -0.2, -goal_y * tile_size)
+
+        self._is_victory_zooming = True
+        self._victory_zoom_time = 0.0
+        self._victory_zoom_duration = max(1.0, duration)
+        self._victory_start_dist = self.current_distance
+        self._victory_start_pitch = self.current_pitch
+        self._victory_start_yaw = self.current_yaw
+        self._victory_start_center = Vec3(self.current_center)
+
+        self._victory_target_center = goal_pos
+        # Dramatic gradual zoom into the goal vortex (30% of base distance or 2.8 units)
+        self._victory_target_dist = max(2.8, self.base_distance * 0.30)
+        # Tilt downwards looking into the hole
+        self._victory_target_pitch = min(75.0, max(52.0, self.current_pitch + 16.0))
+        self._victory_target_yaw = self.current_yaw + 20.0
+
         self.target_center = goal_pos
-        self.target_distance = self.base_distance * 0.80
-        self.target_pitch = max(self.min_pitch, self.current_pitch - 6.0)
-        self.target_yaw = self.current_yaw + 15.0
+        self.target_distance = self._victory_target_dist
+        self.target_pitch = self._victory_target_pitch
+        self.target_yaw = self._victory_target_yaw
 
     def update(self):
         """Damps current camera coordinates smoothly toward targets every frame."""
@@ -132,30 +180,55 @@ class CameraController(Entity):
         if dt <= 0:
             dt = 0.016
 
-        # Check interactive mouse drag (RMB)
+        # Check interactive mouse drag (supports both Right Mouse and Left Mouse when not clicking UI)
         if mouse and hasattr(mouse, "position"):
             curr_pos = mouse.position
-            if self.enabled_controls and getattr(mouse, "right", False):
-                if self._was_mouse_right_down:
+            hovered = getattr(mouse, "hovered_entity", None)
+            is_hovering_ui = bool(
+                hovered
+                and (
+                    getattr(hovered, "parent", None) == camera.ui
+                    or getattr(getattr(hovered, "parent", None), "parent", None) == camera.ui
+                )
+            )
+            is_down = getattr(mouse, "right", False) or (
+                getattr(mouse, "left", False) and not is_hovering_ui
+            )
+            if self.enabled_controls and is_down:
+                if self._was_mouse_down:
                     dx = curr_pos[0] - self._prev_mouse_pos[0]
                     dy = curr_pos[1] - self._prev_mouse_pos[1]
                     if dx != 0.0 or dy != 0.0:
                         self.orbit(dx, dy)
-                self._was_mouse_right_down = True
+                self._was_mouse_down = True
             else:
-                self._was_mouse_right_down = False
+                self._was_mouse_down = False
             self._prev_mouse_pos = curr_pos
 
-        # Exponential damping: lerp = 1 - exp(-smoothing * dt)
-        damp = 1.0 - math.exp(-self.smoothing * dt)
-        damp = max(0.0, min(1.0, damp))
+        if self._is_victory_zooming:
+            self._victory_zoom_time += dt
+            t = min(1.0, self._victory_zoom_time / self._victory_zoom_duration)
+            # Smooth S-curve easing (cosine interpolation)
+            s = 0.5 - 0.5 * math.cos(t * math.pi)
 
-        self.current_yaw += (self.target_yaw - self.current_yaw) * damp
-        self.current_pitch += (self.target_pitch - self.current_pitch) * damp
-        self.current_distance += (self.target_distance - self.current_distance) * damp
+            self.current_distance = self._victory_start_dist + (self._victory_target_dist - self._victory_start_dist) * s
+            self.current_center = self._victory_start_center + (self._victory_target_center - self._victory_start_center) * s
+            self.current_pitch = self._victory_start_pitch + (self._victory_target_pitch - self._victory_start_pitch) * s
+            self.current_yaw = self._victory_start_yaw + (self._victory_target_yaw - self._victory_start_yaw) * s
 
-        diff_center = self.target_center - self.current_center
-        self.current_center += diff_center * damp
+            if t >= 1.0:
+                self._is_victory_zooming = False
+        else:
+            # Exponential damping: lerp = 1 - exp(-smoothing * dt)
+            damp = 1.0 - math.exp(-self.smoothing * dt)
+            damp = max(0.0, min(1.0, damp))
+
+            self.current_yaw += (self.target_yaw - self.current_yaw) * damp
+            self.current_pitch += (self.target_pitch - self.current_pitch) * damp
+            self.current_distance += (self.target_distance - self.current_distance) * damp
+
+            diff_center = self.target_center - self.current_center
+            self.current_center += diff_center * damp
 
         self._apply_camera_transform()
 

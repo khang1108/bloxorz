@@ -1,5 +1,7 @@
 import time
+import threading
 from pathlib import Path
+from queue import Empty, SimpleQueue
 from typing import List, Optional, Callable, Dict, Any
 from ursina import (
     Ursina,
@@ -19,6 +21,8 @@ from bloxorz.ui.theme import Palette
 from bloxorz.ui.hud import HUD
 from bloxorz.ui.menu import MenuManager
 from bloxorz.ui.solver_widget import SolverWidget
+from bloxorz.ui.minimap import MiniMap
+from bloxorz.ui.gameplay_dock import GameplayDock
 from bloxorz.solvers import get_solver
 from bloxorz.graphics.camera_ctrl import CameraController
 from bloxorz.graphics.board_view import BoardView
@@ -62,6 +66,9 @@ class BloxorzApp:
         self._solution_delay: float = CONFIG.solver.default_delay
         self._on_solution_complete: Optional[Callable[[], None]] = None
         self._solution_generation: int = 0
+        self._is_solving: bool = False
+        self._solver_thread: Optional[threading.Thread] = None
+        self._solver_results: SimpleQueue = SimpleQueue()
         self.active_solver_name: str = "BFS"
         self.set_active_solver("BFS")
 
@@ -77,6 +84,8 @@ class BloxorzApp:
             on_run_solver=self.toggle_solver,
             initial_algorithm=self.active_solver_name,
         )
+        self.minimap = MiniMap(parent=ui_parent)
+        self.dock = GameplayDock()
 
         self.menu_mgr = MenuManager(
             on_resume=self.resume_game,
@@ -94,6 +103,16 @@ class BloxorzApp:
         self._last_input_key: str = ""
         self.input_handler = InputHandler(self)
         self.load_stage_by_index(self.current_stage_idx, animate_camera=False)
+
+    def _sync_minimap(self) -> None:
+        """Refresh the map after the game commits a state transition."""
+        if getattr(self, "minimap", None) and self.game:
+            self.minimap.sync(self.game.board, self.game.block)
+
+    def _set_gameplay_ui_visible(self, visible: bool) -> None:
+        self.solver_widget.set_visible(visible)
+        self.minimap.set_visible(visible)
+        self.dock.set_visible(visible)
 
     def load_stage_by_index(self, stage_idx: int, animate_camera: bool = True):
         """Loads and initializes a stage by 1-based index."""
@@ -120,12 +139,13 @@ class BloxorzApp:
         self.hud.update_moves(0)
         self.hud.hide_banner()
         self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
+        self._sync_minimap()
         self.menu_mgr.close_all()
         if getattr(self, "camera_ctrl", None):
             self.camera_ctrl.enabled_controls = True
         if getattr(self, "solver_widget", None):
             self.solver_widget.set_running_state(False)
-            self.solver_widget.set_visible(True)
+            self._set_gameplay_ui_visible(True)
 
     def restart_stage(self, trigger_sfx: bool = False):
         """Resets the current stage.
@@ -135,11 +155,12 @@ class BloxorzApp:
         """
         self.stop_solution()
         if getattr(self, "solver_widget", None):
-            self.solver_widget.set_visible(True)
+            self._set_gameplay_ui_visible(True)
         if self.game:
             if hasattr(self, "sound_mgr") and self.sound_mgr and trigger_sfx:
                 self.sound_mgr.play("restart")
             self.game.restart()
+            self._sync_minimap()
             if getattr(self, "board_view", None) and hasattr(self.board_view, "update_bridges"):
                 self.board_view.update_bridges(self.game.board)
             if getattr(self, "block_view", None) and hasattr(self.block_view, "sync_to_state"):
@@ -163,7 +184,7 @@ class BloxorzApp:
         self.menu_mgr.close_all()
         self.camera_ctrl.enabled_controls = True
         if getattr(self, "solver_widget", None):
-            self.solver_widget.set_visible(True)
+            self._set_gameplay_ui_visible(True)
 
     def next_stage(self):
         """Advances to the next stage or loops to beginning."""
@@ -176,6 +197,8 @@ class BloxorzApp:
         """Performs turn undo."""
         if self.block_view.is_animating or not self.game:
             return
+        if self._is_solving or self._is_playing_solution:
+            self.stop_solution()
         if self.game.undo():
             self.sound_mgr.play("undo")
             self.block_view.sync_to_state(self.game.block)
@@ -183,6 +206,7 @@ class BloxorzApp:
             self.hud.update_moves(self.game.move_count)
             self.hud.hide_banner()
             self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
+            self._sync_minimap()
 
     def handle_move(self, direction: Direction, on_done: Optional[Callable[[str], None]] = None):
         """Executes a move request from player input or solver API."""
@@ -202,6 +226,7 @@ class BloxorzApp:
         self.sound_mgr.play("roll")
 
         def on_roll_finished():
+            self._sync_minimap()
             if outcome in ("SAFE", "MERGED", "TELEPORT"):
                 self.hud.update_moves(self.game.move_count)
                 self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
@@ -227,7 +252,7 @@ class BloxorzApp:
 
                 def on_victory_done():
                     if getattr(self, "solver_widget", None):
-                        self.solver_widget.set_visible(False)
+                        self._set_gameplay_ui_visible(False)
                         self.solver_widget.set_running_state(False)
                     self.menu_mgr.show_victory_menu(
                         self.game.board.level_name, self.game.move_count, self.current_stage_idx
@@ -290,82 +315,66 @@ class BloxorzApp:
             self.solver_widget.select_algorithm(self.active_solver_name)
 
     def toggle_solver(self):
-        """Starts or aborts solver execution."""
-        if self._is_playing_solution:
+        """Start the selected method, or stop its search/playback immediately."""
+        if self._is_solving or self._is_playing_solution:
             self.stop_solution()
         else:
             self.trigger_solver()
 
     def trigger_solver(self) -> None:
-        """Solve from a fresh stage, reporting missing solvers and empty results."""
-        if not self.game:
+        """Run one search on an isolated board and deliver results on the UI thread."""
+        if not self.game or self.block_view.is_animating or self._is_solving or self._is_playing_solution:
             return
-        if self.block_view.is_animating or self._is_playing_solution:
+        if self._solver_thread and self._solver_thread.is_alive():
+            self.hud.show_banner("PREVIOUS SEARCH FINISHING")
             return
-
-        algo = getattr(self, "active_solver_name", "")
-
         if self.registered_solver is None:
             self.hud.show_banner("NO SOLVER REGISTERED")
             return
 
-        # Prepare clean stage board
         self.restart_stage(trigger_sfx=False)
-        board_to_solve = self.game.board
+        board_to_solve = self.game.board.clone()
+        solver = self.registered_solver
+        generation = self._solution_generation
+        self._is_solving = True
+        self.solver_widget.set_running_state(True)
+        self.hud.show_banner(f"SOLVER ({self.active_solver_name}): COMPUTING...", duration=None)
 
-        def _execute_search():
+        def worker() -> None:
             try:
-                moves = self.registered_solver(board_to_solve)
-                return moves, None
+                moves, error = solver(board_to_solve), None
             except NotImplementedError:
-                return None, "NOT_IMPLEMENTED"
-            except ValueError:
-                return None, "VALUE_ERROR"
+                moves, error = None, "NOT_IMPLEMENTED"
             except Exception:
-                return None, "ERROR"
+                moves, error = None, "ERROR"
+            # No Ursina calls from the worker: InputHandler.update drains this queue.
+            self._solver_results.put((generation, moves, error))
 
-        def _handle_solution(moves: Optional[List[SolverAction]], error: Optional[str]):
-            if error == "NOT_IMPLEMENTED":
-                self.hud.show_banner("SOLVER DOES NOT SUPPORT THIS STAGE")
-                if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_running_state(False)
-                return
-            elif error in ("VALUE_ERROR", "ERROR"):
-                self.hud.show_banner("SOLVER ERROR")
-                if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_running_state(False)
-                return
+        self._solver_thread = threading.Thread(target=worker, daemon=True)
+        self._solver_thread.start()
 
-            if moves:
-                move_count = sum(isinstance(action, Direction) for action in moves)
+    def _poll_solver_results(self) -> None:
+        """Ignore results invalidated by stop, restart, or a stage change."""
+        while True:
+            try:
+                generation, moves, error = self._solver_results.get_nowait()
+            except Empty:
+                return
+            if generation != self._solution_generation or not self._is_solving:
+                continue
+            self._is_solving = False
+            if error:
+                message = "SOLVER DOES NOT SUPPORT THIS STAGE" if error == "NOT_IMPLEMENTED" else "SOLVER ERROR"
+                self.hud.show_banner(message)
+                self.solver_widget.set_running_state(False)
+            elif moves:
+                move_count = sum(isinstance(action, Direction) and action != Direction.SWITCH_CUBE for action in moves)
                 self.hud.show_banner(f"SOLVER: {move_count} MOVES", duration=1.2)
                 self.play_solution(moves)
-            elif self.game.board.evaluate_block_state(self.game.block)[0] == "VICTORY":
-                self.hud.show_banner("ALREADY AT GOAL")
-                if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_running_state(False)
             else:
-                self.hud.show_banner("SOLVER FOUND NO SOLUTION")
-                if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_running_state(False)
-
-        import sys
-        if "pytest" in sys.modules:
-            # Synchronous path for deterministic testing
-            moves, error = _execute_search()
-            _handle_solution(moves, error)
-        else:
-            # Asynchronous background worker thread to prevent UI freezing
-            import threading
-            if getattr(self, "solver_widget", None):
-                self.solver_widget.set_running_state(True)
-            self.hud.show_banner(f"SOLVER ({algo}): COMPUTING...", duration=2.5)
-
-            def _worker():
-                moves, error = _execute_search()
-                invoke(_handle_solution, moves, error)
-
-            threading.Thread(target=_worker, daemon=True).start()
+                at_goal = self.game.board.evaluate_block_state(self.game.block)[0] == "VICTORY"
+                self.hud.show_banner("ALREADY AT GOAL" if at_goal else "SOLVER FOUND NO SOLUTION")
+                self.solver_widget.set_running_state(False)
 
     def play_solution(
         self,
@@ -409,6 +418,7 @@ class BloxorzApp:
                 self.game.switch_block()
                 self.sound_mgr.play("switch")
                 self.block_view.sync_to_state(self.game.block)
+                self._sync_minimap()
             invoke(self._play_next_solver_step, current_generation, delay=self._solution_delay)
             return
 
@@ -432,7 +442,10 @@ class BloxorzApp:
 
     def stop_solution(self) -> None:
         """Stop playback and invalidate callbacks queued before a stage reset."""
+        if self._is_solving:
+            self.hud.hide_banner()
         self._solution_generation += 1
+        self._is_solving = False
         self._is_playing_solution = False
         self._active_solution.clear()
         self._solution_idx = 0
@@ -514,29 +527,33 @@ class BloxorzApp:
                 self.menu_mgr.close_all()
                 self.camera_ctrl.enabled_controls = True
                 if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_visible(True)
+                    self._set_gameplay_ui_visible(True)
             else:
+                self.stop_solution()
                 self.camera_ctrl.enabled_controls = False
                 if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_visible(False)
+                    self._set_gameplay_ui_visible(False)
                 self.menu_mgr.show_settings_menu(self.current_stage_idx)
             return
         if k_clean == "p":
-            self.trigger_solver()
+            self.toggle_solver()
             return
         if k_clean == "escape":
             if self.menu_mgr.is_any_menu_open():
                 self.menu_mgr.close_all()
                 self.camera_ctrl.enabled_controls = True
                 if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_visible(True)
+                    self._set_gameplay_ui_visible(True)
             else:
+                self.stop_solution()
                 self.camera_ctrl.enabled_controls = False
                 if getattr(self, "solver_widget", None):
-                    self.solver_widget.set_visible(False)
+                    self._set_gameplay_ui_visible(False)
                 self.menu_mgr.show_stage_select_menu(self.current_stage_idx)
             return
 
+        if k_clean == "space" and (self._is_solving or self._is_playing_solution):
+            return
         if k_clean == "space":
             if self.menu_mgr.victory_root:
                 self.next_stage()
@@ -546,6 +563,10 @@ class BloxorzApp:
                     if switched:
                         self.sound_mgr.play("switch")
                         self.block_view.sync_to_state(self.game.block)
+                        self._sync_minimap()
+            return
+
+        if self._is_solving or self._is_playing_solution:
             return
 
         arrow_scheme = getattr(getattr(CONFIG, "controls", None), "arrow_scheme", "isometric")
@@ -639,6 +660,9 @@ class InputHandler(Entity):
 
     def _make_event_callback(self, key_name: str):
         return lambda: self.app_instance.handle_input(key_name)
+
+    def update(self) -> None:
+        self.app_instance._poll_solver_results()
 
     def input(self, key: str):
         self.app_instance.handle_input(key)

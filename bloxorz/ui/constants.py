@@ -143,38 +143,8 @@ class MenuConstants:
 
 
 class SolverWidgetConstants:
-    """Coordinates, dimensions, and depth values for the compact collapsible solver widget."""
-
-    # Collapsed Pill Button
-    COLLAPSED_POS: Point2D = (0.70, 0.36)
-    COLLAPSED_SCALE: Size2D = (0.24, 0.044)
-    COLLAPSED_TEXT_SCALE: float = 0.85
-
-    # Expanded Card Panel
-    EXPANDED_POS: Point2D = (0.70, 0.22)
-    EXPANDED_CONTAINER_SCALE: Size2D = (0.24, 0.26)
-    EXPANDED_BORDER_SCALE: Size2D = (0.246, 0.266)
-
-    # Header within panel
-    HEADER_Y: float = 0.095
-    HEADER_TITLE_X: float = -0.095
-    HEADER_TITLE_SCALE: float = 0.80
-    COLLAPSE_BTN_X: float = 0.088
-    COLLAPSE_BTN_SCALE: Size2D = (0.040, 0.032)
-    COLLAPSE_BTN_TEXT_SCALE: float = 0.85
-
-    # Dividers
-    DIVIDER_TOP_Y: float = 0.068
-    DIVIDER_BOTTOM_Y: float = -0.076
-    DIVIDER_SCALE: Size2D = (0.21, 0.002)
-
-    # Option Radio Rows (BFS, DFS, UCS, A*)
-    OPTION_START_Y: float = 0.034
-    OPTION_SPACING_Y: float = 0.033
-    OPTION_BTN_SCALE: Size2D = (0.21, 0.030)
-    OPTION_TEXT_SCALE: float = 0.80
-
-    # Run Solver Button
-    ACTION_BTN_Y: float = -0.104
-    ACTION_BTN_SCALE: Size2D = (0.21, 0.034)
-    ACTION_BTN_TEXT_SCALE: float = 0.82
+    """Layout for the four one-click solver buttons."""
+    PANEL_SIZE: Size2D = (.36, .275)
+    BUTTON_SIZE: Size2D = (.145, .075)
+    EDGE_MARGIN: float = .215
+    PANEL_Y: float = .19

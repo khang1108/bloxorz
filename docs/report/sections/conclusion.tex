@@ -1,44 +1,62 @@
-\section{Tổng kết và Đánh giá Dự án}
+\section{Kết luận và Hướng Phát triển}
+\label{sec:conclusion}
 
 \subsection{Tổng kết Kết quả Đạt được}
-Đồ án đã hoàn thành toàn diện tất cả các yêu cầu kỹ thuật và học thuật đặt ra cho bài toán xây dựng và giải đố tự động trò chơi Bloxorz. 
+Đồ án đã nghiên cứu và hiện thực thành công một hệ thống mô phỏng và
+giải quyết bài toán Bloxorz hoàn chỉnh, đáp ứng toàn diện cả về mặt
+kỹ nghệ phần mềm thực hành lẫn phương pháp luận Trí tuệ Nhân tạo thực nghiệm:
 
-Về mặt mô hình hóa và cơ chế trò chơi, hệ thống đã hiện thực thành công một Game Engine hoàn chỉnh mô phỏng chính xác các tương tác vật lý trong không gian ba chiều. Toàn bộ các cơ chế phức tạp từ gạch cam mong manh, hệ thống cầu đa trạng thái, ba nhóm công tắc cơ học (công tắc tròn mềm, công tắc chữ X chịu lực và công tắc phân thân) đến logic sáp nhập hình học đều được kiểm chứng chặt chẽ qua bộ 167 bài kiểm thử tự động.
+\begin{enumerate}[1.]
+    \item \textbf{Mô hình hóa Toàn diện Luật chơi Bloxorz:}
+    Hệ sinh thái game được xây dựng với đầy đủ các quy tắc vật lý phức tạp:
+    động học lăn lật 3 tư thế của khối $1 \times 1 \times 2$, tương tác sàn
+    mong manh (gạch cam chịu lực phụ thuộc tư thế), mạng lưới cầu đóng/mở động
+    liên kết với nhiều loại công tắc (công tắc tròn, công tắc chữ X), và đặc
+    biệt là cơ chế phân thân -- hợp nhất hai khối lập phương độc lập.
+    Giao diện 3D trực quan trên nền Ursina Engine kết hợp Tactical Minimap
+    mang lại trải nghiệm mượt mà, hỗ trợ quan sát trực tiếp các bước đi do AI
+    sinh ra.
 
-Về mặt giao diện và trải nghiệm người dùng, đồ án tích hợp giao diện đồ họa đẳng cự trực quan trên nền tảng Ursina Engine. Hệ thống hỗ trợ bảng điều khiển HUD trực quan, camera mượt mà, hiệu ứng âm thanh đồng bộ tương tác và menu phân trang quản trị trọn vẹn danh mục 83 màn chơi.
+    \item \textbf{Hiện thực Chuẩn mực Bộ 4 Giải thuật Tìm kiếm:}
+    Xây dựng thành công 4 thuật toán tìm kiếm kinh điển (BFS, DFS, UCS, A*)
+    trên nền tảng cấu trúc nút bất biến \texttt{SearchNode}. Kiến trúc chuỗi
+    liên kết ngược giúp cắt giảm chi phí cấp phát bộ nhớ cho mỗi nút con từ
+    $O(d)$ xuống $O(1)$, loại trừ triệt để lỗi ghi đè tham chiếu trong hàng đợi
+    ưu tiên và cho phép tái tạo lộ trình trong thời gian tuyến tính $O(d)$.
 
-Về mặt giải thuật trí tuệ nhân tạo, nhóm đã hiện thực bài bản và chuẩn hóa bộ bốn thuật toán tìm kiếm cốt lõi gồm BFS, DFS/IDS, UCS và A* Search. Cấu trúc nút tìm kiếm bất biến \texttt{SearchNode} theo mô hình liên kết ngược đã tối ưu hóa triệt để tài nguyên bộ nhớ, loại trừ rò rỉ tham chiếu và cho phép truy vết lời giải trong thời gian tuyến tính. Đặc biệt, hàm chi phí phi đồng nhất \texttt{fragile\_cost} và hàm Heuristic $h(n)$ được thiết kế sáng tạo và chứng minh toán học nghiêm ngặt về tính chất chấp nhận được (\textit{Admissible}), bảo đảm tính tối ưu toàn cục của giải thuật A*.
+    \item \textbf{Thiết kế và Chứng minh Hàm Heuristic:}
+    Xây dựng và chứng minh toán học chặt chẽ tính chấp nhận được của hàm
+    Heuristic dựa trên khoảng cách Manhattan chia đôi kết hợp phạt định hướng
+    sai lệch và chi phí tiếp cận hợp nhất khối phân thân. Chứng minh lý thuyết
+    khẳng định rằng A* luôn tìm ra lời giải có tổng chi phí tối ưu toàn cục.
 
-\subsection{Ưu điểm, Hạn chế và Hướng Phát triển}
-\paragraph{Ưu điểm nổi bật:}
-Hệ thống thể hiện tính module hóa cao độ (\textit{High Modularity}) thông qua việc phân tách rành mạch giữa mô hình dữ liệu lõi (\texttt{Board}, \texttt{BlockState}), hợp đồng giải thuật (\texttt{BaseSolver}, \texttt{SearchNode}) và giao diện điều khiển. Bộ kiểm thử tự động (\textit{Unit Tests}) với độ bao phủ cao giúp hệ thống vận hành ổn định, không phát sinh lỗi ngoại lệ trong suốt quá trình chạy nghiệm thử. Hàm chi phí phi đồng nhất \texttt{fragile\_cost} và hàm Heuristic $h(n)$ được chứng minh toán học chặt chẽ, bảo đảm tính Admissible và tìm ra nghiệm tối ưu.
+    \item \textbf{Đánh giá Thực nghiệm Định lượng Nghiêm ngặt:}
+    Thông qua 40 lượt benchmark lấy mẫu ngẫu nhiên có kiểm soát
+    ($\text{seed}=42$), nhóm đã kiểm chứng thực nghiệm sự vượt trội của A*:
+    A* cắt tỉa trung bình hơn $56\%$ số nút mở rộng và tăng tốc độ tìm kiếm
+    lên tới gần $10$ lần tại các bản đồ phân thân phức tạp so với BFS và UCS.
+    Đồng thời, thực nghiệm xác nhận BFS, UCS và A* đạt tính tối ưu tuyệt đối
+    $100\%$ về số bước đi, trong khi DFS cho lời giải dài hơn trung bình gấp
+    $2,03$ lần.
+\end{enumerate}
 
-\paragraph{Hạn chế và Hướng mở rộng:}
-Đối với các màn chơi có quy mô bản đồ khổng lồ kết hợp nhiều công tắc phân thân và ma trận cầu đan xen (tiêu biểu từ Stage 70 đến Stage 83), không gian trạng thái mở rộng bùng nổ theo cấp số nhân khiến thời gian tìm kiếm của BFS và UCS gia tăng đáng kể. 
+\subsection{Hướng Phát triển trong Tương lai}
+Từ nền tảng của đồ án này, một số hướng nghiên cứu mở rộng đầy tiềm năng
+bao gồm:
+\begin{itemize}[--]
+    \item \textbf{Cơ sở Dữ liệu Mẫu (PDB):}
+    Xây dựng các bảng PDB tính toán trước chi phí mở các cụm cầu phức tạp,
+    tạo ra các hàm Heuristic có tính tương thích cao hơn và làm tăng đáng kể
+    năng lực cắt tỉa tại các mê cung chứa hàng chục công tắc lồng nhau.
 
-Trong tương lai, hệ thống có thể được nâng cấp thông qua hai hướng tiếp cận tiên tiến:
-Thứ nhất, tích hợp kỹ thuật cơ sở dữ liệu mẫu (\textit{Pattern Databases}) và \textit{Landmark Heuristics}. Bằng cách tính toán trước khoảng cách đường đi thực tế trên bề mặt sàn thông qua phép loang ngược BFS từ ô đích, giải thuật sẽ sở hữu hàm Heuristic sắc bén hơn, phản ánh chính xác các vật cản địa hình thay vì chỉ đo khoảng cách Manhattan đường chim bay.
-Thứ hai, triển khai giải thuật Tìm kiếm Hai chiều (\textit{Bidirectional Search}) nhằm tiến hành duyệt đồng thời từ điểm xuất phát và ô đích. Kỹ thuật này cho phép giảm độ sâu tìm kiếm từ $d$ xuống $d/2$, thu hẹp độ phức tạp không gian và thời gian từ $O(b^d)$ xuống $O(b^{d/2})$, qua đó nâng cao đáng kể tốc độ giải các màn chơi quy mô lớn.
+    \item \textbf{Thuật toán Tìm kiếm Giới hạn Bộ nhớ:}
+    Ứng dụng Iterative Deepening A* (IDA*) hoặc Simplified Memory-Bounded A*
+    (SMA*) để giải quyết các bản đồ có quy mô lưới khổng lồ vượt quá giới hạn
+    bộ nhớ RAM vật lý.
 
-\subsection{Liên kết Trình diễn Sản phẩm (YouTube Demo Video)}
-Toàn bộ quy trình trải nghiệm trò chơi và thực thi giải thuật tự động đã được ghi hình và phát hành công khai:
-
-\begin{table}[H]
-    \centering
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabular}{|p{0.9\textwidth}|}
-        \hline
-        \centering
-        \textbf{ĐƯỜNG DẪN VIDEO DEMO TRÊN YOUTUBE} \\[0.3em]
-        \url{https://www.youtube.com/watch?v=your_video_id_here} \\[0.3em]
-        \textit{(Video bao gồm thuyết minh chi tiết về giao diện 3D, các tính năng tương tác người chơi và minh họa quá trình tự động giải quyết các màn chơi của 4 thuật toán BFS, DFS, UCS, A*)} \\
-        \hline
-    \end{tabular}
-    \caption{Thông tin liên kết video thuyết minh và trình diễn đồ án}
-    \label{tab:video_demo}
-\end{table}
-
-\section*{Phụ lục: Tuyên bố Sử dụng Công cụ Trí tuệ Nhân tạo (AI Declaration)}
-Tuân thủ quy chế liêm chính học thuật của môn học, nhóm công khai việc sử dụng các mô hình ngôn ngữ lớn (Large Language Models) với vai trò trợ lý hỗ trợ lập trình (Pair Programming Assistant).
-
-Công cụ được ứng dụng giới hạn trong phạm vi tra cứu cú pháp đồ họa 3D Ursina, rà soát lỗi kiểm thử tự động (\textit{Unit Tests}) và định dạng bảng biểu báo cáo khoa học theo chuẩn \LaTeX. Toàn bộ các thuật toán tìm kiếm (BFS, DFS/IDS, UCS, A*), mô hình hóa toán học không gian trạng thái, thiết kế hàm chi phí phi đồng nhất và các chứng minh lý thuyết Heuristic đều do nhóm sinh viên trực tiếp tư duy thiết kế, kiểm chứng và chịu trách nhiệm học thuật hoàn toàn.
+    \item \textbf{Học Tăng cường Sâu:}
+    Huấn luyện mạng nơ-ron tích chập (CNN) kết hợp học tăng cường (DQN / PPO)
+    để tác tử tự học các chiến lược định hướng không gian và tương tác công
+    tắc từ ảnh chụp ma trận bàn cờ mà không cần phụ thuộc vào hàm Heuristic thủ
+    công.
+\end{itemize}

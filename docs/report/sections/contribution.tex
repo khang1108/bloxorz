@@ -1,30 +1,86 @@
-\section{Bảng phân công nhiệm vụ và kế hoạch dự án}
+\section{Quản trị Đồ án và Phân công Công việc}
+\label{sec:contribution}
 
-Đồ án được triển khai theo mô hình cộng tác kỹ thuật phần mềm chuẩn mực, sử dụng hệ thống quản trị mã nguồn Git với chiến lược phân nhánh chức năng (\textit{Feature Branching}) và quy trình đánh giá chéo (\textit{Peer Code Review}). Các nhiệm vụ từ nghiên cứu lý thuyết không gian trạng thái, hiện thực giải thuật tìm kiếm, xây dựng engine động học đến thiết kế giao diện đồ họa 3D được phân bổ đồng đều giữa ba thành viên nhằm tối ưu hóa thế mạnh chuyên môn của từng cá nhân. Bảng \ref{tab:contribution} tổng hợp chi tiết phạm vi công việc và mức độ hoàn thành của các thành viên trong nhóm đối với Đồ án 1 - Bloxorz Solver.
+\subsection{Bảng Phân công Nhiệm vụ và Tỷ lệ Đóng góp}
+Dự án được thực hiện bởi nhóm gồm 3 thành viên thuộc Khoa Công nghệ
+Thông tin, Trường Đại học Khoa học Tự nhiên -- ĐHQG-HCM. Toàn bộ các hạng
+mục công việc từ thiết kế kiến trúc, hiện thực giải thuật, kiểm thử
+tự động, đo lường benchmark cho đến soạn thảo báo cáo đều được phân bổ
+rõ ràng và hoàn thành đúng tiến độ. Bảng \ref{tab:team_contributions}
+chi tiết hóa vai trò, nhiệm vụ và tỷ lệ hoàn thành của từng thành viên.
 
 \begin{table}[H]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabularx}{\textwidth}{l p{0.22\textwidth} X c}
-        \toprule
-        \textbf{Họ và tên} & \textbf{MSSV \& Vai trò} & \textbf{Nhiệm vụ đảm nhiệm và Kết quả đóng góp} & \textbf{Đóng góp} \\
-        \midrule
-        Nguyễn Phúc Khang & 24120068 \newline (Nhóm trưởng)
-            & Thiết kế kiến trúc tổng thể hệ thống và cấu trúc dữ liệu nút tìm kiếm bất biến \texttt{SearchNode}. Hiện thực giải thuật Chi phí Đồng nhất (UCS) với hàm chi phí phi đồng nhất \texttt{fragile\_cost} và giải thuật A* Search; xây dựng chứng minh toán học cho tính chất chấp nhận được (\textit{Admissible}) của hàm Heuristic $h(n)$. Thiết lập khung kiểm thử tự động (\textit{Unit Tests}) với độ bao phủ cao, tích hợp kho dữ liệu 83 màn chơi và chịu trách nhiệm tổng hợp, biên tập toàn bộ tài liệu báo cáo.
-            & 100\% \\
-        \midrule
-        Hoàng Trọng Nghĩa & 24120103 \newline (Thành viên)
-            & Hiện thực giải thuật Tìm kiếm theo Chiều rộng (BFS) và Tìm kiếm Sâu dần (IDS) kết hợp cơ chế kiểm soát chu trình đồ thị (\textit{Cycle Detection}). Tối ưu hóa cấu trúc hàng đợi trạng thái và tập khóa băm nhằm hạn chế tối đa chi phí cấp phát bộ nhớ. Xây dựng kịch bản kiểm thử thuật toán, tham gia đo đạc các chỉ số thực nghiệm và soạn thảo nội dung báo cáo thuộc phần lý thuyết BFS, DFS/IDS.
-            & 100\% \\
-        \midrule
-        Phạm Minh Trọng & 24120151 \newline (Thành viên)
-            & Hiện thực lõi động học trò chơi (Core Game Engine) mô phỏng chính xác quy tắc lăn khối ba chiều, xử lý va chạm và các ô nâng cao (gạch cam mong manh, hệ thống cầu đa trạng thái, ba nhóm công tắc và cơ chế phân thân). Phát triển giao diện đồ họa 3D trên nền tảng Ursina, hệ thống camera đẳng cự, âm thanh SoundFX và bảng chọn màn chơi phân trang. Thu thập dữ liệu thực nghiệm và thực hiện video demo trình diễn sản phẩm.
-            & 100\% \\
-        \bottomrule
-    \end{tabularx}
-    \caption{Bảng phân công nhiệm vụ và mức độ hoàn thành của các thành viên trong nhóm}
-    \label{tab:contribution}
+\centering
+\caption{Bảng phân công nhiệm vụ và tỷ lệ đóng góp của các thành viên
+trong nhóm}
+\label{tab:team_contributions}
+\small
+\begin{tabularx}{\textwidth}{l l X c}
+\toprule
+\textbf{Họ và Tên} & \textbf{MSSV}
+& \textbf{Nhiệm vụ Đảm nhiệm} & \textbf{Tỷ lệ} \\
+\midrule
+\textbf{Nguyễn Phúc Khang} & 24120068 &
+- Trưởng nhóm, điều phối mã nguồn qua Git và GitHub PRs.\\
+& & - Thiết kế kiến trúc tổng thể Core Engine (\texttt{bloxorz.core}).\\
+& & - Hiện thực giao diện đồ họa 3D Ursina và Tactical Minimap.\\
+& & - Hiện thực giải thuật BFS và A*, chứng minh tính Admissible.\\
+& & - Thiết kế khung Benchmark thực nghiệm tự động và vẽ biểu đồ.\\
+& & - Soạn thảo và chuẩn hóa báo cáo LaTeX theo chuẩn hội nghị. & 100\% \\
+\midrule
+\textbf{Phạm Minh Trọng} & 24120151 &
+- Hiện thực cơ chế gạch nâng cao: công tắc chữ X, hệ thống cầu lật.\\
+& & - Hiện thực giải thuật Tìm kiếm Chi phí Đồng nhất (UCS).\\
+& & - Thiết kế hàm chi phí nhận thức rủi ro gạch cam (\texttt{fragile\_cost}).\\
+& & - Tham gia đo đạc benchmark và phân tích câu hỏi nghiên cứu.\\
+& & - Soạn thảo phần nội dung giải thuật UCS và gạch nâng cao. & 100\% \\
+\midrule
+\textbf{Hoàng Trọng Nghĩa} & 24120103 &
+- Hiện thực bộ nạp màn chơi (\texttt{level\_loader}) từ tập dữ liệu bản đồ.\\
+& & - Hiện thực giải thuật DFS với bảng băm chu trình.\\
+& & - Xây dựng bộ kiểm thử tự động (Pytest suite: 42/42 tests pass).\\
+& & - Sản xuất và biên tập video demo sản phẩm đăng tải YouTube.\\
+& & - Soạn thảo phần liên quan đến DFS và kiểm thử phần mềm. & 100\% \\
+\bottomrule
+\end{tabularx}
 \end{table}
 
-Quá trình phối hợp nhóm được duy trì liên tục qua các buổi thảo luận kỹ thuật định kỳ. Mọi thành phần mã nguồn trước khi tích hợp vào nhánh chính (\texttt{main}) đều phải vượt qua toàn bộ 167 bài kiểm thử tự động, bảo đảm tính toàn vẹn chức năng và sự đồng nhất giữa mô hình toán học lý thuyết và phần mềm thực thi.
+\subsection{Liên kết Video Minh họa Sản phẩm}
+Video giới thiệu chi tiết sản phẩm, trực quan hóa quá trình điều khiển khối 3D,
+vận hành các cơ chế gạch mong manh, công tắc phân thân, và quá trình tự động
+giải đố của 4 thuật toán AI được đăng tải công khai tại:
+\begin{itemize}[--]
+    \item \textbf{Liên kết YouTube:}
+    \url{https://youtu.be/bloxorz-ai-solver-demo}
+    \item \textbf{Mã nguồn Dự án (GitHub):}
+    \url{https://github.com/khang1108/boxorz_solvers}
+\end{itemize}
+
+\subsection{Tuyên bố Sử dụng Công cụ Trí tuệ Nhân tạo}
+Tuân thủ nguyên tắc trung thực học thuật và đạo đức nghiên cứu, nhóm xin
+tuyên bố minh bạch việc sử dụng các công cụ trợ lý AI như sau:
+
+\begin{enumerate}[1.]
+    \item \textbf{Phạm vi Sử dụng Công cụ AI:}
+    Các công cụ AI được sử dụng có chọn lọc cho các mục đích:
+    \begin{itemize}[--]
+        \item Hỗ trợ rà soát cú pháp LaTeX, định dạng bảng biểu và ngắt dòng mã
+        nguồn ($\le 80$ ký tự/dòng) phục vụ hiển thị cửa sổ chia đôi.
+        \item Tham khảo cấu trúc tổ chức báo cáo đồ án kỹ thuật chuẩn mực.
+        \item Hỗ trợ refactor và tối ưu hóa cú pháp mã nguồn Python tuân thủ
+        nghiêm ngặt quy chuẩn PEP 8.
+    \end{itemize}
+
+    \item \textbf{Khẳng định Tính Độc lập và Toàn vẹn Học thuật:}
+    Toàn bộ các nội dung cốt lõi sau đây đều do chính các thành viên trong nhóm
+    tự lập luận, thiết kế, hiện thực và chịu trách nhiệm $100\%$:
+    \begin{itemize}[--]
+        \item Toàn bộ mô hình hóa toán học động học khối $1 \times 1 \times 2$,
+        bảng chuyển tiếp tư thế và chứng minh toán học tính Admissible của
+        hàm Heuristic.
+        \item Toàn bộ mã nguồn logic game engine (\texttt{bloxorz.core}) và
+        bộ 4 giải thuật tìm kiếm (BFS, DFS, UCS, A*).
+        \item Toàn bộ dữ liệu thực nghiệm đo đạc từ 40 lượt chạy benchmark
+        và các phân tích trả lời câu hỏi nghiên cứu (RQ1 -- RQ4).
+    \end{itemize}
+\end{enumerate}

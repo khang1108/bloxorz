@@ -1,0 +1,159 @@
+\section{Cơ sở Lý thuyết}
+\label{sec:related_work}
+
+Các bài toán tìm kiếm đường đi và lập kế hoạch chuyển động trên
+lưới rời rạc đã thu hút sự chú ý sâu sắc của cộng đồng Trí tuệ
+Nhân tạo và Khoa học Máy tính lý thuyết trong nhiều thập kỷ
+\cite{russell2020aima, edelkamp2011heuristic}. Trong phần này,
+nhóm khảo cứu các nền tảng lý thuyết liên quan trực tiếp đến
+đồ án, bao gồm: lý thuyết độ phức tạp của bài toán lăn khối,
+các giải thuật tìm kiếm đồ thị kinh điển, lý thuyết thiết kế
+hàm đánh giá Heuristic, và các tiêu chuẩn đánh giá thực nghiệm.
+
+\subsection{Lý thuyết Độ phức tạp và Bài toán Lăn khối Đa diện}
+\label{subsec:related_complexity}
+Khác với các bài toán điều hướng chất điểm truyền thống trong mê cung,
+bài toán lăn các vật thể đa diện trên mặt phẳng lưới $2\text{D}$ đặt
+ra những ràng buộc chuyển động đặc biệt về hình học và cấu hình không gian.
+
+Buchin và các cộng sự (2007) \cite{buchin2007rolling} đã tiến hành
+nghiên cứu sâu sắc về tính chất không gian trạng thái của bài toán lăn
+khối lập phương trên lưới ô vuông. Các tác giả chỉ ra rằng khi các mặt
+của khối lập phương được gán nhãn hoặc chịu điều kiện tiếp xúc, đồ thị
+trạng thái chuyển tiếp có cấu trúc chu trình phức tạp, đòi hỏi số bước
+di chuyển lớn hơn đáng kể so với khoảng cách hình học thông thường.
+Nghiên cứu tổng quát hơn của Hearn và Demaine (2009) \cite{hearn2009games}
+về lý thuyết trò chơi tổ hợp đã hệ thống hóa các mô hình đồ thị chuyển
+động có thể đảo ngược và phân loại chúng vào các lớp độ phức tạp tính toán
+khác nhau.
+
+Đối với trò chơi Bloxorz, sự kết hợp giữa khối hình chữ nhật
+$1 \times 1 \times 2$ (có ba tư thế định hướng khác nhau) và các cơ
+chế sàn tương tác (công tắc, cầu lật, gạch mong manh, phân thân) làm
+gia tăng đột biến độ phức tạp bài toán. Nghiên cứu mang tính bước ngoặt
+của van der Zanden và Bodlaender (2014) \cite{vanderzanden2014bloxorz}
+đã chứng minh một cách tường minh rằng: bài toán xác định tính đến
+được của Bloxorz tổng quát là \textbf{PSPACE-complete}. Để thiết lập
+chứng minh này, các tác giả đã quy giảm từ bài toán thỏa mãn biểu thức
+logic định lượng luân phiên (QBF) thông qua việc xây dựng các cổng
+logic cơ học (AND, OR, NOT) bằng chính hệ thống công tắc và cầu nối trong
+Bloxorz. Kết quả này khẳng định rằng không tồn tại bất kỳ giải thuật
+thời gian đa thức nào có thể giải quyết trọn vẹn mọi bản đồ Bloxorz
+(trừ khi $\text{P} = \text{PSPACE}$), do đó việc áp dụng các giải thuật
+tìm kiếm thông minh và hàm Heuristic cắt tỉa không gian là hoàn toàn tất yếu.
+
+\subsection{Các Giải thuật Tìm kiếm Không Gian Trạng thái Kinh điển}
+\label{subsec:related_search}
+Để giải quyết bài toán không gian trạng thái được mô hình hóa dưới dạng
+đồ thị có hướng hữu hạn $G = (V, E)$, các giải thuật tìm kiếm không
+thông tin cung cấp nền tảng chuẩn mực:
+
+\begin{itemize}[--]
+    \item \textbf{Tìm kiếm theo Chiều rộng (BFS):}
+    Được công bố lần đầu bởi Moore (1959) \cite{moore1959bfs} trong bài
+    toán tìm đường thoát mê cung ngắn nhất. BFS duyệt không gian theo từng
+    lớp độ sâu thông qua hàng đợi FIFO. Trong đồ thị có trọng số cạnh
+    đồng nhất (mỗi bước lật khối tính là 1 bước di chuyển), BFS bảo đảm
+    tính đầy đủ và tính tối ưu về số bước đi. Tuy nhiên, nhược điểm chí
+    mạng của BFS là độ phức tạp không gian $O(b^d)$, trong đó $b$ là hệ
+    số nhánh và $d$ là độ sâu lời giải ngắn nhất, khiến giải thuật dễ cạn
+    kiệt bộ nhớ RAM đối với các bản đồ phức tạp \cite{russell2020aima}.
+
+    \item \textbf{Tìm kiếm theo Chiều sâu (DFS):}
+    Được hình thức hóa bởi Tarjan (1972) \cite{tarjan1972dfs} trong ngữ
+    cảnh xử lý đồ thị tuyến tính. DFS khai thác tối đa một nhánh tìm kiếm
+    thông qua cấu trúc ngăn xếp LIFO. Trong các bài toán có không gian
+    trạng thái chứa chu trình vô hạn (như việc lăn khối qua lại giữa hai
+    ô liền kề), DFS thuần túy sẽ rơi vào vòng lặp vô tận. Do đó, việc
+    kết hợp một tập hợp ghi nhận các trạng thái đã duyệt (\texttt{visited})
+    là yêu cầu bắt buộc để đảm bảo tính hữu hạn và dừng của giải thuật
+    \cite{edelkamp2011heuristic}. Mặc dù tiết kiệm bộ nhớ trong các nhánh
+    nông, DFS không bảo đảm tính tối ưu và có xu hướng sinh ra chuỗi hành
+    động dài bất thường. Korf (1985) \cite{korf1985ids} đã đề xuất giải
+    thuật Tìm kiếm Sâu dần (IDS) để kết hợp ưu thế bộ nhớ tuyến tính của
+    DFS với tính tối ưu độ sâu của BFS.
+
+    \item \textbf{Tìm kiếm Chi phí Đồng nhất (UCS):}
+    Là một biến thể tương đương với giải thuật đường đi ngắn nhất của
+    Dijkstra (1959) \cite{dijkstra1959graph}. Thay vì mở rộng nút theo
+    thứ tự độ sâu, UCS sử dụng hàng đợi ưu tiên để luôn mở rộng trạng thái
+    có tổng chi phí tích lũy $g(n)$ nhỏ nhất. UCS đạt tính tối ưu toàn cục
+    ngay cả khi chi phí di chuyển giữa các ô không bằng nhau. Trong đồ án
+    này, UCS đóng vai trò then chốt khi gán trọng số phạt cho các ô gạch
+    cam nguy hiểm nhằm mô phỏng tác tử né tránh rủi ro nứt vỡ sàn.
+\end{itemize}
+
+\subsection{Tìm kiếm Heuristic và Tính Chất Chấp Nhận Được}
+\label{subsec:related_heuristics}
+Nhằm khắc phục sự bùng nổ tổ hợp của các phương pháp duyệt mù, giải thuật
+A* được giới thiệu bởi Hart, Nilsson và Raphael (1968) \cite{hart1968astar}
+đã cách mạng hóa lĩnh vực tìm kiếm heuristic. A* định hướng tìm kiếm bằng
+hàm đánh giá tổng thể:
+\begin{equation}
+    f(n) = g(n) + h(n)
+    \label{eq:astar_eval}
+\end{equation}
+Trong đó, $g(n)$ là chi phí thực tế đã đi từ trạng thái khởi đầu đến nút
+$n$, và $h(n)$ là hàm Heuristic ước lượng chi phí tối thiểu từ $n$ đến
+trạng thái đích.
+
+Công trình lý thuyết kinh điển của Dechter và Pearl (1985)
+\cite{dechter1985astar} cùng chuyên khảo chuyên sâu của Pearl (1984)
+\cite{pearl1984heuristics} đã đặt nền móng toán học vững chắc cho tính
+tối ưu của A*:
+\begin{enumerate}[1.]
+    \item \textbf{Tính Chấp nhận được:}
+    Hàm Heuristic $h(n)$ được gọi là chấp nhận được nếu nó không bao giờ
+    ước tính vượt quá chi phí thực tế thấp nhất $h^*(n)$ để đi từ $n$ đến
+    đích, tức là:
+    \begin{equation}
+        0 \le h(n) \le h^*(n), \quad \forall n \in S
+        \label{eq:admissibility}
+    \end{equation}
+    Khi đồ thị tìm kiếm là dạng cây hoặc giải thuật sử dụng cơ chế mở lại
+    nút thích hợp, tính chất chấp nhận được bảo đảm rằng đường đi đầu tiên
+    A* tìm đến trạng thái đích luôn là đường đi có tổng chi phí tối ưu
+    nhất.
+
+    \item \textbf{Tính Nhất quán:}
+    $h(n)$ được gọi là nhất quán nếu với mọi nút $n$ và nút con $n'$ sinh
+    ra bởi hành động $a$ có chi phí $c(n, a, n')$, ta luôn có bất đẳng thức
+    tam giác:
+    \begin{equation}
+        h(n) \le c(n, a, n') + h(n')
+        \label{eq:consistency}
+    \end{equation}
+    Tính nhất quán đảm bảo rằng chuỗi giá trị $f(n)$ không giảm dọc theo
+    mọi nhánh tìm kiếm, đồng thời nút đầu tiên được lấy ra khỏi hàng đợi
+    ưu tiên đã có giá trị $g(n)$ tối ưu cục bộ, loại bỏ nhu cầu phải mở
+    lại nút \cite{edelkamp2011heuristic}.
+\end{enumerate}
+
+Để thiết kế hàm Heuristic thỏa mãn tính chấp nhận được cho Bloxorz, kỹ thuật
+thư giãn bài toán \cite{pearl1984heuristics} thường được áp dụng: bỏ qua các
+chướng ngại vật rơi tự do, bỏ qua sự nứt vỡ của gạch cam và giả định khối
+có thể lướt hoặc lăn tự do trên mặt phẳng lưới. Trong đồ án này, nhóm
+xây dựng hàm Heuristic dựa trên khoảng cách Manhattan chia đôi (vì mỗi bước
+lật khối có thể di chuyển trọng tâm $2$ đơn vị) kết hợp phạt sai lệch tư thế
+không gian.
+
+\subsection{Phương Pháp Thực Nghiệm và Đánh Giá Hiệu Năng}
+\label{subsec:related_benchmarks}
+Nhằm đảm bảo tính khách quan và khoa học trong việc so sánh các giải
+thuật tìm kiếm, Sturtevant (2012) \cite{sturtevant2012benchmarks} đã đề
+xuất bộ tiêu chuẩn đánh giá tìm kiếm trên lưới bao gồm:
+\begin{enumerate}[(i)]
+    \item Đo lường thời gian thực thi tìm kiếm độc lập với thời gian đồ họa;
+    \item Thống kê số nút đã duyệt và số nút đã sinh ra như một thước đo không
+    phụ thuộc phần cứng;
+    \item Đánh giá mức độ chiếm dụng bộ nhớ đỉnh;
+    \item Đánh giá sai số chiều dài đường đi so với lời giải tối ưu.
+\end{enumerate}
+
+Tuân thủ phương pháp luận trên, hệ thống của nhóm tách bạch hoàn toàn
+bộ giải AI khỏi Ursina Engine \cite{amland2020ursina, panda3d2024manual}.
+Việc giám sát bộ nhớ được thực hiện trực tiếp thông qua thư viện chuẩn
+\texttt{tracemalloc} của Python \cite{python2024tracemalloc}, và hàng đợi
+ưu tiên được tối ưu hóa bằng cấu trúc Min-Heap của thư viện \texttt{heapq}
+\cite{python2024heapq}, thiết lập một khung thực nghiệm chuẩn hóa, có thể
+tái lập hoàn toàn.

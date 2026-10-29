@@ -1,141 +1,280 @@
-\section{Mô hình hóa Không gian Trạng thái và Các Giải thuật Tìm kiếm}
+\section{Cài đặt các Thuật toán Tìm kiếm}
+\label{sec:algorithms}
 
-\subsection{Hình thức hóa Bài toán Tìm kiếm (Search Problem Formalization)}
-Để áp dụng các giải thuật trí tuệ nhân tạo, bài toán Bloxorz được hình thức hóa thành một bộ $5$ thành phần chuẩn tắc $\langle S, s_0, A, T, G \rangle$:
+Chương này trình bày chi tiết kiến trúc và phương pháp hiện thực của 4
+giải thuật tìm kiếm trong không gian trạng thái: Tìm kiếm theo Chiều
+rộng (BFS), Tìm kiếm theo Chiều sâu (DFS), Tìm kiếm Chi phí Đồng nhất
+(UCS), và Tìm kiếm A*. Tất cả các thuật toán đều được phát triển trên
+cùng một giao diện trừu tượng \texttt{BaseSolver} và sử dụng chung cấu
+trúc nút tìm kiếm bất biến tối ưu bộ nhớ.
 
-\paragraph{Không gian trạng thái ($S$):}
-Một trạng thái $s \in S$ không đơn thuần là tọa độ không gian mà là tích Descartes giữa cấu hình hình học của khối và cấu hình môi trường động của bàn cờ:
+\subsection{Hình thức hóa Bài toán Không gian Trạng thái}
+\label{subsec:formal_search_problem}
+Không gian trạng thái Bloxorz được hình thức hóa thành một bộ $6$ thành
+phần $\langle S, s_0, A, T, G, c \rangle$:
+\begin{enumerate}[1.]
+    \item \textbf{Tập trạng thái ($S$):}
+    Mỗi trạng thái $s \in S$ là một cặp
+    $s = \langle \text{BlockState}, \text{BoardState} \rangle$,
+    trong đó $\text{BlockState}$ biểu diễn vị trí và tư thế của khối
+    (hoặc cặp khối đơn), và $\text{BoardState}$ là tuple trạng thái
+    boolean đóng/mở của các nhóm cầu trên bản đồ.
+
+    \item \textbf{Trạng thái ban đầu ($s_0 \in S$):}
+    Khối đặt tại vị trí xuất phát (\texttt{spawn\_state}) ở tư thế
+    $\text{STANDING}$, và các cầu ở trạng thái khởi tạo ban đầu.
+
+    \item \textbf{Không gian hành động ($A$):}
+    $A = \{\text{UP}, \text{DOWN}, \text{LEFT}, \text{RIGHT},
+    \texttt{SWITCH\_CUBE}\}$.
+
+    \item \textbf{Hàm chuyển tiếp trạng thái
+    ($T: S \times A \to S \cup \{\bot\}$):}
+    Trả về trạng thái hợp lệ tiếp theo $s'$ sau khi lăn khối và kích hoạt
+    công tắc tương ứng, hoặc trả về trạng thái rơi ngã $\bot$ (Fell Void /
+    Fell Fragile).
+
+    \item \textbf{Điều kiện đích ($G \subset S$):}
+    Trạng thái thỏa mãn khối nguyên vẹn ở tư thế $\text{STANDING}$ tại tọa
+    độ lỗ thoát: $(x, y) = (x_g, y_g)$.
+
+    \item \textbf{Hàm chi phí bước đi
+    ($c: S \times A \times S \to \mathbb{R}^+$):}
+    Xác định chi phí để thực hiện hành động $a$ chuyển từ $s$ sang $s'$.
+\end{enumerate}
+
+\subsection{Cấu trúc Nút Tìm kiếm Bất biến (\texttt{SearchNode})}
+\label{subsec:search_node}
+Một thách thức cố hữu trong việc hiện thực các giải thuật tìm kiếm đồ thị
+trên ngôn ngữ có cơ chế quản lý bộ nhớ tự động (như Python) là chi phí lưu
+trữ lịch sử đường đi. Nếu mỗi nút lưu trữ một danh sách các bước đi
+$\text{List}[a]$ từ gốc, chi phí bộ nhớ cho một nút ở độ sâu $d$ sẽ là
+$O(d)$, dẫn đến tổng chi phí bộ nhớ của toàn bộ cây tìm kiếm bùng nổ lên
+$O(b^d \cdot d)$ \cite{russell2020aima}.
+
+Để giải quyết vấn đề này, nhóm thiết kế lớp dữ liệu bất biến
+\texttt{SearchNode} theo mô hình chuỗi liên kết ngược:
 \begin{equation}
-s = \big(\mathcal{B}, \mathcal{M}\big)
+    \text{SearchNode} = \langle \text{block}, \text{board}, \text{cost},
+    \text{depth}, \text{parent}, \text{direction} \rangle
 \end{equation}
-Trong đó $\mathcal{B}$ đại diện cho trạng thái hình học và quyền điều khiển của khối, được xác định phân theo hai chế độ vận hành:
+\begin{itemize}[--]
+    \item \textbf{Tiết kiệm bộ nhớ vượt trội $O(1)$:}
+    Mỗi khi một nút con được sinh ra, nó chỉ lưu trữ một con trỏ tham chiếu
+    ngược về nút cha (\texttt{parent}) và hành động dẫn xuất
+    (\texttt{direction}). Chi phí cấp phát bộ nhớ cho mỗi nút giảm từ
+    $O(d)$ xuống hằng số $O(1)$.
+    
+    \item \textbf{Bảo toàn dữ liệu trong Hàng đợi Ưu tiên:}
+    Đặc tính bất biến đảm bảo rằng việc tìm thấy một đường đi tốt hơn tới cùng
+    một trạng thái sẽ không thể vô tình sửa đổi dữ liệu của các nhánh tìm kiếm
+    khác đang nằm trong hàng đợi ưu tiên Min-Heap.
+
+    \item \textbf{Tái cấu trúc đường đi trong $O(d)$:}
+    Khi trạng thái đích được phát hiện, hàm \texttt{reconstruct\_moves()} chỉ
+    cần lần ngược theo chuỗi con trỏ \texttt{parent} từ đích về gốc trong
+    thời gian tuyến tính $O(d)$ và đảo ngược danh sách để thu được chuỗi hành
+    động hoàn chỉnh.
+\end{itemize}
+
+\subsection{Tìm kiếm theo Chiều rộng và Chiều sâu}
+\label{subsec:bfs_dfs_impl}
+
+\noindent
+\textbf{Tìm kiếm theo Chiều rộng (BFS):}
+Hiện thực bằng hàng đợi hai đầu \texttt{collections.deque} trong Python.
+BFS thăm các trạng thái theo từng tầng độ sâu tăng dần.
+\begin{itemize}[--]
+    \item \textit{Kiểm tra Đích sớm:}
+    Để tối ưu thời gian, BFS kiểm tra điều kiện đích ngay tại thời điểm
+    sinh nút con thay vì đợi đến lúc lấy nút ra khỏi hàng đợi.
+    \item \textit{Tính tối ưu:} BFS bảo đảm $100\%$ tìm ra lộ trình có số
+    bước lật khối ít nhất trong không gian chi phí đồng nhất.
+\end{itemize}
+
+\noindent
+\textbf{Tìm kiếm theo Chiều sâu (DFS) với Cơ chế Phát hiện Chu trình:}
+Khác với cây tìm kiếm thuần túy, không gian trạng thái Bloxorz là một đồ
+thị có vô số chu trình (ví dụ: chu trình lật qua trái rồi lật ngược lại
+qua phải). Nếu sử dụng DFS đệ quy tiêu chuẩn, thuật toán sẽ ngay lập tức rơi
+vào vòng lặp vô tận hoặc chạm giới hạn đệ quy của Python
+(\texttt{RecursionError}).
+\begin{itemize}[--]
+    \item \textit{Ngăn xếp LIFO tường minh:} Nhóm hiện thực DFS bằng
+    ngăn xếp tường minh trên bộ nhớ Heap thông qua danh sách Python
+    (\texttt{list.pop()}), triệt tiêu hoàn toàn nguy cơ tràn ngăn xếp hệ thống.
+    \item \textit{Tập trạng thái đã duyệt:} Sử dụng bảng băm lưu trữ khóa định
+    danh trạng thái $\langle \text{block\_key}, \text{bridge\_key} \rangle$.
+    Trước khi đẩy một nút vào ngăn xếp, DFS kiểm tra khóa băm; nếu trạng thái
+    đã tồn tại trong \texttt{visited}, nhánh đó sẽ bị cắt tỉa ngay lập tức.
+    \item \textit{Đặc điểm hiệu năng:} DFS có tốc độ lặn sâu rất nhanh nhưng
+    thường cho ra các đường đi vòng vèo, số bước di chuyển lớn gấp nhiều lần
+    so với đường đi tối ưu.
+\end{itemize}
+
+\subsection{Tìm kiếm Chi phí Đồng nhất và Nhận Thức Địa Hình}
+\label{subsec:ucs_impl}
+UCS mở rộng không gian tìm kiếm dựa trên tổng chi phí tích lũy $g(n)$ nhỏ nhất.
+Hàng đợi ưu tiên được tối ưu bằng mô-đun Min-Heap \texttt{heapq} của Python
+với phần tử có dạng $\langle g(n), \text{counter}, \text{node} \rangle$, trong
+đó \texttt{counter} đóng vai trò phá vỡ hòa điểm ổn định.
+
+Để mô phỏng hành vi thông minh né tránh rủi ro của tác tử, nhóm thiết
+kế hàm chi phí phi đồng nhất \texttt{fragile\_cost}:
 \begin{equation}
-\mathcal{B} = \begin{cases}
-    (x, y, o), & \text{khi khối đơn nhất với tọa độ neo } (x, y) \in \mathbb{Z}^2 \text{ và tư thế } o \in \{S, H, V\} \\[0.6em]
-    \big((x_1, y_1), (x_2, y_2), k\big), & \text{khi khối phân thân với } k \in \{0, 1\} \text{ chỉ định khối đang nhận lệnh điều khiển}
-\end{cases}
+    c(s, a, s') =
+    \begin{cases}
+        0.0 & \text{nếu } a = \texttt{SWITCH\_CUBE} \\
+        3.0 & \text{nếu } s' \text{ tiếp xúc gạch cam }
+        (\texttt{FRAGILE}) \\
+        1.0 & \text{trong các trường hợp lật khối bình thường khác}
+    \end{cases}
+    \label{eq:fragile_cost}
 \end{equation}
-Trạng thái cấu hình môi trường $\mathcal{M} = \big((b_1, \sigma_1), (b_2, \sigma_2), \dots, (b_m, \sigma_m)\big)$ là một bộ tuple bất biến có thứ tự ánh xạ từng định danh cầu $b_i$ với giá trị chân lý $\sigma_i \in \{\text{True}, \text{False}\}$ biểu thị trạng thái mở hoặc đóng. 
 
-Sự phân tách tường minh này đóng vai trò quyết định đối với tính đầy đủ của thuật toán tìm kiếm. Hai trạng thái có cùng vị trí khối $\mathcal{B}$ nhưng khác biệt về trạng thái cầu $\mathcal{M}$ được xem là hai đỉnh phân biệt trong đồ thị trạng thái. Nhờ đó, thuật toán không bao giờ bỏ sót nhánh rẽ khi khối cần quay lại vị trí xuất phát sau khi đã kích hoạt mở một cây cầu mới ở góc bàn cờ.
+\noindent
+\textbf{Ý nghĩa Thiết kế:}
+Việc ấn định chi phí bước đi trên gạch cam là $3.0$ (cao gấp ba lần bước đi
+trên gạch bền) tạo ra một áp lực toán học ép UCS ưu tiên tìm kiếm các lộ trình
+vòng trên nền gạch an toàn trước. Chỉ khi mọi lộ trình thuần gạch bền đều dẫn
+đến ngõ cụt hoặc có chi phí vượt quá việc băng qua gạch cam, UCS mới quyết định
+cho khối bước lên bề mặt mong manh. Cơ chế này giúp giảm thiểu tối đa xác suất
+phạm sai lầm trong các môi trường có độ rủi ro cơ học cao.
 
-\paragraph{Trạng thái ban đầu ($s_0$):}
-Vị trí khối dựng đứng tại tọa độ xuất phát (\textit{Spawn Point}) và trạng thái khởi tạo ban đầu của toàn bộ các cây cầu theo tệp cấu hình màn chơi:
+\subsection{Thuật toán Tìm kiếm A* và Chứng minh Tính Chấp Nhận Được}
+\label{subsec:astar_admissibility}
+Giải thuật A* tích hợp tri thức định hướng thông qua hàm Heuristic $h(n)$
+để tập trung tia tìm kiếm về phía ô đích.
+
+\subsubsection{\texorpdfstring{Công thức Hàm Heuristic $h(n)$}%
+{Cong thuc Ham Heuristic h(n)}}
+Hàm Heuristic của nhóm được xây dựng trên nguyên lý nới lỏng bài toán,
+phân biệt hai cấu hình:
+
+\begin{enumerate}[1.]
+    \item \textbf{Cấu hình Khối Nguyên vẹn ($1 \times 1 \times 2$):}
+    Gọi $(x_g, y_g)$ là tọa độ ô đích và $\text{Cells}(n)$ là tập hợp các
+    tọa độ ô lưới mà khối đang che phủ tại nút $n$. Khoảng cách Manhattan
+    ngắn nhất từ khối đến đích được tính bởi:
+    \begin{equation}
+        d_{\min}(n) = \min_{(x, y) \in \text{Cells}(n)} (|x - x_g| + |y - y_g|)
+    \end{equation}
+    Hàm Heuristic được xác định:
+    \begin{equation}
+        h(n) =
+        \begin{cases}
+            0 & \text{nếu } d_{\min}(n) = 0 \land
+            \mathcal{O}(n) = \text{STANDING} \\
+            2 & \text{nếu } d_{\min}(n) = 0 \land
+            \mathcal{O}(n) \neq \text{STANDING} \\
+            \left\lceil \dfrac{d_{\min}(n)}{2} \right\rceil &
+            \text{nếu } d_{\min}(n) > 0
+        \end{cases}
+        \label{eq:heuristic_normal}
+    \end{equation}
+
+    \item \textbf{Cấu hình Khối Phân thân:}
+    Khi khối bị tách thành hai khối lập phương $B_1 = (x_1, y_1)$ và
+    $B_2 = (x_2, y_2)$, chúng bắt buộc phải di chuyển về hai ô kề nhau
+    để hợp nhất trước khi có thể về đích ở tư thế đứng. Chi phí tối thiểu
+    để hai khối tiếp xúc cạnh là:
+    \begin{equation}
+        h_{\text{merge}}(n) = \max\Big(0, \,
+        (|x_1 - x_2| + |y_1 - y_2| - 1)\Big)
+    \end{equation}
+    Sau khi hợp nhất, khoảng cách ngắn nhất đến đích được ước lượng bởi khối
+    nằm gần đích hơn:
+    \begin{equation}
+        h_{\text{goal}}(n) = \left\lceil
+        \dfrac{\min\Big(d(B_1, G), \, d(B_2, G)\Big)}{2} \right\rceil
+    \end{equation}
+    Tổng chi phí Heuristic trong trạng thái phân thân là:
+    \begin{equation}
+        h(n) = h_{\text{merge}}(n) + h_{\text{goal}}(n)
+        \label{eq:heuristic_split}
+    \end{equation}
+\end{enumerate}
+
+\subsubsection{Chứng minh Toán học Tính Chấp Nhận Được}
+\noindent
+\textbf{Định lý 1 (Tính Chấp nhận được của $h(n)$):}
+\textit{Hàm đánh giá Heuristic $h(n)$ được định nghĩa tại Phương trình
+(\ref{eq:heuristic_normal}) và (\ref{eq:heuristic_split}) thỏa mãn điều kiện
+chấp nhận được:}
 \begin{equation}
-s_0 = \big((x_{\text{spawn}}, y_{\text{spawn}}, S), \mathcal{M}_{\text{initial}}\big)
+    0 \le h(n) \le h^*(n), \quad \forall n \in S
 \end{equation}
+\textit{Trong đó $h^*(n)$ là chi phí thực tế tối thiểu để đưa khối từ trạng
+thái $n$ về trạng thái đích hợp lệ.}
 
-\paragraph{Tập hành động hợp lệ ($A(s)$):}
-Hành động $a \in A(s)$ phụ thuộc vào tính chất của khối tại trạng thái hiện tại. Với khối đơn nhất, tập hành động bao gồm bốn hướng lăn $A(s) \subseteq \{\texttt{UP}, \texttt{RIGHT}, \texttt{DOWN}, \texttt{LEFT}\}$. Khi khối đang ở trạng thái phân thân, tập hành động được bổ sung thêm thao tác hoán đổi quyền điều khiển giữa hai khối lập phương: $A(s) \subseteq \{\texttt{UP}, \texttt{RIGHT}, \texttt{DOWN}, \texttt{LEFT}, \texttt{SWITCH}\}$.
+\noindent
+\textbf{Chứng minh:}
+Ta xét từng trường hợp cấu hình của trạng thái $n$:
 
-\paragraph{Mô hình chuyển trạng thái ($T: S \times A \to S$):}
-Hàm tất định ánh xạ trạng thái $s$ khi thực hiện hành động hợp lệ $a$ sang trạng thái mới $s'$. Quá trình chuyển đổi bao gồm tính toán động học vị trí khối, kích hoạt các công tắc nằm dưới bề mặt tiếp xúc, cập nhật trạng thái đóng/mở của các cây cầu liên kết và kiểm tra điều kiện sáp nhập phân thân. Các hành động dẫn tới việc rơi xuống vực hoặc dựng đứng trên gạch cam sẽ bị hàm kế thừa (\textit{Successor Function}) triệt tiêu, không sinh ra nhánh trong cây tìm kiếm.
-
-\paragraph{Kiểm tra trạng thái đích ($G(s)$):}
-Vị trí chiến thắng được xác nhận khi và chỉ khi khối ở tư thế dựng đứng lọt trọn vào ô đích:
+\noindent
+\textbf{Trường hợp 1: Khối nguyên vẹn và $d_{\min}(n) > 0$.}
+Trong mỗi bước lật hợp lệ
+$a \in \{\text{UP}, \text{DOWN}, \text{LEFT}, \text{RIGHT}\}$,
+trọng tâm của khối di chuyển trên lưới Manhattan một khoảng tối đa là
+$2$ đơn vị (xảy ra khi khối từ tư thế đứng lật sang tư thế nằm, hoặc từ
+nằm lật sang đứng). Do đó, với bất kỳ đường đi thực tế nào gồm $k$ bước
+lật đưa khối về ô đích, tổng độ dịch chuyển Manhattan $\Delta D$ bị chặn
+trên bởi:
 \begin{equation}
-G(s) = \text{True} \iff \mathcal{B} = (x_{\text{goal}}, y_{\text{goal}}, S)
+    \Delta D \le 2 \cdot k \implies k \ge
+    \left\lceil \dfrac{\Delta D}{2} \right\rceil \ge
+    \left\lceil \dfrac{d_{\min}(n)}{2} \right\rceil
 \end{equation}
-
-\subsection{Cấu trúc Dữ liệu Nút Tìm kiếm Bất biến (\texttt{SearchNode})}
-Trong quá trình tìm kiếm đồ thị, để bảo đảm tính toàn vẹn tham chiếu và tối ưu hóa chi phí bộ nhớ, hệ thống sử dụng cấu trúc nút tìm kiếm bất biến \texttt{SearchNode} được thiết kế theo mô hình danh sách liên kết ngược (\textit{Backward Linked Chain}):
+Vì hàm chi phí bước đi $c(s, a, s') \ge 1.0$ với mọi bước lật thực tế
+(theo Phương trình \ref{eq:fragile_cost}), tổng chi phí tối ưu thực tế
+thỏa mãn:
 \begin{equation}
-\mathcal{N} = \big\langle \text{block}, \text{board}, g, d, \pi, a_{\text{in}} \big\rangle
+    h^*(n) = \sum_{i=1}^{k^*} c(s_i, a_i, s_{i+1}) \ge 1.0 \cdot k^*
+    \ge \left\lceil \dfrac{d_{\min}(n)}{2} \right\rceil = h(n)
 \end{equation}
-Trong đó $g$ là chi phí đường đi tích lũy từ nút gốc, $d$ là độ sâu tìm kiếm, $\pi$ là con trỏ tham chiếu đến nút cha liền trước và $a_{\text{in}}$ là hành động dẫn từ nút cha đến nút hiện tại. 
 
-Thiết kế này mang lại lợi thế vượt trội so với cách tiếp cận ngây thơ (sao chép toàn bộ mảng lịch sử bước đi tại mỗi nút). Thay vì tiêu tốn $O(d)$ bộ nhớ cho mỗi trạng thái sinh ra, \texttt{SearchNode} chỉ tiêu tốn $O(1)$ bộ nhớ nhờ việc tái sử dụng nút cha. Khi tìm thấy ô đích, thuật toán chỉ cần kích hoạt phương thức \texttt{reconstruct\_moves()} để lần theo chuỗi con trỏ cha $\pi \to \pi(\pi) \dots \to \text{root}$ và đảo ngược mảng kết quả, thu được lộ trình hoàn chỉnh trong thời gian tuyến tính $O(d)$. Hơn nữa, việc cố định bất biến (\textit{Frozen Dataclass}) ngăn chặn hoàn toàn hiện tượng một đường đi mới được tối ưu hóa ghi đè làm sai lệch chuỗi con trỏ của các nhánh tìm kiếm song song khác đang nằm trong hàng đợi ưu tiên.
+\noindent
+\textbf{Trường hợp 2: Khối nguyên vẹn và $d_{\min}(n) = 0$.}
+\begin{itemize}[--]
+    \item Nếu $\mathcal{O}(n) = \text{STANDING}$, khối đã ở tư thế đích,
+    do đó $h^*(n) = 0 = h(n)$.
+    \item Nếu $\mathcal{O}(n) \neq \text{STANDING}$ (khối đang nằm ngang
+    hoặc nằm dọc và đè lên một phần ô đích): Theo luật chơi Bloxorz, trò
+    chơi không chấp nhận trạng thái nằm trên ô đích. Khối không thể tự
+    động chuyển từ tư thế nằm sang đứng ngay trên cùng một tọa độ mà bắt
+    buộc phải lật ra ô bên cạnh ít nhất $1$ bước, rồi lật ngược trở lại
+    để đứng lên ô đích. Do đó, số bước di chuyển thực tế tối thiểu bắt
+    buộc phải là $k^* \ge 2$, suy ra:
+    \begin{equation}
+        h^*(n) \ge 2.0 \cdot 1.0 = 2.0 = h(n)
+    \end{equation}
+\end{itemize}
 
-\subsection{Thuật toán Tìm kiếm theo Chiều rộng (Breadth-First Search - BFS)}
-Thuật toán BFS tiếp cận bài toán bằng chiến lược loang sóng đồng mức, sử dụng hàng đợi hai đầu FIFO (\texttt{collections.deque}). Tại mỗi bước lặp, trạng thái ở đầu hàng đợi được lấy ra để kiểm tra đích; nếu chưa đạt đích, tất cả các trạng thái con hợp lệ chưa từng được duyệt sẽ được đưa vào cuối hàng đợi.
-
-Để ngăn chặn lặp chu trình và bùng nổ tổ hợp, thuật toán duy trì một tập hợp băm \texttt{visited} lưu trữ khóa chuẩn tắc $\text{key}(s) = \big(\text{canonical}(\mathcal{B}), \mathcal{M}\big)$. Thuật toán BFS bảo đảm tính đầy đủ (\textit{Completeness}) và tính tối ưu (\textit{Optimality}) về số lượng bước đi trong điều kiện chi phí mỗi bước là đồng nhất. Độ phức tạp thời gian và không gian của BFS đều ở mức $O(b^d)$, trong đó $b$ là hệ số nhánh hiệu dụng ($b \le 4$ với khối thường, $b \le 5$ với khối phân thân) và $d$ là độ sâu của lời giải nông nhất.
-
-\subsection{Thuật toán Tìm kiếm theo Chiều sâu (Depth-First Search - DFS / IDS)}
-Thuật toán DFS triển khai chiến lược thám hiểm sâu nhất có thể theo từng nhánh bằng cấu trúc ngăn xếp LIFO. Mặc dù DFS tiêu tốn rất ít bộ nhớ trong trường hợp cây tìm kiếm hữu hạn ($O(b \cdot m)$ với $m$ là độ sâu tối đa), trong đồ thị có chu trình của Bloxorz, DFS thuần túy đối mặt với hai rủi ro nghiêm trọng: rơi vào vòng lặp vô tận và trả về lời giải cực kỳ dài, thiếu tối ưu.
-
-Để giải quyết triệt để vấn đề này, nhóm tích hợp cơ chế kiểm soát chu trình theo đường đi (\textit{Path Cycle Detection}) và phát triển thành giải thuật Tìm kiếm Sâu dần (\textit{Iterative Deepening Search - IDS}). IDS thực hiện lặp DFS với giới hạn độ sâu cắt tỉa $L$ tăng dần từ $0, 1, 2, \dots$:
+\noindent
+\textbf{Trường hợp 3: Khối phân thân.}
+Để đưa hệ thống về đích, hai khối $B_1$ và $B_2$ bắt buộc phải hợp nhất
+thành một khối thống nhất $1 \times 1 \times 2$.
+\begin{itemize}[--]
+    \item Điều kiện cần để hợp nhất là khoảng cách Manhattan giữa hai khối
+    phải giảm từ $d(B_1, B_2) = |x_1 - x_2| + |y_1 - y_2|$ về đúng $1$. Vì
+    mỗi bước di chuyển của một khối đơn chỉ làm giảm khoảng cách Manhattan
+    giữa chúng tối đa $1$ đơn vị, số bước tối thiểu để hợp nhất không thể
+    nhỏ hơn $\max(0, d(B_1, B_2) - 1)$.
+    \item Sau khi hợp nhất, trọng tâm của khối mới không thể ở gần đích hơn
+    so với khối đơn gần đích nhất trước đó. Theo Bất đẳng thức tam giác và
+    kết quả từ Trường hợp 1, khối mới cần thêm ít nhất:
+    $\lceil \min(d(B_1, G), d(B_2, G)) / 2 \rceil$ bước lật.
+\end{itemize}
+Vì các giai đoạn này diễn ra tuần tự và độc lập, ta có:
 \begin{equation}
-L \leftarrow L + 1
+    h^*(n) \ge h_{\text{merge}}^*(n) + h_{\text{goal}}^*(n) \ge
+    h_{\text{merge}}(n) + h_{\text{goal}}(n) = h(n)
 \end{equation}
-Ở mỗi tầng lặp, IDS duyệt toàn bộ không gian trạng thái có độ sâu $\le L$. Giải thuật này kết hợp hoàn hảo ưu điểm của cả hai thế giới: bảo đảm tính đầy đủ và tính tối ưu về số bước đi như BFS, đồng thời duy trì độ phức tạp bộ nhớ tuyến tính $O(b \cdot d)$ như DFS.
 
-\subsection{Thuật toán Chi phí Đồng nhất (Uniform-Cost Search - UCS)}
-Khác với BFS chỉ quan tâm đến số lượng bước di chuyển, thuật toán UCS giải quyết bài toán tìm kiếm có trọng số, định hướng tìm ra lộ trình có tổng chi phí thực tế $g(n)$ nhỏ nhất. UCS sử dụng hàng đợi ưu tiên (\textit{Min-Priority Queue}) cấu trúc nhị phân Heap. Nút có chi phí tích lũy $g(n)$ thấp nhất luôn được ưu tiên lấy ra mở rộng trước.
+Từ cả ba trường hợp trên, ta có $h(n) \le h^*(n)$ với mọi $n \in S$.
+Định lý được chứng minh hoàn tất.
+\hfill $\blacksquare$
 
-\paragraph{Thiết kế Hàm Chi phí Bước đi Phi đồng nhất (\texttt{fragile\_cost}):}
-Để mô hình hóa bài toán tìm kiếm đường đi an toàn, giảm thiểu tối đa rủi ro khi di chuyển trên nền địa hình hiểm trở, hệ thống áp dụng hàm chi phí phi đồng nhất \texttt{fragile\_cost}:
-\begin{equation}
-c(s, a, s') = \begin{cases}
-    0.0 & \text{nếu } a = \texttt{SWITCH} \text{ (chỉ đổi quyền điều khiển giữa hai khối, không dịch chuyển vật lý)} \\[0.5em]
-    3.0 & \text{nếu } s' \text{ có ô khối tiếp xúc với ô gạch cam (\texttt{FRAGILE})} \\[0.5em]
-    1.0 & \text{trong các trường hợp lăn bình thường trên sàn đá kiên cố}
-\end{cases}
-\end{equation}
-Phụ phí $+2.0$ đặt lên ô gạch cam phản ánh chi phí cơ hội và rủi ro sập sàn: khối chỉ chấp nhận lăn qua gạch cam khi không còn đường gạch thường nào khác dẫn tới đích. Đối với khối phân thân, chi phí chỉ áp dụng dựa trên đích đến của khối đơn lẻ đang nhận lệnh lăn, khối đang nằm bất động ở vị trí khác không phải chịu phụ phí.
-
-Thuật toán duy trì một bảng \texttt{best\_cost} ghi nhận chi phí thấp nhất từng tìm thấy cho mỗi khóa trạng thái. Khi một nhánh mới chạm đến trạng thái đã biết với chi phí $g_{\text{new}} < \text{best\_cost}[s]$, trạng thái này được chấp nhận đưa vào hàng đợi ưu tiên. Ngược lại, nếu $g_{\text{new}} \ge \text{best\_cost}[s]$, nhánh đó lập tức bị cắt tỉa. Điều kiện dừng tối ưu xảy ra khi một nút thỏa mãn điều kiện đích được lấy ra khỏi đầu hàng đợi ưu tiên (\textit{goal dequeued}), bảo đảm không còn bất kỳ đường đi nào khác có chi phí nhỏ hơn tồn tại trong không gian tìm kiếm.
-
-\subsection{Thuật toán Tìm kiếm Thông tin A* (A* Search)}
-Thuật toán A* là sự kết hợp tinh hoa giữa chi phí thực tế đã đi qua $g(n)$ của UCS và hàm đánh giá tri thức định hướng tương lai $h(n)$. Hàm đánh giá tổng thể tại nút $n$ được xác định theo công thức:
-\begin{equation}
-f(n) = g(n) + h(n)
-\end{equation}
-Trong đó $g(n)$ đo lường chi phí chính xác từ điểm xuất phát đến nút hiện tại, còn $h(n)$ là ước lượng cận dưới của chi phí còn lại từ nút hiện tại đến ô đích.
-
-\paragraph{Thiết kế Hàm Đánh giá Heuristic ($h(n)$):}
-Để A* luôn bảo đảm tìm được lời giải tối ưu toàn cục, hàm heuristic $h(n)$ bắt buộc phải thỏa mãn tính chất chấp nhận được (\textit{Admissible}):
-\begin{equation}
-h(n) \le h^*(n), \quad \forall n \in S
-\end{equation}
-Trong đó $h^*(n)$ là chi phí thực tế nhỏ nhất từ nút $n$ đến đích. Dựa trên cấu trúc hình học của Bloxorz, nhóm thiết kế hàm Heuristic kết hợp giữa khoảng cách Manhattan chuẩn hóa và chi phí tái hợp phân thân:
-\begin{equation}
-h(n) = \begin{cases}
-    \text{dist}_{\text{merge}} + \left\lceil \dfrac{\min\big(d(b_1, \text{goal}), d(b_2, \text{goal})\big)}{2} \right\rceil & \text{khi khối bị phân thân} \\[1em]
-    \left\lceil \dfrac{\min_{(x, y) \in \text{occupied}} \big(|x - x_{\text{goal}}| + |y - y_{\text{goal}}|\big)}{2} \right\rceil + p_{\text{ori}} & \text{khi khối đơn nhất}
-\end{cases}
-\end{equation}
-Trong đó $p_{\text{ori}}$ là phụ phí định hướng tư thế: nếu khối đã chạm tới ô đích ($\min d = 0$) nhưng đang ở tư thế nằm ngang hoặc nằm dọc, khối bắt buộc phải tốn thêm ít nhất $2$ bước lật để dựng đứng vào ô đích, do đó $p_{\text{ori}} = 2.0$.
-
-\paragraph{Chứng minh Tính chất Chấp nhận được (Admissibility Proof):}
-\textit{Định lý:} Hàm heuristic $h(n)$ được định nghĩa như trên là chấp nhận được đối với bài toán Bloxorz với chi phí bước đi cơ bản $c \ge 1.0$.
-
-\textit{Chứng minh:} 
-Xét một bước lăn bất kỳ của khối chữ nhật kích thước $1 \times 1 \times 2$. Khoảng cách Manhattan giữa khối và ô đích được tính dựa trên điểm gần nhất thuộc tập các ô bị chiếm giữ:
-\begin{equation}
-D(\mathcal{B}, \text{goal}) = \min_{(x, y) \in \text{occupied}} \big(|x - x_{\text{goal}}| + |y - y_{\text{goal}}|\big)
-\end{equation}
-Khi khối ở tư thế \textbf{Dựng đứng} lăn sang tư thế \textbf{Nằm}, cạnh tiếp xúc dịch chuyển $1$ đơn vị và khối vươn dài thêm $1$ đơn vị theo hướng lăn. Do đó, tọa độ của ô xa nhất thuộc khối có thể dịch chuyển tối đa $\Delta x + \Delta y = 2$ đơn vị trong duy nhất $1$ bước lăn (ví dụ: từ ô $x=0$ dựng đứng lật sang phải chiếm ô $x=1$ và $x=2$). 
-
-Vì trong mỗi bước lăn đơn lẻ, khoảng cách Manhattan ngắn nhất tới ô đích chỉ có thể giảm đi tối đa là $2$ đơn vị:
-\begin{equation}
-\Delta D \le 2 \implies \text{Số bước lăn tối thiểu} \ge \left\lceil \frac{D}{2} \right\rceil
-\end{equation}
-Khi nhân với chi phí bước đi nhỏ nhất của hệ thống ($c_{\min} = 1.0$), ta có:
-\begin{equation}
-h(n) = \left\lceil \frac{D}{2} \right\rceil \cdot 1.0 \le h^*(n)
-\end{equation}
-Đối với trường hợp phân thân, hai khối đơn vị $1 \times 1 \times 1$ bắt buộc phải di chuyển đến vị trí kề nhau ($|x_1 - x_2| + |y_1 - y_2| = 1$). Vì mỗi lượt chỉ có thể điều khiển một khối đơn vị và mỗi bước chỉ đi được đúng $1$ ô, số bước di chuyển tối thiểu để hai khối sáp nhập không thể nhỏ hơn $\text{dist}_{\text{merge}} = \max\big(0, |x_1 - x_2| + |y_1 - y_2| - 1\big)$. Sau khi sáp nhập thành khối lớn $1 \times 1 \times 2$, khối này tiếp tục cần tối thiểu $\lceil \min(d_1, d_2) / 2 \rceil$ bước để di chuyển về đích. Do đó, tổng ước lượng luôn là cận dưới của chi phí thực tế. 
-
-Như vậy, hàm heuristic $h(n)$ hoàn toàn \textbf{Admissible}, bảo đảm tính tối ưu tuyệt đối của giải thuật A*.
-
-\subsection{Bảng So sánh Tổng quan Lý thuyết giữa 4 Giải thuật}
-Bảng \ref{tab:algorithm_theoretical_comparison} tổng kết sự so sánh lý thuyết giữa 4 giải thuật tìm kiếm được triển khai trong dự án Bloxorz Solver.
-
-\begin{table}[H]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabularx}{\textwidth}{l c c c c X}
-        \toprule
-        \textbf{Thuật toán} & \textbf{Cấu trúc biên} & \textbf{Chi phí} & \textbf{Đầy đủ} & \textbf{Tối ưu} & \textbf{Độ phức tạp Không gian} \\
-        \midrule
-        \textbf{BFS} & Hàng đợi FIFO & Đồng nhất & Có & Có (về bước) & $O(b^d)$ (Bùng nổ bộ nhớ theo độ sâu) \\
-        \textbf{DFS / IDS} & Ngăn xếp LIFO & Đồng nhất & Có (với IDS) & Có (với IDS) & $O(b \cdot d)$ (Tiết kiệm bộ nhớ tối đa) \\
-        \textbf{UCS} & Min-Heap & Bất kỳ ($c \ge 0$) & Có & Có (về chi phí) & $O(b^{1 + \lfloor C^* / \epsilon \rfloor})$ \\
-        \textbf{A* Search} & Min-Heap ($f = g + h$) & Bất kỳ ($c \ge 0$) & Có & Có (với $h$ hợp lệ) & $O(b^d)$ (Được định hướng cắt tỉa bởi $h$) \\
-        \bottomrule
-    \end{tabularx}
-    \caption{So sánh đặc tính lý thuyết giữa bốn thuật toán tìm kiếm}
-    \label{tab:algorithm_theoretical_comparison}
-\end{table}
+Hệ quả trực tiếp của Định lý 1 là giải thuật A* được bảo đảm $100\%$ về mặt
+lý thuyết sẽ luôn tìm ra lời giải có chi phí tối ưu toàn cục, đồng thời phát
+huy tối đa khả năng cắt tỉa các nhánh tìm kiếm kém triển vọng.

@@ -32,7 +32,7 @@ class SoundManager:
         """Loads Ursina Audio objects once the engine is running."""
         try:
             from ursina import Audio
-            sfx_names = ["roll", "switch", "fall", "win", "undo", "restart", "click", "merge"]
+            sfx_names = ["roll", "switch", "fall", "win", "undo", "restart", "click", "merge", "teleport"]
             self.sounds = {}
             for name in sfx_names:
                 wav_path = self.assets_dir / f"{name}.wav"

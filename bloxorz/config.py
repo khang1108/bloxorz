@@ -51,12 +51,12 @@ class CameraConfig:
 @dataclass
 class MotionConfig:
     """Kinematic timings, animation durations, and easing intervals."""
-    roll_duration: float = 0.20  # Duration of single 90-degree block roll in seconds (200ms)
-    fall_duration: float = 1.30  # Fall animation duration (see-saw tipping + free fall) in seconds
-    victory_fall_duration: float = 4.50  # Goal plunge fall duration in seconds (4-8s)
-    victory_pulse_duration: float = 4.50  # Backward-compatible alias
-    teleport_flight_duration: float = 0.70  # Parabolic aerial flight duration during teleport split (700ms)
-    fade_transition: float = 0.25  # UI modal scene fade transition duration in seconds (250ms)
+    roll_duration: float = 0.18  # Snappy Bloxpath roll speed (180ms)
+    fall_duration: float = 1.30  # Fall animation duration in seconds
+    victory_fall_duration: float = 3.50  # Goal plunge fall duration in seconds
+    victory_pulse_duration: float = 3.50  # Backward-compatible alias
+    teleport_flight_duration: float = 1.10  # Aerial flight duration during teleport split (seconds)
+    fade_transition: float = 0.25  # UI modal scene fade transition duration in seconds
 
 
 @dataclass
@@ -140,6 +140,67 @@ class ControlsConfig:
 
 
 @dataclass
+class AnimationConfig:
+    """Tuning parameters for Animation & VFX subsystem - Bloxpath Inspired Polish."""
+    # Sóng dập dìu cho các ô đi được (walkable board tiles floating like a raft on water)
+    wave_enabled: bool = True
+    wave_amplitude: float = 0.09
+    wave_freq_x: float = 0.40
+    wave_freq_z: float = 0.35
+    wave_speed: float = 1.6
+
+    # Bloxpath Column Sea (Ô nền bên ngoài gần như tĩnh, trồi lên sụt xuống bất đối xứng)
+    column_sea_enabled: bool = True
+    column_sea_padding: int = 8
+    column_sea_amplitude: float = 0.50
+    column_sea_speed: float = 1.50
+    column_sea_freq_x: float = 0.40
+    column_sea_freq_z: float = 0.35
+    column_sea_base_y: float = -1.25
+    palette_mode: str = "obsidian"  # "obsidian" (Chuẩn Bloxpath dark minimal) | "alabaster"
+
+    # Bloxpath Stage Assembly Intro (Gạch trồi lên từ hư không khi vào màn)
+    stage_intro_anim: bool = True
+    stage_intro_duration: float = 0.32
+    stage_intro_stagger: float = 0.025
+
+    # Bloxpath Tile Step Feedback (Ô gạch phát sáng nhẹ khi khối hộp bước lên)
+    tile_highlight_enabled: bool = True
+    tile_highlight_duration: float = 0.22
+
+    # Mặt sàn vững chãi (Không thụt lún giật)
+    cushion_depth: float = 0.0
+    cushion_radius: float = 0.0
+    cushion_duration: float = 0.0
+
+    # Lăn khối chuẩn Bloxpath: Khối đá cứng nguyên khối, dứt khoát, không cao su
+    roll_squash_y: float = 1.0
+    roll_stretch_xz: float = 1.0
+    micro_bounce_height: float = 0.0
+    micro_bounce_duration: float = 0.0
+    ghost_trail_enabled: bool = True
+    ghost_alpha: float = 0.15
+    ghost_fade_speed: float = 3.5
+
+    # Camera tĩnh tại 100%
+    screen_shake_enabled: bool = False
+    shake_intensity_roll: float = 0.0
+    shake_intensity_impact: float = 0.0
+    shake_intensity_shatter: float = 0.0
+    shake_decay: float = 8.0
+
+    # Hiệu ứng Teleport & Victory
+    teleport_particle_count: int = 14
+    victory_confetti_count: int = 36
+    victory_vortex_speed: float = 140.0
+
+    # Bụi lơ lửng tối giản
+    ambient_dust_count: int = 16
+    ambient_dust_range: float = 14.0
+    ambient_dust_speed: float = 0.20
+
+
+@dataclass
 class AppConfig:
     """Root configuration tree aggregating all subsystem configurations."""
     window: WindowConfig = field(default_factory=WindowConfig)
@@ -150,6 +211,7 @@ class AppConfig:
     audio: AudioConfig = field(default_factory=AudioConfig)
     solver: SolverConfig = field(default_factory=SolverConfig)
     controls: ControlsConfig = field(default_factory=ControlsConfig)
+    animation: AnimationConfig = field(default_factory=AnimationConfig)
 
 
 def _apply_dict_to_dataclass(dc_instance: Any, data: Dict[str, Any]):
@@ -220,6 +282,9 @@ def load_config(file_path: Optional[Path] = None) -> AppConfig:
 
     if "controls" in loaded_data and isinstance(loaded_data["controls"], dict):
         _apply_dict_to_dataclass(cfg.controls, loaded_data["controls"])
+
+    if "animation" in loaded_data and isinstance(loaded_data["animation"], dict):
+        _apply_dict_to_dataclass(cfg.animation, loaded_data["animation"])
 
     return cfg
 

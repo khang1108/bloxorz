@@ -24,6 +24,18 @@ from bloxorz.graphics.background_matrix import ColumnSea
 _TEX_PATH = Path(__file__).resolve().parent.parent / "assets" / "textures" / "tile_bevel.png"
 _TILE_TEX = Texture(str(_TEX_PATH)) if _TEX_PATH.exists() else None
 
+_MAGMA_TEX_PATH = Path(__file__).resolve().parent.parent / "assets" / "textures" / "magma_veins.png"
+_MAGMA_TEX = Texture(str(_MAGMA_TEX_PATH)) if _MAGMA_TEX_PATH.exists() else None
+if _MAGMA_TEX and hasattr(_MAGMA_TEX, "_texture") and _MAGMA_TEX._texture:
+    try:
+        from panda3d.core import SamplerState
+        _MAGMA_TEX._texture.setMinfilter(SamplerState.FT_linear_mipmap_linear)
+        _MAGMA_TEX._texture.setMagfilter(SamplerState.FT_linear)
+        _MAGMA_TEX._texture.setWrapU(SamplerState.WM_repeat)
+        _MAGMA_TEX._texture.setWrapV(SamplerState.WM_repeat)
+    except Exception:
+        pass
+
 
 class BoardView(Entity):
     """Renders the 3D grid with clear void gaps, distinct tile types, and Bloxpath-style tactile feedback."""
@@ -48,6 +60,7 @@ class BoardView(Entity):
         self.switch_entities: Dict[Tuple[int, int], Entity] = {}
         self.bridge_entities: Dict[Tuple[int, int], Entity] = {}
         self.bridge_roots: Dict[Tuple[int, int], Entity] = {}
+        self.pedestal_entities: List[Tuple[Entity, float]] = []
         self.goal_entity: Optional[Entity] = None
         self.goal_floor: Optional[Entity] = None
 
@@ -79,6 +92,7 @@ class BoardView(Entity):
         self.switch_entities.clear()
         self.bridge_entities.clear()
         self.bridge_roots.clear()
+        self.pedestal_entities.clear()
         self._crumbling_tiles.clear()
         self.goal_entity = None
         self.goal_floor = None
@@ -141,15 +155,22 @@ class BoardView(Entity):
                 delay = min(0.38, dist * stagger)
                 tile_root.animate_y(0.0, duration=dur + 0.12, delay=delay, curve=curve.out_back)
 
-            # Deep monolithic foundation dropping into the column sea
+            # Deep monolithic foundation dropping into the column sea with glowing magma veins
             if tile_type != TileType.GOAL:
-                Entity(
+                ped = Entity(
                     parent=tile_root,
                     model='cube',
+                    texture=_MAGMA_TEX,
                     position=(0.0, -tile_h - base_depth / 2.0, 0.0),
                     scale=(1.002, base_depth, 1.002),
-                    color=c_pedestal,
+                    color=color.white if _MAGMA_TEX else c_pedestal,
                 )
+                if _MAGMA_TEX:
+                    ped.texture_scale = (1.0, 1.8)
+                    u_off = (float(x) * 0.28 + float(y) * 0.43) % 1.0
+                    ped.texture_offset = (u_off, 0.0)
+                    self.pedestal_entities.append((ped, u_off))
+
                 # Cyberpunk Magma heat collar anchoring the volcanic rock into the flowing lava
                 Entity(
                     parent=tile_root,
@@ -469,6 +490,15 @@ class BoardView(Entity):
 
             for (bx, by), broot in self.bridge_roots.items():
                 broot.y = self.compute_wave_y(float(bx), -float(by))
+
+        # Flowing molten lava veins streaming down the walkable column pillars
+        if self.pedestal_entities:
+            flow_y = -(self._anim_time * 0.07)  # Steady, majestic downward molten flow
+            heat_pulse = 0.94 + 0.10 * math.sin(self._anim_time * 2.2)
+            c_flow = color.rgba(heat_pulse, heat_pulse * 0.95, heat_pulse * 0.92, 1.0)
+            for ped, u_off in self.pedestal_entities:
+                ped.texture_offset = (u_off, flow_y)
+                ped.color = c_flow
 
         # Pulsating arcane breathing glow for goal core floor
         if self.goal_floor:

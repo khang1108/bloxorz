@@ -32,19 +32,34 @@ class ColorToken:
 
 
 class Palette:
-    """Unified Neo-Minimalist 'Obsidian & Frosted Mineral' Palette."""
-    # Background & Atmosphere (Deep Abyssal Void)
-    BACKGROUND = ColorToken.from_hex("#090B0F")
-    BACKGROUND_SECONDARY = ColorToken.from_hex("#12161F")
+    """Unified Neo-Minimalist Bloxpath Palette."""
+    # Background & Atmosphere (Deep Abyssal Void with depth fog)
+    BACKGROUND = ColorToken.from_hex("#0E1117")
+    BACKGROUND_SECONDARY = ColorToken.from_hex("#141820")
 
-    # Board Tiles (Architectural Floating Monoliths)
+    # Bloxpath Background Matrix Sea (Undulating column ocean)
+    SEA_COLUMN_BODY = ColorToken.from_hex("#222630")
+    SEA_COLUMN_RIM = ColorToken.from_hex("#00D2FF")
+    SEA_COLUMN_CAP = ColorToken.from_hex("#262C38")
+
+    # Board Tiles (Architectural Monoliths - Original Obsidian Slate)
     TILE_NORMAL = ColorToken.from_hex("#262F3D")         # Top slate surface
     TILE_PEDESTAL = ColorToken.from_hex("#131720")       # Deep under-slab reaching into abyss
     TILE_INSET = ColorToken.from_hex("#1A202A")          # Inner architectural recessed plate
     TILE_BORDER = ColorToken.from_hex("#3B4759")
+    UNDER_RIM = ColorToken.from_hex("#1E293B")
+
+    # Bloxpath Alabaster Theme Tokens (Steam release alternative)
+    TILE_ALABASTER = ColorToken.from_hex("#F1F5F9")
+    TILE_ALABASTER_PEDESTAL = ColorToken.from_hex("#CBD5E1")
+    TILE_ALABASTER_INSET = ColorToken.from_hex("#E2E8F0")
+    TILE_ALABASTER_HIGHLIGHT = ColorToken.from_hex("#93C5FD")
+    BLOCK_GOLDEN = ColorToken.from_hex("#EAB308")
 
     # The Block (Hero Element - Frosted Alabaster)
     BLOCK_CORE = ColorToken.from_hex("#F1F5F9")
+    BLOCK_SPLIT_ACTIVE = ColorToken.from_hex("#22C55E")   # Emerald green split cube
+    BLOCK_SPLIT_PASSIVE = ColorToken.from_hex("#CBD5E1")  # Light granite gray split cube
     BLOCK_SHADOW = ColorToken.from_hex("#040508", 0.5)
 
     # Interactive / Special Tiles (Distinctive Visual Cues)
@@ -67,6 +82,37 @@ class Palette:
     SURFACE_OVERLAY = ColorToken.from_hex("#07090D", 0.90)
     SURFACE_BORDER = ColorToken.from_hex("#1E293B")
 
+    # VFX & Particles Palette
+    GHOST_TRAIL = ColorToken.from_hex("#38BDF8", 0.35)   # Cyan mờ cho bóng ma
+    DUST_PARTICLE = ColorToken.from_hex("#FF8C00", 0.85) # Bụi tro lửa rực rỡ
+    EMBER_ASH = ColorToken.from_hex("#FF5722", 0.90)     # Ánh lửa tro đỏ cam nóng rực
+    EMBER_ASH_GLOW = ColorToken.from_hex("#FFAA00", 0.95)# Ánh lửa tro vàng cam hổ phách
+    EMBER_ASH_SPARK = ColorToken.from_hex("#FFD54F", 1.00)# Đốm tàn tro rực sáng
+    TILE_HIGHLIGHT = ColorToken.from_hex("#CBD5E1")      # Xung sáng tiếp đất rực rỡ (Platinum slate)
+    SHOCKWAVE_RING = ColorToken.from_hex("#38BDF8", 0.60)# Vòng sóng xung kích
+    CRUMBLE_FRAGMENT = ColorToken.from_hex("#E06D28")    # Mảnh vụn ô nứt
+    VICTORY_GOLD = ColorToken.from_hex("#F59E0B")        # Vàng hoàng kim chiến thắng
+    VICTORY_CYAN = ColorToken.from_hex("#38BDF8")        # Cyan chiến thắng
+    VICTORY_WHITE = ColorToken.from_hex("#FFFFFF")       # Trắng ánh sáng
+    TELEPORT_ENERGY = ColorToken.from_hex("#818CF8")     # Tím lam năng lượng
+
+    # Cyberpunk Neon Magma Palette (Nham thạch neon cuộn chảy)
+    LAVA_CORE = ColorToken.from_hex("#FF3C00")           # Neon Magma Orange
+    LAVA_HOT = ColorToken.from_hex("#FF8800")            # Radiant Heat Amber
+    LAVA_NEON_PINK = ColorToken.from_hex("#FF0055")      # Cyberpunk Neon Pink fissure
+    LAVA_UNDERGLOW = ColorToken.from_hex("#FF4500", 0.85)# Radiant under-rim glow
+    MAGMA_EMBER = ColorToken.from_hex("#FF5722", 0.75)   # Molten cinder spark
+    MAGMA_SPARK = ColorToken.from_hex("#FFC107", 0.90)   # Electric heat spark
+
+    # Teleport Sci-Fi Warp & Footstep VFX Tokens
+    TELEPORT_BEAM = ColorToken.from_hex("#00F0FF", 0.80)     # Luminous Cyan Beam
+    TELEPORT_BEAM_DST = ColorToken.from_hex("#38BDF8", 0.80) # Sky Descent Beam
+    TELEPORT_PAD = ColorToken.from_hex("#00F0FF", 0.90)      # Holographic Runic Circle
+    TELEPORT_RING = ColorToken.from_hex("#818CF8", 0.85)     # Ascent Energy Ring
+    TELEPORT_GLOW = ColorToken.from_hex("#E0F2FE", 1.00)     # Dematerialization Flash
+    FOOTSTEP_GLOW = ColorToken.from_hex("#00F0FF", 0.85)     # Neon Footstep Glow
+    SEISMIC_RIPPLE = ColorToken.from_hex("#38BDF8", 0.60)    # Concentric ground wave
+
 
 class Typography:
     """Scale and font sizing tokens."""
@@ -86,5 +132,13 @@ class Motion:
     FALL_DURATION = getattr(CONFIG.motion, "fall_duration", 1.30)
     VICTORY_FALL_DURATION = getattr(CONFIG.motion, "victory_fall_duration", 4.50)
     VICTORY_PULSE_DURATION = VICTORY_FALL_DURATION
-    TELEPORT_FLIGHT_DURATION = getattr(CONFIG.motion, "teleport_flight_duration", 0.70)
+    TELEPORT_FLIGHT_DURATION = getattr(CONFIG.motion, "teleport_flight_duration", 1.10)
     FADE_TRANSITION = CONFIG.motion.fade_transition
+
+    # Animation & VFX Motion Constants
+    WAVE_ENABLED = getattr(CONFIG.animation, "wave_enabled", True)
+    WAVE_AMPLITUDE = getattr(CONFIG.animation, "wave_amplitude", 0.04)
+    CUSHION_DEPTH = getattr(CONFIG.animation, "cushion_depth", 0.0)
+    GHOST_ALPHA = getattr(CONFIG.animation, "ghost_alpha", 0.18)
+    GHOST_FADE_SPEED = getattr(CONFIG.animation, "ghost_fade_speed", 2.5)
+

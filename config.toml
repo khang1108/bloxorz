@@ -31,10 +31,10 @@ smoothing = 12.0                # Exponential damping factor for 60-120fps motio
 step_orbit_angle = 45.0         # Step rotation angle for Q/E keys (degrees)
 
 [motion]
-roll_duration = 0.20            # Block roll duration in seconds (200ms)
-fall_duration = 1.30            # Fall animation duration (see-saw tipping + free fall) in seconds
-victory_fall_duration = 4.50    # Goal plunge descent duration before victory menu in seconds (4-8s)
-victory_pulse_duration = 4.50   # Backward-compatible alias
+roll_duration = 0.18            # Bloxpath snappy roll duration in seconds (180ms)
+fall_duration = 1.30            # Fall animation duration in seconds
+victory_fall_duration = 3.50    # Goal plunge descent duration before victory menu in seconds
+victory_pulse_duration = 3.50   # Backward-compatible alias
 fade_transition = 0.25          # UI scene fade duration
 
 [graphics.block]
@@ -104,3 +104,43 @@ default_delay = 0.08            # Delay in seconds between animated solver moves
 # "isometric": Up/W = +X, Down/S = -X, Left/A = -Y, Right/D = +Y (screen isometric diagonals)
 # "classic": Up = -Y, Down = +Y, Left = -X, Right = +X (cardinal 2D grid coordinates)
 arrow_scheme = "isometric"
+
+[animation]
+wave_enabled = true
+wave_amplitude = 0.22
+wave_freq_x = 0.38
+wave_freq_z = 0.32
+wave_speed = 1.35
+column_sea_enabled = true
+column_sea_padding = 8
+column_sea_base_y = -1.72
+palette_mode = "obsidian"
+stage_intro_anim = true
+stage_intro_duration = 0.32
+stage_intro_stagger = 0.025
+tile_highlight_enabled = true
+tile_highlight_duration = 0.22
+cushion_depth = 0.0
+cushion_radius = 0.0
+cushion_duration = 0.0
+roll_squash_y = 1.0
+roll_stretch_xz = 1.0
+micro_bounce_height = 0.0
+micro_bounce_duration = 0.0
+ghost_trail_enabled = true
+ghost_alpha = 0.15
+ghost_fade_speed = 3.5
+screen_shake_enabled = false
+shake_intensity_roll = 0.0
+shake_intensity_impact = 0.0
+shake_intensity_shatter = 0.0
+shake_decay = 8.0
+teleport_particle_count = 14
+victory_confetti_count = 36
+victory_vortex_speed = 140.0
+ambient_dust_count = 16
+ambient_dust_range = 14.0
+ambient_dust_speed = 0.20
+
+
+

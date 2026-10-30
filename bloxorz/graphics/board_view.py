@@ -166,7 +166,7 @@ class BoardView(Entity):
                     color=color.white if _MAGMA_TEX else c_pedestal,
                 )
                 if _MAGMA_TEX:
-                    ped.texture_scale = (1.0, 1.8)
+                    ped.texture_scale = (0.70, 1.30)
                     u_off = (float(x) * 0.28 + float(y) * 0.43) % 1.0
                     ped.texture_offset = (u_off, 0.0)
                     self.pedestal_entities.append((ped, u_off))
@@ -302,7 +302,9 @@ class BoardView(Entity):
                 )
                 self.tile_entities[(x, y)] = top_slab
 
-        # Build bridge entities (slatted architectural planks)
+        # Build bridge entities (Full architectural monolith columns matching normal tiles)
+        closed_y = -3.80
+        open_y = 0.0
         for group in board.bridges.values():
             for (bx, by) in group.tiles:
                 pos_x = float(bx)
@@ -314,16 +316,50 @@ class BoardView(Entity):
                 )
                 self.bridge_roots[(bx, by)] = bridge_root
 
-                bridge_tile = Entity(
+                # Full bridge column that rises up / sinks down
+                bridge_col = Entity(
                     parent=bridge_root,
+                    position=(0.0, open_y if group.is_open else closed_y, 0.0),
+                    visible=group.is_open,
+                    name=f"bridge_col_{bx}_{by}",
+                )
+                self.bridge_entities[(bx, by)] = bridge_col
+
+                # 1. Top walkable slab matching standard tiles
+                top_slab = Entity(
+                    parent=bridge_col,
                     model='cube',
                     texture=_TILE_TEX,
-                    position=(0.0, -tile_h / 2.0 if group.is_open else -1.50, 0.0),
+                    position=(0.0, -tile_h / 2.0, 0.0),
                     scale=(tile_w, tile_h, tile_w),
-                    color=c_bridge,
-                    visible=group.is_open,
+                    color=c_normal,
                 )
-                self.bridge_entities[(bx, by)] = bridge_tile
+                self.tile_entities[(bx, by)] = top_slab
+
+                # 2. Deep monolithic foundation with flowing magma veins
+                ped = Entity(
+                    parent=bridge_col,
+                    model='cube',
+                    texture=_MAGMA_TEX,
+                    position=(0.0, -tile_h - base_depth / 2.0, 0.0),
+                    scale=(1.002, base_depth, 1.002),
+                    color=color.white if _MAGMA_TEX else c_pedestal,
+                )
+                if _MAGMA_TEX:
+                    ped.texture_scale = (0.70, 1.30)
+                    u_off = (float(bx) * 0.28 + float(by) * 0.43) % 1.0
+                    ped.texture_offset = (u_off, 0.0)
+                    self.pedestal_entities.append((ped, u_off))
+
+                # 3. Cyberpunk Magma heat collar
+                Entity(
+                    parent=bridge_col,
+                    model='cube',
+                    position=(0.0, -1.73, 0.0),
+                    scale=(1.06, 0.05, 1.06),
+                    color=color.hex(Palette.LAVA_UNDERGLOW.hex_code),
+                    unlit=True,
+                )
 
         # Setup ambient dust centered around the stage
         if board.base_tiles:
@@ -430,32 +466,34 @@ class BoardView(Entity):
 
     def update_bridges(self, board: Board):
         """Smoothly animates bridge states with staggered architectural deployment."""
-        cfg = CONFIG.board
-        stagger_delay = 0.05
+        stagger_delay = 0.06
         idx = 0
+
+        closed_y = -3.80
+        open_y = 0.0
 
         for group in board.bridges.values():
             for (bx, by) in group.tiles:
-                ent = self.bridge_entities.get((bx, by))
-                if not ent:
+                col = self.bridge_entities.get((bx, by))
+                if not col:
                     continue
                 delay = idx * stagger_delay
                 idx += 1
 
                 if group.is_open:
-                    ent.visible = True
+                    col.visible = True
                     invoke(
-                        lambda e=ent: e.animate_y(cfg.bridge_open_y, duration=cfg.bridge_anim_duration, curve=curve.out_cubic),
+                        lambda c=col: c.animate_y(open_y, duration=0.42, curve=curve.out_back),
                         delay=delay,
                     )
                 else:
-                    def hide_after_sink(e=ent):
-                        e.visible = False
+                    def hide_after_sink(c=col):
+                        c.visible = False
                     invoke(
-                        lambda e=ent: e.animate_y(cfg.bridge_closed_y, duration=cfg.bridge_anim_duration, curve=curve.in_cubic),
+                        lambda c=col: c.animate_y(closed_y, duration=0.38, curve=curve.in_cubic),
                         delay=delay,
                     )
-                    invoke(hide_after_sink, delay=delay + cfg.bridge_anim_duration)
+                    invoke(hide_after_sink, delay=delay + 0.38)
 
     def animate_switch_press(self, x: int, y: int):
         """Micro-animation depressing switch plate when stepped on."""
@@ -493,7 +531,7 @@ class BoardView(Entity):
 
         # Flowing molten lava veins streaming down the walkable column pillars
         if self.pedestal_entities:
-            flow_y = -(self._anim_time * 0.07)  # Steady, majestic downward molten flow
+            flow_y = +(self._anim_time * 0.075)  # Flowing downward smoothly
             heat_pulse = 0.94 + 0.10 * math.sin(self._anim_time * 2.2)
             c_flow = color.rgba(heat_pulse, heat_pulse * 0.95, heat_pulse * 0.92, 1.0)
             for ped, u_off in self.pedestal_entities:

@@ -5,6 +5,23 @@ from typing import Tuple
 from bloxorz.config import CONFIG
 
 
+class NeonHUD:
+    """Cyberpunk accents scoped to solver controls and the minimap."""
+    SURFACE = "#0A1020"
+    BUTTON = "#121C32"
+    HOVER = "#263651"
+    PRESSED = "#1B3048"
+    TEXT = "#EDF7FF"
+    MUTED = "#8BABC4"
+    CYAN = "#35F3FF"
+    MAGENTA = "#FF3AC8"
+    AMBER = "#FFD166"
+    VIOLET = "#B48AFF"
+    FLOOR = "#385777"
+    CLOSED_BRIDGE = "#283044"
+    ALGORITHMS = (CYAN, MAGENTA, AMBER, VIOLET)
+
+
 @dataclass(frozen=True)
 class ColorToken:
     """Hex and RGB definitions for a single design token."""

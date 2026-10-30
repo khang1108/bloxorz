@@ -70,7 +70,7 @@
     arc=8pt,                % Độ bo tròn góc
     boxrule=0pt,            % Độ dày viền = 0
     left=10pt, right=10pt, top=8pt, bottom=8pt, % Khoảng cách lề bên trong
-    fontupper=\itshape\color{black!80} % Font chữ: Nghiêng và màu xám đậm (80% đen)
+    fontupper=\itshape\color{black!80} % Font: Nghiêng và màu xám đậm (80%)
 }
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -108,7 +108,7 @@
     keywordstyle=\color{magenta},
     numberstyle=\tiny\color{codegray},
     stringstyle=\color{codepurple},
-    basicstyle=\ttfamily\footnotesize, % Font chữ kiểu máy đánh chữ, kích thước nhỏ
+    basicstyle=\ttfamily\footnotesize, % Font máy đánh chữ, kích thước nhỏ
     breakatwhitespace=false,         
     breaklines=true,                 % Tự động xuống dòng nếu quá dài
     captionpos=b,                    
@@ -151,7 +151,7 @@
 		\tiny \bf \\
 		\tiny \bf 
 	\end{tabular}  }
-\fancyfoot[L]{\scriptsize \ttfamily CSC14003 - Introduction to Artificial Intelligence}
+\fancyfoot[L]{\scriptsize \ttfamily CSC14003 - Intro to Artificial Intelligence}
 \fancyfoot[R]{\scriptsize \ttfamily Page {\thepage}}
 \renewcommand{\headrulewidth}{0.3pt}
 \renewcommand{\footrulewidth}{0.3pt}
@@ -194,13 +194,16 @@
 \renewcommand{\arraystretch}{1.3} % Adjust row height
 \setcounter{page}{1}
 
-\include{sections/contribution}
+\include{sections/introduction}
+\include{sections/related_work}
 \include{sections/game_overview}
 \include{sections/algorithms}
 \include{sections/experiments}
 \include{sections/conclusion}
+\include{sections/contribution}
 
 \newpage
+\nocite{*}
 \bibliographystyle{IEEEtran}
 \bibliography{ref}
 \end{document}

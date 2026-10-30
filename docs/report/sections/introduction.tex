@@ -1,0 +1,106 @@
+\section{Giới thiệu}
+\label{sec:introduction}
+
+Trong quá trình phát triển của ngành Trí tuệ Nhân tạo, các giải thuật
+tìm kiếm trong không gian trạng thái đóng vai trò là vô cùng quan trọng
+vì nó là nền tảng cốt lõi cho việc giải quyết các bài toán lập kế hoạch
+tự động, tối ưu hóa tổ hợp và ra quyết định thông minh
+\cite{russell2020aima, edelkamp2011heuristic}.
+Để đánh giá một cách rõ ràng và đầy đủ được cho phần hiệu năng của các giải
+thuật tìm kiếm không có thông tin và tìm kiếm có thông tin thì các trò chơi
+giải đố tổ hợp kinh điển (chẳng hạn như 15-Puzzle, Sokoban, Rubik's Cube)
+thường xuyên được sử dụng làm môi trường chuẩn đánh giá
+\cite{pearl1984heuristics, sturtevant2012benchmarks}.
+
+Trong số các trò chơi giải đố không gian, \textbf{Bloxorz}, được thiết
+kế bởi Damien Clarke vào năm 2007 \cite{clarke2007bloxorz}, nổi lên như
+một bài toán mô phỏng hay và đầy thách thức đối với các hệ thống AI.
+Trò chơi đặt người chơi vào nhiệm vụ điều khiển một khối hình hộp chữ nhật
+đồng chất kích thước $1 \times 1 \times 2$ lăn lật trên một mặt sàn lưới
+rời rạc $\mathbb{Z}^2$ để đưa khối về vị trí đích ở tư thế dựng đứng.
+Điểm hấp dẫn đặc biệt của Bloxorz nằm ở chỗ: bài toán không đơn thuần là
+điều hướng một chất điểm trong mê cung 2D tĩnh, mà là làm sao để 
+vật thể cứng có kích thước hình học có thể di chuyển về đích mà không bị
+gặp bẫy, các cảm biến hoặc các ô đặc biệt. Ta có các tư thế không gian (đứng,
+nằm ngang, nằm dọc) ảnh hưởng trực tiếp từ hướng đi cho tới diện tích tiếp xúc,
+khả năng chịu tải của bề mặt sàn và các cơ chế kích hoạt tương tác phức tạp.
+
+\subsection{Thách thức và Độ phức tạp}
+Mặc dù luật chơi bề ngoài rất dễ hiểu nhưng bài toán Bloxorz tiềm ẩn độ phức
+tạp tính toán rất cao:
+\begin{enumerate}[1.]
+    \item \textbf{Độ phức tạp PSPACE-Complete:}
+    Nghiên cứu lý thuyết độ phức tạp tính toán của van der Zanden và
+    Bodlaender (2014) \cite{vanderzanden2014bloxorz} đã chứng minh
+    rằng việc xác định tính khả giải của một màn chơi Bloxorz tổng
+    quát có chứa các công tắc và cầu lật là một bài toán thuộc lớp
+    \textbf{PSPACE-complete} \cite{sipser2013computation, hearn2009games}
+     tập hợp các bài toán quyết định khó nhất đòi hỏi lượng bộ nhớ
+    không gian đa thức nhưng thời gian thực thi có thể bùng nổ theo cấp
+    số mũ. Tương tự các nghiên cứu về câu đố lăn khối đa diện trên lưới
+    của Buchin và cộng sự \cite{buchin2007rolling}, không gian trạng
+    thái của Bloxorz bùng nổ tổ hợp theo quy mô bản đồ và số lượng cơ
+    chế kích hoạt.
+
+    \item \textbf{Môi trường đa Trạng thái và biến động:}
+    Với các màn chơi có sự xuất hiện của các ô gạch cam chịu lực kém
+    phụ thuộc vào tư chế tiếp xúc mà dẫn tới các hệ thống cầu đóng/mở
+    đan xen chịu sự điều khiển của nhiều loại công tắc cơ học (công tắc
+    tròn tiếp xúc nhẹ, công tắc chữ X chịu lực tập trung), và đặc biệt
+    là công tắc phân thân chia tách khối thành hai khối lập phương
+    $1 \times 1 \times 1$ độc lập khiến không gian trạng thái mở rộng
+    thành một tích Descartes phức hợp giữa cấu hình hình học của khối
+    và véc-tơ trạng thái của toàn bộ môi trường.
+
+    \item \textbf{Thách thức trong Thiết kế Hàm Heuristic:}
+    Để giải thuật A* \cite{hart1968astar} bảo đảm tìm được lời giải ngắn
+    nhất tối ưu toàn cục, hàm đánh giá heuristic $h(n)$ bắt buộc phải
+    thỏa mãn tính chất chấp nhận được ($h(n) \le h^*(n)$) và tính nhất
+    quán \cite{dechter1985astar}. Việc xây dựng một hàm heuristic phản
+    ánh chính xác khoảng cách Manhattan trong điều kiện khối có thể bao
+    phủ hai ô mỗi bước, đồng thời xử lý trơn tru cả giai đoạn khối bị
+    phân tách thành hai thực thể độc lập đòi hỏi các phân tích toán học
+    nới lỏng bài toán hết sức chặt chẽ \cite{pearl1984heuristics}.
+\end{enumerate}
+
+\subsection{Mục tiêu và Kết quả Đạt được của Đồ án}
+Đồ án được thực hiện trong khuôn khổ môn học Nhập môn Trí tuệ Nhân tạo
+với các mục tiêu trọng tâm sau:
+\begin{itemize}[--]
+    \item \textbf{Vận dụng lý thuyết tìm kiếm trong không gian trạng thái:}
+    Áp dụng các giải thuật tìm kiếm đã học trong môn học  bao gồm cả
+    tìm kiếm không thông tin (BFS, DFS, UCS) và tìm kiếm có thông tin
+    (A*)  vào việc tự động giải quyết trò chơi giải đố Bloxorz.
+
+    \item \textbf{Mô hình hóa và xây dựng trò chơi hoàn chỉnh:}
+    Hiện thực hóa chính xác các quy tắc vật lý và cơ chế tương tác phức tạp
+    của Bloxorz: động học lật khối theo 3 tư thế không gian, điều kiện chịu
+    tải của gạch cam mong manh, mạng lưới cầu đóng/mở động theo công tắc tròn
+    và công tắc chữ X, cùng cơ chế phân thân và tái hợp nhất hai khối lập
+    phương độc lập.
+
+    \item \textbf{Thiết kế hàm Heuristic phù hợp:}
+    Xây dựng hàm Heuristic cho giải thuật A* dựa trên khoảng cách Manhattan
+    kết hợp xử lý sai lệch tư thế và chi phí hợp nhất phân thân, đồng thời
+    chứng minh tính chất chấp nhận được ($h(n) \le h^*(n)$) để bảo đảm A*
+    luôn tìm ra đường đi ngắn nhất.
+
+    \item \textbf{Đo đạc và đánh giá so sánh thực nghiệm:}
+    Thực hiện kiểm thử và thu thập số liệu thực tế trên nhiều màn chơi
+    đại diện có độ phức tạp khác nhau; phân tích và đối sánh định lượng các
+    chỉ số về thời gian chạy, dung lượng bộ nhớ sử dụng, số trạng thái mở rộng
+    và tính tối ưu của lời giải giữa 4 thuật toán.
+\end{itemize}
+
+Dựa trên các mục tiêu trên, nhóm đã hoàn thành đầy đủ các nội dung:
+\begin{enumerate}[1.]
+    \item Xây dựng hoàn chỉnh trò chơi Bloxorz với giao diện trực quan 3D,
+    hỗ trợ bản đồ thu nhỏ (Minimap) và bộ nạp màn chơi từ dữ liệu có sẵn.
+    \item Cài đặt hoàn chỉnh bộ 4 thuật toán tìm kiếm (BFS, DFS, UCS, A*)
+    trên cùng một cấu trúc trạng thái chung, tối ưu hóa việc lưu trữ nút
+    để tiết kiệm bộ nhớ trong quá trình duyệt đồ thị.
+    \item Chứng minh toán học tính chấp nhận được của hàm Heuristic và kiểm
+    chứng tính tối ưu của đường đi thông qua thực nghiệm.
+    \item Đo lường, vẽ đồ thị đối sánh và phân tích ưu nhược điểm thực tế
+    của từng giải thuật trên tập màn chơi thử nghiệm.
+\end{enumerate}

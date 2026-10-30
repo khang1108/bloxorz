@@ -1,167 +1,188 @@
-% Checked against available primary/official sources on 2026-10-16.
-% Plain BibTeX compatible: online links are included in note/howpublished,
-% because common .bst files may ignore 'url' and 'doi' fields.
-% Requires \usepackage{url} or \usepackage{hyperref}.
+% ==============================================================================
+% BIBLIOGRAPHY: CSC14003 - Introduction to Artificial Intelligence (Project 1)
+% Subject: Bloxorz Solver, State-Space Search Algorithms, and Simulation Engine
+% Verified open-access / reputable academic and technical sources.
+% ==============================================================================
 
-@book{remzi2018ostep,
-  author    = {Arpaci-Dusseau, Remzi H. and Arpaci-Dusseau, Andrea C.},
-  title     = {Operating Systems: Three Easy Pieces},
-  publisher = {Arpaci-Dusseau Books},
-  year      = {2018},
-  note      = {Version 1.00 (August 2018). Free PDF: \url{https://pages.cs.wisc.edu/~remzi/OSTEP/}}
+@book{russell2020aima,
+  author    = {Russell, Stuart and Norvig, Peter},
+  title     = {Artificial Intelligence: A Modern Approach},
+  edition   = {4th},
+  publisher = {Pearson},
+  year      = {2020},
+  note      = {Standard international reference for uninformed and heuristic search algorithms (BFS, DFS, UCS, A*). Free resources: \url{http://aima.cs.berkeley.edu/}}
 }
 
-@manual{xv6book,
-  author = {Cox, Russ and Kaashoek, Frans and Morris, Robert},
-  title  = {{xv6}: A Simple, Unix-like Teaching Operating System},
-  year   = {2024},
-  note   = {RISC-V edition, revision 4 (August 31, 2024). \url{https://pdos.csail.mit.edu/6.828/2024/xv6/book-riscv-rev4.pdf}}
+@article{hart1968astar,
+  author    = {Hart, Peter E. and Nilsson, Nils J. and Raphael, Bertram},
+  title     = {A Formal Basis for the Heuristic Determination of Minimum Cost Paths},
+  journal   = {IEEE Transactions on Systems Science and Cybernetics},
+  volume    = {4},
+  number    = {2},
+  pages     = {100--107},
+  year      = {1968},
+  doi       = {10.1109/TSSC.1968.300136},
+  note      = {Seminal paper introducing the A* search algorithm and proving its admissibility and optimality. Open access via IEEE: \url{https://ieeexplore.ieee.org/document/4082128}}
 }
 
-% Replaces unverified 'mcilroy1968coroutines': the underlying idea
-% dates to 1968, but this freely available RETROSPECTIVE was revised in 2022.
-@misc{mcilroy2022sieve,
-  author       = {McIlroy, M. Douglas},
-  title        = {Coroutine Prime Number Sieve},
-  year         = {2022},
-  howpublished = {Online essay, \url{https://www.cs.dartmouth.edu/doug/sieve/sieve.pdf}},
-  note         = {Recounts a 1968 Cambridge Computing Laboratory talk; last revised November 2022}
+@article{dijkstra1959graph,
+  author    = {Dijkstra, Edsger W.},
+  title     = {A Note on Two Problems in Connexion with Graphs},
+  journal   = {Numerische Mathematik},
+  volume    = {1},
+  number    = {1},
+  pages     = {269--271},
+  year      = {1959},
+  doi       = {10.1007/BF01386390},
+  note      = {Foundational algorithm for Uniform-Cost Search (UCS) and shortest-path tree generation. Free access: \url{http://www-imai.is.s.u-tokyo.ac.jp/~h-yosh/dijkstra.pdf}}
 }
 
-@article{mcilroy1978unix,
-  author  = {McIlroy, M. Douglas and Pinson, Elliot N. and Tague, Berkley A.},
-  title   = {{UNIX} Time-Sharing System: Foreword},
-  journal = {The Bell System Technical Journal},
-  volume  = {57},
-  number  = {6},
-  pages   = {1899--1904},
-  year    = {1978},
-  doi     = {10.1002/j.1538-7305.1978.tb02135.x},
-  note    = {Full text: \url{https://www.nokia.com/bell-labs/publications-and-media/publications/unix-time-sharing-system-forward/}}
+@inproceedings{moore1959bfs,
+  author    = {Moore, Edward F.},
+  title     = {The Shortest Path Through a Maze},
+  booktitle = {Proceedings of the International Symposium on the Theory of Switching},
+  volume    = {30},
+  pages     = {285--292},
+  year      = {1959},
+  publisher = {Harvard University Press},
+  note      = {Foundational formulation of Breadth-First Search (BFS) for state-space traversal and shortest grid paths.}
 }
 
-@article{hoare1978csp,
-  author    = {Hoare, C. A. R.},
-  title     = {Communicating Sequential Processes},
-  journal   = {Communications of the ACM},
-  volume    = {21},
-  number    = {8},
-  pages     = {666--677},
-  year      = {1978},
-  publisher = {Association for Computing Machinery},
-  doi       = {10.1145/359576.359585},
-  note      = {\url{https://doi.org/10.1145/359576.359585}}
+@article{tarjan1972dfs,
+  author    = {Tarjan, Robert E.},
+  title     = {Depth-First Search and Linear Graph Algorithms},
+  journal   = {SIAM Journal on Computing},
+  volume    = {1},
+  number    = {2},
+  pages     = {146--160},
+  year      = {1972},
+  doi       = {10.1137/0201010},
+  note      = {Classical formulation of Depth-First Search (DFS) with visited state detection to prevent cyclic looping.}
 }
 
-% Note: the 1996 date in the original key is the copyright START date,
-% not the edition year of this current manual.
-@manual{baker2026tree,
-  author       = {Baker, Steve},
-  title        = {{tree(1)}: List Contents of Directories in a Tree-like Format},
-  year         = {2026},
-  organization = {Tree Project},
-  note         = {Version 2.3.2 manual page. \url{https://oldmanprogrammer.net/source.php?dir=projects%2Ftree%2Fdoc%2F%2Ftree.1}}
+@article{korf1985ids,
+  author    = {Korf, Richard E.},
+  title     = {Depth-First Iterative-Deepening: An Optimal Admissible Tree Search},
+  journal   = {Artificial Intelligence},
+  volume    = {27},
+  number    = {1},
+  pages     = {97--109},
+  year      = {1985},
+  doi       = {10.1016/0004-3702(85)90084-0},
+  note      = {Proof of linear space complexity and asymptotic optimality for iterative deepening tree search.}
 }
 
-@manual{posix2018diff,
-  author       = {{IEEE} and {The Open Group}},
-  title        = {{diff}: Compare Two Files},
-  organization = {The Open Group Base Specifications},
-  edition      = {Issue 7, 2018 Edition},
-  year         = {2018},
-  note         = {IEEE Std 1003.1-2017. \url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/diff.html}}
+@article{dechter1985astar,
+  author    = {Dechter, Rina and Pearl, Judea},
+  title     = {Generalized Best-First Search Strategies and the Optimality of {A*}},
+  journal   = {Journal of the ACM},
+  volume    = {32},
+  number    = {3},
+  pages     = {505--536},
+  year      = {1985},
+  doi       = {10.1145/3828.3830},
+  note      = {Theoretical study of admissibility, monotonicity (consistency), and pruning power in heuristic search.}
 }
 
-@techreport{hunt1976algorithm,
-  author      = {Hunt, James W. and McIlroy, M. Douglas},
-  title       = {An Algorithm for Differential File Comparison},
-  institution = {Bell Laboratories},
-  type        = {Computing Science Technical Report},
-  number      = {41},
-  month       = jul,
-  year        = {1976},
-  note        = {Author-hosted copy: \url{https://www.cs.dartmouth.edu/~doug/diff.pdf}}
+@book{pearl1984heuristics,
+  author    = {Pearl, Judea},
+  title     = {Heuristics: Intelligent Search Strategies for Computer Problem Solving},
+  publisher = {Addison-Wesley},
+  year      = {1984},
+  note      = {Comprehensive monograph on designing admissible heuristics via problem relaxation and abstraction.}
 }
 
-@manual{posix2018du,
-  author       = {{IEEE} and {The Open Group}},
-  title        = {{du}: Estimate File Space Usage},
-  organization = {The Open Group Base Specifications},
-  edition      = {Issue 7, 2018 Edition},
-  year         = {2018},
-  note         = {IEEE Std 1003.1-2017. \url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/du.html}}
+@article{vanderzanden2014bloxorz,
+  author    = {van der Zanden, Tom C. and Bodlaender, Hans L.},
+  title     = {{PSPACE}-completeness of {Bloxorz} and of Games with 2-Buttons},
+  journal   = {arXiv preprint arXiv:1411.5951},
+  year      = {2014},
+  note      = {Formal computational complexity proof demonstrating that Bloxorz level reachability is PSPACE-complete. Free PDF: \url{https://arxiv.org/abs/1411.5951}}
 }
 
-@manual{posix2018cp,
-  author       = {{IEEE} and {The Open Group}},
-  title        = {{cp}: Copy Files},
-  organization = {The Open Group Base Specifications},
-  edition      = {Issue 7, 2018 Edition},
-  year         = {2018},
-  note         = {IEEE Std 1003.1-2017. \url{https://pubs.opengroup.org/onlinepubs/9699919799/utilities/cp.html}}
+@inproceedings{buchin2007rolling,
+  author    = {Buchin, Kevin and Buchin, Maike and Demaine, Erik D. and Demaine, Martin L. and El-Khechen, Dania and Fekete, S{\'a}ndor P. and Knauer, Christian and Schulz, Andr{\'e} and Taslakian, Perouz},
+  title     = {On Rolling Cube Puzzles},
+  booktitle = {Proceedings of the 19th Canadian Conference on Computational Geometry (CCCG 2007)},
+  pages     = {141--144},
+  year      = {2007},
+  note      = {Complexity and state-space properties of rolling polyhedra across square grids. Free PDF: \url{https://erikdemaine.org/papers/RollingCube_CCCG2007/paper.pdf}}
 }
 
-@misc{mitxv6util2024,
-  author       = {{MIT CSAIL PDOS Group}},
-  title        = {Lab: {xv6} and {Unix} Utilities},
+@book{hearn2009games,
+  author    = {Hearn, Robert A. and Demaine, Erik D.},
+  title     = {Games, Puzzles, and Computation},
+  publisher = {A K Peters / CRC Press},
+  year      = {2009},
+  note      = {Algorithmic analysis of combinatorial motion puzzles and reversible game mechanics. Free draft: \url{https://arxiv.org/abs/cs/0702120}}
+}
+
+@misc{clarke2007bloxorz,
+  author       = {Clarke, Damien},
+  title        = {Bloxorz: A 3{D} Block-Rolling Puzzle Game},
+  howpublished = {Coolmath Games / DX Interactive},
+  year         = {2007},
+  note         = {Original game rules, stage layouts, orientation dynamics, and switch-bridge mechanics. \url{https://www.coolmathgames.com/0-bloxorz}}
+}
+
+@article{sturtevant2012benchmarks,
+  author    = {Sturtevant, Nathan R.},
+  title     = {Benchmarks for Grid-Based Pathfinding},
+  journal   = {IEEE Transactions on Computational Intelligence and AI in Games},
+  volume    = {4},
+  number    = {2},
+  pages     = {144--148},
+  year      = {2012},
+  doi       = {10.1109/TCIAIG.2012.2197681},
+  note      = {Standardized benchmark methodology and metrics reporting for grid search algorithms. Free PDF: \url{https://web.cs.du.edu/~sturtevant/papers/benchmarks.pdf}}
+}
+
+@book{edelkamp2011heuristic,
+  author    = {Edelkamp, Stefan and Schr{\"o}dl, Stefan},
+  title     = {Heuristic Search: Theory and Applications},
+  publisher = {Morgan Kaufmann},
+  year      = {2011},
+  note      = {Comprehensive guide on state-space graph search, transposition tables, and priority queue implementations.}
+}
+
+@misc{amland2020ursina,
+  author       = {Amland, Petter},
+  title        = {Ursina Engine: A Minimalist 3{D} Game Engine for {Python}},
+  howpublished = {Open-source software, \url{https://www.ursinaengine.org/}},
+  year         = {2020},
+  note         = {3D rendering engine and OpenGL entity system used for the graphical game interface and HUD.}
+}
+
+@misc{panda3d2024manual,
+  author       = {{Panda3D Team} and {Carnegie Mellon University Entertainment Technology Center}},
+  title        = {Panda3{D}: Open Source Framework for 3{D} Rendering and Games},
+  howpublished = {Online manual, \url{https://docs.panda3d.org/}},
   year         = {2024},
-  howpublished = {MIT 6.1810: Operating System Engineering, \url{https://pdos.csail.mit.edu/6.1810/2024/labs/util.html}},
-  note         = {Section: primes; accessed 2026-10-16}
+  note         = {Underlying scene graph and display region architecture supporting viewport clipping and camera perspective manipulation.}
 }
 
-@misc{xv6param,
-  author       = {{MIT PDOS}},
-  title        = {{xv6-riscv} Source Code: {kernel/param.h}},
-  howpublished = {GitHub repository, \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/param.h}},
-  note         = {Defines NPROC, NOFILE, and MAXPATH; branch riscv; accessed 2026-10-16}
+@misc{python2024tracemalloc,
+  author       = {{Python Software Foundation}},
+  title        = {Python Standard Library: {tracemalloc} --- Trace Memory Allocations},
+  howpublished = {Python Documentation (PEP 454), \url{https://docs.python.org/3/library/tracemalloc.html}},
+  year         = {2024},
+  note         = {Standard memory allocation tracking library used to measure peak memory footprint across solver runs.}
 }
 
-@misc{xv6fs,
-  author       = {{MIT PDOS}},
-  title        = {{xv6-riscv} Source Code: {kernel/fs.h}},
-  howpublished = {GitHub repository, \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/fs.h}},
-  note         = {Defines DIRSIZ and struct dirent; branch riscv; accessed 2026-10-16}
+@misc{python2024heapq,
+  author       = {{Python Software Foundation}},
+  title        = {Python Standard Library: {heapq} --- Heap Queue Algorithm},
+  howpublished = {Python Documentation, \url{https://docs.python.org/3/library/heapq.html}},
+  year         = {2024},
+  note         = {Binary min-heap data structure used for efficient frontier management in UCS and A* search.}
 }
 
-@misc{xv6pipe,
-  author       = {{MIT PDOS}},
-  title        = {{xv6-riscv} Source Code: {kernel/pipe.c}},
-  howpublished = {GitHub repository, \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/pipe.c}},
-  note         = {Implements pipe read, write, and close; branch riscv; accessed 2026-10-16}
+@book{sipser2013computation,
+  author    = {Sipser, Michael},
+  title     = {Introduction to the Theory of Computation},
+  edition   = {3rd},
+  publisher = {Cengage Learning},
+  year      = {2013},
+  note      = {Standard reference defining computational complexity classes, PSPACE, and PSPACE-completeness.}
 }
 
-@manual{gnudiffmanual,
-  title        = {{GNU Diffutils Manual}: Summarizing Which Files Differ},
-  author       = {{Free Software Foundation}},
-  organization = {{GNU Project}},
-  url          = {https://www.gnu.org/software/diffutils/manual/html_node/Brief.html},
-  note         = {Section 1.6, option -q / --brief; accessed 2026-10-16}
-}
-
-
-@misc{xv6proc,
-  author       = {{MIT PDOS}},
-  title        = {{xv6-riscv} Source Code: {kernel/proc.c}},
-  howpublished = {GitHub repository,
-    \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/proc.c}},
-  note         = {Process exit, reparenting, and wait;
-                  branch riscv; accessed 2026-10-16}
-}
-
-@misc{xv6sysfile,
-  author       = {{MIT PDOS}},
-  title        = {{xv6-riscv} Source Code: {kernel/sysfile.c}},
-  howpublished = {GitHub repository,
-    \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/sysfile.c}},
-  note         = {Open system call and O\_TRUNC behavior;
-                  branch riscv; accessed 2026-10-16}
-}
-
-@misc{xv6file,
-  author       = {{MIT PDOS}},
-  title        = {{xv6-riscv} Source Code: {kernel/file.c}},
-  howpublished = {GitHub repository,
-    \url{https://github.com/mit-pdos/xv6-riscv/blob/riscv/kernel/file.c}},
-  note         = {File descriptor layer and filewrite;
-                  branch riscv; accessed 2026-10-16}
-}

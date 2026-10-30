@@ -1,111 +1,335 @@
-\section{Thực nghiệm, Đo đạc Chỉ số và Phân tích Đánh giá}
+\section{Kết quả Thực nghiệm và Nhận xét}
+\label{sec:experiments}
 
-\subsection{Thiết kế Phương pháp Luận Thực nghiệm (Experimental Methodology)}
-Để đánh giá toàn diện hiệu năng và sự khác biệt về mặt hành vi giữa bốn giải thuật tìm kiếm, hệ thống thực nghiệm được xây dựng dựa trên các tiêu chuẩn đo lường khoa học nghiêm ngặt. Toàn bộ các thử nghiệm được thực thi trên cùng một môi trường phần cứng máy tính đồng nhất (CPU Intel Core i7, 16GB RAM, hệ điều hành Linux x86\_64) nhằm bảo đảm tính khách quan và tính tái lập của số liệu đo đạc.
+Chương này trình bày toàn bộ quy trình thực nghiệm khoa học nhằm đánh
+giá định lượng hiệu năng của 4 giải thuật tìm kiếm (BFS, DFS, UCS, A*)
+trên tập dữ liệu bản đồ Bloxorz. Mục tiêu cốt lõi là phân tích sự đánh đổi
+giữa thời gian thực thi, mức tiêu thụ bộ nhớ, số nút mở rộng và tính
+tối ưu của đường đi.
 
-Bảng \ref{tab:evaluation_metrics} định nghĩa hệ thống bốn chỉ số cốt lõi được thu thập cho mỗi lượt giải đố của từng thuật toán. Việc kết hợp giữa chỉ số phụ thuộc phần cứng (thời gian tính toán, bộ nhớ thực tế) và chỉ số độc lập phần cứng (số nút mở rộng, số bước đi) mang lại góc nhìn đa chiều và chuẩn xác nhất.
+\subsection{Thiết kế Thực nghiệm và Thiết lập Benchmark}
+\label{subsec:exp_setup}
+
+\subsubsection{Phương pháp Lấy mẫu Tập Dữ liệu}
+Để ngăn ngừa thiên kiến lựa chọn, nhóm sử dụng phương pháp lấy mẫu
+ngẫu nhiên có kiểm soát hạt giống với $\text{seed} = 42$ từ tập dữ liệu hơn
+80 màn chơi Bloxorz. Mẫu được chọn gồm $10$ màn đại diện ($N=10$):
+\texttt{stage\_04}, \texttt{stage\_12}, \texttt{stage\_14},
+\texttt{stage\_15}, \texttt{stage\_18}, \texttt{stage\_29}, \texttt{stage\_32},
+\texttt{stage\_36}, \texttt{stage\_70}, và \texttt{stage\_82}.
+Tập mẫu này bao quát đầy đủ 4 nhóm đặc trưng cơ học của trò chơi:
+\begin{itemize}[--]
+    \item \textbf{Nhóm Cơ bản:} Bản đồ sàn gạch bền kinh điển
+    (ví dụ: \texttt{stage\_36}).
+    \item \textbf{Nhóm Gạch mong manh:} Màn chơi chứa nhiều ô gạch cam
+    đòi hỏi kiểm soát tư thế nghiêm ngặt (ví dụ: \texttt{stage\_04}).
+    \item \textbf{Nhóm Mạng lưới Cầu \& Công tắc:} Màn chơi có nhiều cụm
+    cầu mở/đóng đan xen bởi công tắc tròn và công tắc X
+    (ví dụ: \texttt{stage\_12}, \texttt{stage\_14}, \texttt{stage\_18},
+    \texttt{stage\_29}, \texttt{stage\_32}, \texttt{stage\_70}).
+    \item \textbf{Nhóm Phân thân Đa thực thể:} Màn chơi nâng cao chứa
+    cổng dịch chuyển phân tách khối thành hai khối lập phương
+    $1 \times 1 \times 1$ độc lập
+    (ví dụ: \texttt{stage\_15}, \texttt{stage\_82}).
+\end{itemize}
+
+\subsubsection{Môi trường Thử nghiệm và Công cụ Đo đạc}
+Tất cả 40 lượt thử nghiệm (10 màn $\times$ 4 thuật toán) đều được thực hiện
+trên cùng một môi trường phần cứng và phần mềm nhất quán:
+\begin{itemize}[--]
+    \item \textbf{Hệ điều hành \& Phần cứng:} Linux x86\_64 (Arch Linux),
+    CPU Intel Core đa nhân, 16 GB RAM DDR4.
+    \item \textbf{Môi trường Thực thi:} CPython 3.14 ảo hóa (\texttt{.venv}).
+    \item \textbf{Tách biệt Môi trường Đo:} Mỗi lượt chạy thuật toán được
+    thực thi ở chế độ chạy ngầm không giao diện, loại bỏ hoàn toàn các luồng
+    xử lý đồ họa GPU nhằm loại trừ nhiễu độ trễ khung hình.
+    \item \textbf{Đo lường Bộ nhớ:} Sử dụng mô-đun chuẩn \texttt{tracemalloc}
+    \cite{python2024tracemalloc} để đo chính xác dung lượng bộ nhớ đỉnh mà
+    thuật toán cấp phát trong suốt quá trình duyệt đồ thị.
+\end{itemize}
+
+\subsubsection{Các Câu hỏi Nghiên cứu}
+Nhóm thiết lập $4$ câu hỏi nghiên cứu định lượng:
+\begin{itemize}
+    \item \textbf{RQ1 -- Thời gian tìm kiếm:} Giải thuật nào đạt tốc độ tìm
+    kiếm nhanh nhất trên các màn chơi có quy mô và độ phức tạp khác nhau?
+    \item \textbf{RQ2 -- Mức tiêu thụ bộ nhớ:} Mức độ chiếm dụng bộ nhớ RAM
+    đỉnh điểm của các cấu trúc dữ liệu biên (FIFO, LIFO, Min-Heap) chênh
+    lệch ra sao?
+    \item \textbf{RQ3 -- Năng lực cắt tỉa không gian:} Hàm Heuristic của
+    A* giúp cắt tỉa bao nhiêu phần trăm không gian trạng thái so với
+    duyệt mù BFS và UCS?
+    \item \textbf{RQ4 -- Tính tối ưu của lời giải:} Tính tối ưu về số bước
+    đi được đảm bảo như thế nào? Lời giải của DFS bị suy giảm chất lượng
+    ở mức độ nào?
+\end{itemize}
+
+\subsection{Kết quả Thực nghiệm Tổng hợp}
+\label{subsec:exp_results}
+
+Bảng \ref{tab:benchmark_summary} trình bày số liệu thống kê tổng hợp của 4
+giải thuật trên toàn bộ 10 màn chơi thử nghiệm.
 
 \begin{table}[H]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabularx}{\textwidth}{l p{0.25\textwidth} X}
-        \toprule
-        \textbf{Chỉ số đánh giá} & \textbf{Công cụ đo lường} & \textbf{Ý nghĩa khoa học \& Mục tiêu đối sánh} \\
-        \midrule
-        \textbf{Thời gian tìm kiếm} & \texttt{time.perf\_counter()} & Ghi nhận thời gian tính toán thuần túy của giải thuật từ lúc bắt đầu duyệt đến khi chạm đích, phản ánh độ phức tạp tính toán thực tế. \\
-        \textbf{Bộ nhớ đỉnh (RAM)} & \texttt{tracemalloc} & Đo lường dung lượng RAM tối đa (KiB) mà cấu trúc dữ liệu biên và tập trạng thái đã duyệt cấp phát trong suốt quá trình tìm kiếm. \\
-        \textbf{Số nút mở rộng} & Đếm lượt gọi \texttt{get\_successors} & Xác định quy mô không gian trạng thái thực sự bị duyệt; chỉ số này độc lập với cấu hình phần cứng máy tính. \\
-        \textbf{Độ dài lời giải} & Số hành động lăn thực tế & Tổng số bước di chuyển của khối từ vị trí ban đầu đến ô đích; dùng để kiểm chứng tính tối ưu của đường đi. \\
-        \bottomrule
-    \end{tabularx}
-    \caption{Hệ thống các chỉ số đo lường hiệu năng giải thuật trong thực nghiệm}
-    \label{tab:evaluation_metrics}
+\centering
+\caption{Thống kê tổng hợp hiệu năng 4 thuật toán
+($N=10$ màn, $\text{seed}=42$)}
+\label{tab:benchmark_summary}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Chỉ số Đánh giá}
+& \textbf{BFS} & \textbf{DFS} & \textbf{UCS} & \textbf{A*} \\
+\midrule
+Tỷ lệ giải thành công
+& 10/10 ($100\%$) & 10/10 ($100\%$) & 10/10 ($100\%$) & 10/10 ($100\%$) \\
+Thời gian trung bình (ms) & 1.618,00 & 162,96 & 1.481,29 & \textbf{614,19} \\
+Thời gian trung vị (ms) & 290,97 & 123,40 & 280,82 & \textbf{266,55} \\
+Thời gian lớn nhất (ms) & 8.909,01 & 343,21 & 8.003,33 & \textbf{2.165,97} \\
+Bộ nhớ đỉnh trung bình (KiB)
+& 2.502,28 & \textbf{773,15} & 6.851,11 & 3.217,62 \\
+Số nút mở rộng trung bình
+& 1.869,3 & \textbf{286,1} & 1.906,3 & \textbf{812,0} \\
+Độ dài lời giải trung bình
+& \textbf{59,5} & 120,7 & \textbf{59,5} & \textbf{59,5} \\
+\bottomrule
+\end{tabular}
 \end{table}
 
-Để khảo sát năng lực thích ứng của các giải thuật dưới các điều kiện ràng buộc không gian khác nhau, danh mục 83 màn chơi được phân loại thành 5 nhóm kiểm thử tiêu biểu với độ phức tạp tăng dần như chi tiết tại Bảng \ref{tab:test_groups}.
+Bảng \ref{tab:benchmark_detailed} chi tiết hóa kết quả thực nghiệm trên từng
+màn chơi được chọn.
 
 \begin{table}[H]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabularx}{\textwidth}{l c p{0.35\textwidth} X}
-        \toprule
-        \textbf{Nhóm kiểm thử} & \textbf{Màn đại diện} & \textbf{Đặc trưng cấu trúc địa hình} & \textbf{Mục tiêu đánh giá} \\
-        \midrule
-        \textbf{Nhóm 1: Cơ bản} & Stage 01, 04, 34, 37 
-            & Địa hình sàn đá phẳng liền mạch, không có bẫy gạch cam hay công tắc cầu.
-            & Đo đạc hiệu năng tìm đường thuần túy trong không gian hình học phẳng. \\
-        \midrule
-        \textbf{Nhóm 2: Gạch cam} & Stage 07, 11, 40, 43 
-            & Mật độ ô gạch cam (\texttt{FRAGILE}) cao, nhiều nút thắt hẹp.
-            & Khảo sát khả năng né tránh rủi ro của hàm chi phí \texttt{fragile\_cost} trong UCS. \\
-        \midrule
-        \textbf{Nhóm 3: Cầu \& Switch} & Stage 02, 05, 12, 44 
-            & Nhiều nhóm cầu đóng/mở đan xen, yêu cầu bấm công tắc tròn và chữ X.
-            & Đánh giá khả năng quản lý không gian trạng thái mở rộng kết hợp trạng thái cầu. \\
-        \midrule
-        \textbf{Nhóm 4: Phân thân} & Stage 08, 09, 21, 54 
-            & Chứa công tắc phân tách khối thành hai khối đơn vị $1 \times 1 \times 1$.
-            & Kiểm nghiệm cơ chế điều khiển song song và độ chính xác của heuristic sáp nhập. \\
-        \midrule
-        \textbf{Nhóm 5: Tổng hợp} & Stage 15, 20, 33, 83 
-            & Bản đồ không gian lớn, tích hợp đồng thời gạch cam, nhiều tầng cầu và phân thân.
-            & Thử thách độ bền bỉ, khả năng cắt tỉa và giới hạn tiêu thụ tài nguyên của thuật toán. \\
-        \bottomrule
-    \end{tabularx}
-    \caption{Phân loại các nhóm màn chơi thực nghiệm theo mức độ phức tạp tăng dần}
-    \label{tab:test_groups}
+\centering
+\caption{Kết quả đo đạc chi tiết 40 lượt chạy benchmark trên 10 màn chơi}
+\label{tab:benchmark_detailed}
+\scriptsize
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Màn chơi} & \textbf{Đặc trưng} & \textbf{Thuật toán}
+& \textbf{Thời gian (ms)} & \textbf{Bộ nhớ (KiB)}
+& \textbf{Nút duyệt} & \textbf{Số bước} \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_04}} & \multirow{4}{*}{Fragile}
+  & BFS & 33,5 & 84,6 & 69 & 28 \\
+& & DFS & 52,3 & 117,7 & 82 & 36 \\
+& & UCS & 42,9 & 184,0 & 69 & 28 \\
+& & A*  & 31,5 & 194,7 & 68 & 28 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_12}} & \multirow{4}{*}{Switches+Bridges}
+  & BFS & 161,4 & 295,2 & 320 & 65 \\
+& & DFS & 123,2 & 450,4 & 322 & 120 \\
+& & UCS & 131,3 & 855,1 & 324 & 65 \\
+& & A*  & 116,4 & 739,9 & 287 & 65 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_14}} & \multirow{4}{*}{Switches+Bridges}
+  & BFS & 184,1 & 210,0 & 459 & 67 \\
+& & DFS & 101,7 & 289,9 & 306 & 91 \\
+& & UCS & 173,7 & 1.076,0 & 460 & 67 \\
+& & A*  & 196,4 & 1.057,9 & 459 & 67 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_15}} & \multirow{4}{*}{Split / Teleport}
+  & BFS & 3.647,1 & 5.260,6 & 4.546 & 57 \\
+& & DFS & 123,6 & 744,9 & 243 & 97 \\
+& & UCS & 3.348,2 & 16.744,1 & 4.636 & 57 \\
+& & A*  & 2.166,0 & 8.494,5 & 2.385 & 57 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_18}} & \multirow{4}{*}{Switches+Bridges}
+  & BFS & 632,4 & 424,5 & 598 & 85 \\
+& & DFS & 279,7 & 789,4 & 399 & 149 \\
+& & UCS & 490,3 & 1.515,9 & 598 & 85 \\
+& & A*  & 336,7 & 1.553,5 & 597 & 85 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_29}} & \multirow{4}{*}{Switches+Bridges}
+  & BFS & 2.075,4 & 1.968,4 & 2.298 & 104 \\
+& & DFS & 259,3 & 749,7 & 321 & 137 \\
+& & UCS & 2.080,7 & 4.768,1 & 2.299 & 104 \\
+& & A*  & 1.840,8 & 5.329,5 & 2.293 & 104 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_32}} & \multirow{4}{*}{Switches+Bridges}
+  & BFS & 397,8 & 201,5 & 630 & 129 \\
+& & DFS & 343,2 & 751,7 & 638 & 227 \\
+& & UCS & 388,0 & 1.658,2 & 630 & 129 \\
+& & A*  & 372,8 & 1.620,0 & 605 & 129 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_36}} & \multirow{4}{*}{Standard}
+  & BFS & 24,7 & 56,9 & 59 & 8 \\
+& & DFS & 8,6 & 53,9 & 25 & 25 \\
+& & UCS & 19,2 & 147,4 & 55 & 8 \\
+& & A*  & 9,0 & 106,8 & 23 & 8 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_70}} & \multirow{4}{*}{Switches+Bridges}
+  & BFS & 114,5 & 224,6 & 243 & 26 \\
+& & DFS & 61,8 & 272,9 & 129 & 52 \\
+& & UCS & 135,3 & 533,4 & 244 & 26 \\
+& & A*  & 154,2 & 804,9 & 232 & 26 \\
+\midrule
+\multirow{4}{*}{\texttt{stage\_82}} & \multirow{4}{*}{Split / Teleport}
+  & BFS & 8.909,0 & 16.296,6 & 9.471 & 26 \\
+& & DFS & 276,0 & 3.511,0 & 396 & 273 \\
+& & UCS & 8.003,3 & 41.028,9 & 9.748 & 26 \\
+& & A*  & \textbf{918,1} & \textbf{12.274,5} & \textbf{1.171} & \textbf{26} \\
+\bottomrule
+\end{tabular}
 \end{table}
 
-\subsection{Bảng Số liệu Thực nghiệm và Đo đạc Hiệu năng}
-Bảng \ref{tab:experimental_results} trình bày chi tiết số liệu đo đạc thực nghiệm của bốn giải thuật trên các màn chơi đại diện cho từng nhóm độ khó.
+\subsection{Phân tích Chuyên sâu theo Câu hỏi Nghiên cứu}
+\label{subsec:rq_analysis}
 
-\begin{table}[H]
+Hình \ref{fig:benchmark_dashboard} hiển thị bức tranh toàn cảnh $2 \times 2$
+đối sánh 4 thuật toán trên cả 4 trục chỉ số đánh giá.
+
+\begin{figure}[H]
     \centering
-    \small
-    \renewcommand{\arraystretch}{1.25}
-    \begin{tabularx}{\textwidth}{l l c c c c}
-        \toprule
-        \textbf{Màn chơi} & \textbf{Thuật toán} & \textbf{Thời gian (ms)} & \textbf{Bộ nhớ (KiB)} & \textbf{Số nút mở rộng} & \textbf{Độ dài bước (Moves)} \\
-        \midrule
-        \multirow{4}{*}{\textbf{Stage 01} (Căn bản)} 
-            & BFS       & 1.85   & 48.2  & 58   & 7  \\
-            & DFS / IDS & 3.42   & 22.4  & 112  & 7  \\
-            & UCS       & 2.10   & 52.6  & 58   & 7  \\
-            & A* Search & 1.15   & 34.8  & 24   & 7  \\
-        \midrule
-        \multirow{4}{*}{\textbf{Stage 07} (Gạch cam)} 
-            & BFS       & 28.40  & 194.5 & 645  & 15 \\
-            & DFS / IDS & 42.15  & 45.2  & 1420 & 15 \\
-            & UCS       & 35.80  & 220.4 & 710  & 17 (Né gạch an toàn) \\
-            & A* Search & 14.60  & 118.2 & 280  & 15 \\
-        \midrule
-        \multirow{4}{*}{\textbf{Stage 02} (Cầu \& Switch)} 
-            & BFS       & 12.30  & 124.0 & 312  & 17 \\
-            & DFS / IDS & 25.80  & 38.6  & 780  & 17 \\
-            & UCS       & 14.10  & 138.5 & 312  & 17 \\
-            & A* Search & 7.45   & 82.4  & 145  & 17 \\
-        \midrule
-        \multirow{4}{*}{\textbf{Stage 54} (Phân thân)} 
-            & BFS       & 45.40  & 458.8 & 168  & 7  \\
-            & DFS / IDS & 68.20  & 72.5  & 410  & 7  \\
-            & UCS       & 48.10  & 472.0 & 168  & 7  \\
-            & A* Search & 22.30  & 210.6 & 76   & 7  \\
-        \bottomrule
-    \end{tabularx}
-    \caption{Số liệu đo đạc thực nghiệm thực tế giữa 4 giải thuật trên các màn chơi đại diện}
-    \label{tab:experimental_results}
-\end{table}
+    \includegraphics[width=\textwidth]{%
+        images/charts/benchmark_dashboard_2x2.png}
+    \caption{Bảng điều khiển trực quan hóa $2 \times 2$ đối sánh hiệu năng
+    toàn diện 4 thuật toán}
+    \label{fig:benchmark_dashboard}
+\end{figure}
 
-\subsection{Phân tích và Đánh giá Chuyên sâu (Performance Insights)}
-Dựa trên các bảng số liệu thực nghiệm thu thập được, nhóm rút ra các phân tích chuyên sâu về tương quan hiệu năng giữa các giải thuật:
+\subsubsection{RQ1: Thời gian Tìm kiếm}
+Từ Bảng \ref{tab:benchmark_summary} và Hình \ref{fig:chart_time}, thời gian
+tìm kiếm trung bình của A* là $614,19\text{ ms}$, nhanh hơn xấp xỉ
+$2,6$ lần so với BFS ($1.618,00\text{ ms}$) và $2,4$ lần so với UCS
+($1.481,29\text{ ms}$).
 
-\paragraph{Tương quan giữa A* và BFS về Tốc độ và Số nút Mở rộng:}
-Số liệu thực nghiệm khẳng định ưu thế áp đảo của giải thuật A* so với BFS thuần túy. Nhờ hàm đánh giá heuristic $h(n)$ định hướng chính xác khoảng cách đến ô đích, A* chỉ mở rộng trung bình khoảng $35\% - 45\%$ số nút so với BFS trên cùng một màn chơi (ví dụ tại Stage 01, A* chỉ cần mở rộng 24 nút thay vì 58 nút của BFS; tại Stage 54, A* chỉ duyệt 76 nút thay vì 168 nút). Sự sụt giảm mạnh mẽ về số nút mở rộng kéo theo thời gian tìm kiếm của A* giảm hơn $50\%$ so với BFS, trong khi độ dài lời giải thu được vẫn luôn bảo đảm tính ngắn nhất tuyệt đối nhờ tính chất Admissible của hàm khoảng cách chia đôi.
+Đặc biệt, tại các màn chơi có không gian trạng thái khổng lồ do cơ chế
+phân thân (như \texttt{stage\_82}), ưu thế của A* thể hiện rõ rệt nhất:
+A* giải quyết màn chơi chỉ trong $918,1\text{ ms}$, trong khi BFS mất tới
+$8.909,0\text{ ms}$ (chậm hơn gần $10$ lần) và UCS mất $8.003,3\text{ ms}$.
+DFS đạt thời gian tìm kiếm trung bình thấp nhất ($162,96\text{ ms}$) vì
+thuật toán lặn sâu theo nhánh đầu tiên mà không phải duy trì cấu trúc sắp
+xếp hàng đợi phức tạp, tuy nhiên điều này phải trả giá bằng tính tối ưu.
 
-\paragraph{Đặc thù Lộ trình và Hành vi của UCS:}
-Thuật toán UCS bộc lộ rõ nét bản chất "tìm kiếm hướng an toàn" khi đối diện với các màn chơi có mật độ gạch cam cao (Nhóm 2). Tại Stage 07, trong khi BFS tìm ra đường đi ngắn nhất với 15 bước lăn (băng thẳng qua vùng gạch cam nguy hiểm), UCS lại lựa chọn lộ trình dài 17 bước lăn. Khi phân tích chi tiết chuỗi hành động của UCS, nhóm nhận thấy giải thuật đã chủ động cho khối đi vòng qua các ô sàn đá kiên cố để chỉ dẫm lên gạch cam khi thực sự cần thiết, qua đó đạt tổng chi phí đường đi $g(n)$ tối ưu nhất theo đúng định nghĩa của hàm \texttt{fragile\_cost}. Điều này chứng minh hàm chi phí phi đồng nhất đã vận hành chính xác theo ý đồ thiết kế bài toán.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{%
+            images/charts/comparison_search_time.png}
+        \caption{Thời gian tìm kiếm (thang đo Logarit)}
+        \label{fig:chart_time}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{%
+            images/charts/comparison_expanded_nodes.png}
+        \caption{Số lượng nút mở rộng (thang đo Logarit)}
+        \label{fig:chart_nodes}
+    \end{subfigure}
+    \caption{Đối sánh thời gian tìm kiếm và số lượng nút mở rộng
+    giữa 4 thuật toán}
+    \label{fig:time_and_nodes}
+\end{figure}
 
-\paragraph{Đánh đổi Tài nguyên giữa DFS/IDS và BFS:}
-Xét về phương diện không gian bộ nhớ, giải thuật tìm kiếm sâu dần IDS thể hiện khả năng tiết kiệm RAM ấn tượng nhất. Trên tất cả các màn thử nghiệm, lượng bộ nhớ đỉnh (\textit{Peak Memory}) mà IDS tiêu thụ chỉ dao động từ $22$ đến $72$ KiB, thấp hơn từ $3$ đến $6$ lần so với BFS và UCS. Đổi lại, do phải duyệt lặp lại các tầng nông ở mỗi lần tăng giới hạn độ sâu cắt tỉa, thời gian thực thi của IDS cao hơn khoảng $1.5 - 2.0$ lần so với BFS. Đây là minh chứng điển hình cho nguyên lý đánh đổi kinh điển giữa Thời gian và Không gian (\textit{Time-Space Trade-off}) trong khoa học máy tính: IDS chấp nhận tiêu tốn thêm chu kỳ CPU để giữ cho dấu chân bộ nhớ luôn ở mức tối thiểu.
+\subsubsection{RQ2: Mức Tiêu thụ Bộ nhớ Đỉnh}
+Mức độ tiêu thụ bộ nhớ (Hình \ref{fig:chart_memory}) phản ánh bản chất của
+cấu trúc dữ liệu biên:
+\begin{itemize}[--]
+    \item \textbf{DFS} tiêu tốn ít bộ nhớ nhất (trung bình $773,15\text{ KiB}$)
+    vì cấu trúc ngăn xếp LIFO chỉ lưu trữ các nút dọc theo nhánh đang duyệt.
+    \item \textbf{BFS} tiêu tốn trung bình $2.502,28\text{ KiB}$ do phải duy
+    trì toàn bộ các nút ở tầng độ sâu hiện tại trong hàng đợi hai đầu.
+    \item \textbf{UCS} có mức chiếm dụng bộ nhớ cao nhất (trung bình
+    $6.851,11\text{ KiB}$, đỉnh điểm đạt $41.028,9\text{ KiB}$ tại
+    \texttt{stage\_82}). Nguyên nhân là Min-Heap của UCS phải lưu giữ nhiều
+    phiên bản trạng thái với các mức chi phí khác nhau trước khi chúng được
+    lấy ra khỏi hàng đợi.
+    \item \textbf{A*} kiểm soát bộ nhớ hiệu quả hơn đáng kể so với UCS (trung
+    bình $3.217,62\text{ KiB}$, thấp hơn hơn $53\%$ so với UCS) nhờ hàm
+    Heuristic giúp loại bỏ sớm các nút kém triển vọng trước khi đưa vào
+    hàng đợi.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{%
+            images/charts/comparison_peak_memory.png}
+        \caption{Mức chiếm dụng bộ nhớ đỉnh (KiB)}
+        \label{fig:chart_memory}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{%
+            images/charts/comparison_solution_length.png}
+        \caption{Độ dài lộ trình lời giải (số bước lật)}
+        \label{fig:chart_length}
+    \end{subfigure}
+    \caption{Đối sánh mức chiếm dụng bộ nhớ và tính tối ưu của độ dài đường đi}
+    \label{fig:memory_and_length}
+\end{figure}
+
+\subsubsection{RQ3: Năng lực Cắt tỉa của Hàm Heuristic}
+Số lượng nút mở rộng phản ánh năng lực thu hẹp không gian tìm kiếm của
+thuật toán:
+\begin{itemize}[--]
+    \item Trên toàn bộ 10 màn chơi, A* chỉ mở rộng trung bình $812,0$ nút,
+    giảm hơn $56,5\%$ số nút so với BFS ($1.869,3$ nút) và giảm $57,4\%$
+    so với UCS ($1.906,3$ nút).
+    \item Tại màn \texttt{stage\_82}, trong khi BFS duyệt tới $9.471$ nút và
+    UCS duyệt $9.748$ nút, hàm Heuristic khoảng cách Manhattan chia đôi kết
+    hợp phạt tư thế giúp A* định hướng chuẩn xác và chỉ cần mở rộng đúng
+    $1.171$ nút (\textbf{cắt tỉa thành công $87,6\%$ không gian trạng thái}).
+    \item Biểu đồ phân tán (Hình \ref{fig:scatter_time_nodes}) chỉ ra mối
+    tương quan tuyến tính cực kỳ chặt chẽ giữa số lượng nút mở rộng và thời
+    gian tìm kiếm, chứng minh rằng việc giảm số nút thông qua Heuristic là
+    chìa khóa quyết định để cải thiện tốc độ xử lý.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.72\textwidth]{%
+        images/charts/scatter_time_vs_expanded.png}
+    \caption{Biểu đồ phân tán biểu diễn tương quan giữa Số nút mở rộng
+    và Thời gian tìm kiếm}
+    \label{fig:scatter_time_nodes}
+\end{figure}
+
+\subsubsection{RQ4: Tính Tối ưu của Lời giải}
+Về độ dài đường đi (Hình \ref{fig:chart_length}):
+\begin{itemize}[--]
+    \item \textbf{BFS, UCS và A* đạt tính tối ưu tuyệt đối $100\%$}:
+    Độ dài lời giải của cả 3 thuật toán hoàn toàn trùng khớp trên từng màn chơi
+    (trung bình đúng $59,5$ bước). Kết quả này kiểm chứng hoàn hảo tính đúng đắn
+    của chứng minh toán học về tính Admissible của hàm Heuristic trong Chương
+    \ref{sec:algorithms}.
+    \item \textbf{DFS không bảo đảm tính tối ưu}:
+    Độ dài lộ trình do DFS tìm ra trung bình lên tới $120,7$ bước (dài hơn gấp
+    $2,03$ lần so với đường đi tối ưu). Đáng chú ý nhất tại \texttt{stage\_82},
+    DFS tìm ra đường đi dài tới $273$ bước trong khi nghiệm tối ưu chỉ cần $26$
+    bước (dài hơn gấp $10,5$ lần). Điều này khẳng định rằng mặc dù DFS có tốc
+    độ lặn nhánh nhanh, kết quả sinh ra không phù hợp cho các bài toán yêu cầu
+    tối ưu hóa tài nguyên.
+\end{itemize}
+
+\subsection{Các Mối đe dọa đến Tính Hợp lệ}
+\label{subsec:threats_validity}
+
+\noindent
+\textbf{Tính Hợp lệ Nội tại:}
+\begin{itemize}[--]
+    \item \textit{Đo lường thời gian và bộ nhớ:} Thời gian chạy trên Python có
+    thể chịu ảnh hưởng bởi cơ chế dọn rác tự động (\texttt{gc}).
+    Để giảm thiểu sai số, nhóm đã khởi động lại tiến trình đo lường cho từng
+    màn, chạy kiểm thử ở môi trường không giao diện và kích hoạt
+    \texttt{tracemalloc} đồng nhất trước mỗi lệnh gọi hàm.
+    \item \textit{Xử lý hòa điểm trong hàng đợi:} Thứ tự duyệt giữa các nút có
+    cùng giá trị $f(n)$ hoặc $g(n)$ được giải quyết tất định bằng bộ đếm tự tăng
+    \texttt{itertools.count()}, ngăn ngừa sự xáo trộn ngẫu nhiên giữa các lần
+    chạy.
+\end{itemize}
+
+\noindent
+\textbf{Tính Hợp lệ Bên ngoài:}
+Tập mẫu $10$ màn chơi được chọn ngẫu nhiên có kiểm soát hạt giống
+($\text{seed}=42$) tuy bao quát đầy đủ các cơ chế vật lý phức tạp
+(gạch cam, phân thân, công tắc chữ X) nhưng chưa thể đại diện cho toàn bộ
+các tình huống cực đoan trong các mê cung có hàng trăm công tắc đảo chiều
+liên hoàn. Tuy nhiên, các kết luận định tính về thứ hạng hiệu năng giữa
+các thuật toán vẫn giữ nguyên tính tổng quát cho toàn bộ lớp bài toán
+PSPACE-complete dạng rolling-block puzzle.

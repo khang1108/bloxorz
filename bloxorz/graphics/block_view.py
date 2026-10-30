@@ -25,8 +25,13 @@ from bloxorz.graphics.fx_manager import FXManager
 from bloxorz.graphics.camera_ctrl import CameraController
 from bloxorz.audio.sound_manager import play_sfx
 
+_CYBER_TEX_PATH = Path(__file__).resolve().parent.parent / "assets" / "textures" / "cyber_titanium.png"
+_CYBER_TEX = Texture(str(_CYBER_TEX_PATH)) if _CYBER_TEX_PATH.exists() else None
+
 _TEX_PATH = Path(__file__).resolve().parent.parent / "assets" / "textures" / "tile_bevel.png"
 _TILE_TEX = Texture(str(_TEX_PATH)) if _TEX_PATH.exists() else None
+
+_BLOCK_TEX = _CYBER_TEX or _TILE_TEX
 
 
 def _evaluate_roll_curve(p: float) -> float:
@@ -40,11 +45,41 @@ class BlockView(Entity):
     """Manages 3D block mesh with frame-perfect delta-time rotation and physical VFX juice."""
 
     def _get_block_color(self):
-        """Returns block color based on palette mode (Golden amber for Alabaster, Polished stone for Obsidian)."""
+        """Returns block color based on palette mode (Golden amber for Alabaster, Pure white for Cyber Titanium)."""
         mode = getattr(CONFIG.animation, "palette_mode", "obsidian").lower()
         if mode == "alabaster":
             return color.hex(Palette.BLOCK_GOLDEN.hex_code)
-        return color.hex(Palette.BLOCK_CORE.hex_code)
+        return color.white
+
+    def _set_mesh_visible(self, vis: bool) -> None:
+        """Sets visibility for parent mesh container and modular subcubes."""
+        self.mesh.visible = vis
+        if hasattr(self, "mesh_cube_1") and self.mesh_cube_1:
+            self.mesh_cube_1.visible = vis
+        if hasattr(self, "mesh_cube_2") and self.mesh_cube_2:
+            self.mesh_cube_2.visible = vis
+
+    def _set_mesh_color(self, c) -> None:
+        """Propagates color tint to parent mesh container and modular subcubes."""
+        self.mesh.color = c
+        if hasattr(self, "mesh_cube_1") and self.mesh_cube_1:
+            self.mesh_cube_1.color = c
+        if hasattr(self, "mesh_cube_2") and self.mesh_cube_2:
+            self.mesh_cube_2.color = c
+
+    def _update_subcubes_layout(self, dim: Tuple[float, float, float]) -> None:
+        """Arranges dual modular 1x1x1 subcubes along the primary axis of orientation."""
+        if not hasattr(self, "mesh_cube_1") or not self.mesh_cube_1:
+            return
+        if dim[0] > 1.5:  # LYING_X: horizontal along X axis
+            self.mesh_cube_1.position = Vec3(-0.5, 0, 0)
+            self.mesh_cube_2.position = Vec3(0.5, 0, 0)
+        elif dim[1] > 1.5:  # LYING_Y: horizontal along Z axis (depth in Ursina)
+            self.mesh_cube_1.position = Vec3(0, 0, -0.5)
+            self.mesh_cube_2.position = Vec3(0, 0, 0.5)
+        else:  # STANDING: vertical along Y axis (elevation in Ursina)
+            self.mesh_cube_1.position = Vec3(0, -0.5, 0)
+            self.mesh_cube_2.position = Vec3(0, 0.5, 0)
 
     def __init__(self):
         super().__init__(name="block_view_controller")
@@ -53,34 +88,48 @@ class BlockView(Entity):
         # Permanent Pivot Entity: all rolling transformations occur on this pivot
         self.pivot = Entity(name="block_pivot")
 
-        # The Visual Mesh is permanently parented to the pivot (zero reparenting, zero flick)
+        # The Visual Mesh is permanently parented to the pivot (zero reparenting, zero flick).
+        # Constructed with dual modular 1x1x1 subcubes to ensure distortion-free 1:1 UV mapping
+        # on all faces and an authentic cyber division seam line.
         self.mesh = Entity(
             parent=self.pivot,
             name="block_mesh",
-            model='cube',
-            texture=_TILE_TEX,
-            color=c_block,
         )
 
-        # Dual 1x1x1 split cubes for teleport mechanics (Emerald Green & Granite Silver matching Bloxpath)
-        c_active = color.hex(Palette.BLOCK_SPLIT_ACTIVE.hex_code)
-        c_passive = color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code)
-        u1 = CONFIG.block.unit_scale_1
+        sub_scale = Vec3(0.94, 0.94, 0.94)
+        self.mesh_cube_1 = Entity(
+            parent=self.mesh,
+            name="block_subcube_1",
+            model='cube',
+            texture=_BLOCK_TEX,
+            color=c_block,
+            scale=sub_scale,
+        )
+        self.mesh_cube_2 = Entity(
+            parent=self.mesh,
+            name="block_subcube_2",
+            model='cube',
+            texture=_BLOCK_TEX,
+            color=c_block,
+            scale=sub_scale,
+        )
+        self._update_subcubes_layout((1, 1, 2))
 
+        # Dual 1x1x1 split cubes for teleport mechanics
         self.split_mesh_1 = Entity(
             name="split_cube_1",
             model='cube',
-            texture=_TILE_TEX,
-            color=c_active,
-            scale=Vec3(u1, u1, u1),
+            texture=_BLOCK_TEX,
+            color=color.white,
+            scale=sub_scale,
             visible=False,
         )
         self.split_mesh_2 = Entity(
             name="split_cube_2",
             model='cube',
-            texture=_TILE_TEX,
-            color=c_passive,
-            scale=Vec3(u1, u1, u1),
+            texture=_BLOCK_TEX,
+            color=color.rgba(0.48, 0.54, 0.62, 1.0),
+            scale=sub_scale,
             visible=False,
         )
 
@@ -344,15 +393,15 @@ class BlockView(Entity):
 
         # Restore full core material opacity
         c_active = self._get_block_color()
-        self.mesh.color = c_active
+        self._set_mesh_color(c_active)
 
         if getattr(state, "is_split", False):
-            self.mesh.visible = False
+            self._set_mesh_visible(False)
             self.pivot.visible = False
             self.split_mesh_1.visible = True
             self.split_mesh_2.visible = True
 
-            u1 = CONFIG.block.unit_scale_1
+            u1 = getattr(CONFIG.block, "unit_scale_1", 0.94)
             half_u1 = u1 / 2.0
 
             b1 = getattr(state, "b1")
@@ -366,7 +415,8 @@ class BlockView(Entity):
             self.split_mesh_2.position = Vec3(float(b2.x), y2, -float(b2.y))
             self.split_mesh_2.rotation = Vec3(0, 0, 0)
 
-            c_passive = color.rgba(0.55, 0.60, 0.68, 0.80)
+            c_active = color.white
+            c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
 
             if getattr(state, "active_index", 0) == 0:
                 self.split_mesh_1.color = c_active
@@ -385,7 +435,6 @@ class BlockView(Entity):
 
         wave_y = self._get_surface_y(float(center[0]), float(center[1]))
         world_center = Vec3(float(center[0]), float(center[2]) + wave_y, -float(center[1]))
-        target_scale = self._compute_scale(dim)
 
         self.pivot.position = world_center
         self.pivot.rotation = Vec3(0, 0, 0)
@@ -393,8 +442,10 @@ class BlockView(Entity):
 
         self.mesh.position = Vec3(0, 0, 0)
         self.mesh.rotation = Vec3(0, 0, 0)
-        self.mesh.scale = target_scale
-        self.mesh.visible = True
+        self.mesh.scale = Vec3(1, 1, 1)
+        self._update_subcubes_layout(dim)
+        self._set_mesh_visible(True)
+        self._set_mesh_color(self._get_block_color())
 
     def _start_cube_roll(
         self,
@@ -498,16 +549,17 @@ class BlockView(Entity):
         self.pivot.visible = True
         self.mesh.position = Vec3(0, 0, 0)
         self.mesh.rotation = Vec3(0, 0, 0)
-        self.mesh.scale = Vec3(u1, u2, u1)
-        self.mesh.visible = True
-        self.mesh.color = self._get_block_color()
+        self.mesh.scale = Vec3(1, 1, 1)
+        self._update_subcubes_layout((1, 1, 2))
+        self._set_mesh_visible(True)
+        self._set_mesh_color(self._get_block_color())
 
         # Hide split meshes initially
         self.split_mesh_1.visible = False
         self.split_mesh_2.visible = False
 
-        c_active = color.hex(Palette.BLOCK_SPLIT_ACTIVE.hex_code)
-        c_passive = color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code)
+        c_active = color.white
+        c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
         if getattr(split_state, "active_index", 0) == 0:
             self.split_mesh_1.color = c_active
             self.split_mesh_2.color = c_passive
@@ -650,7 +702,7 @@ class BlockView(Entity):
 
         # Spawn ghost echo trail at previous roll orientation
         fx = FXManager.get_instance()
-        fx.spawn_ghost(self.pivot.position, self.pivot.rotation, self.mesh.scale)
+        fx.spawn_ghost(self.pivot.position, self.pivot.rotation, self._compute_scale(dim_prev))
 
         # Compute exact contact edge pivot on the undulating ground
         if direction == Direction.RIGHT:
@@ -694,7 +746,8 @@ class BlockView(Entity):
         # 2. Offset mesh locally so its initial world position is continuous (0-pixel shift)
         self.mesh.position = center_world - pivot_pos
         self.mesh.rotation = Vec3(0, 0, 0)
-        self.mesh.scale = self._compute_scale(dim_prev)
+        self.mesh.scale = Vec3(1, 1, 1)
+        self._update_subcubes_layout(dim_prev)
 
         # 3. Setup delta-time animation variables
         self._roll_axis = rot_axis
@@ -806,7 +859,8 @@ class BlockView(Entity):
                     self.pivot.rotation = Vec3(0, 0, 0)
                     self.mesh.position = Vec3(0, 0.5, 0)
                     self.mesh.rotation = Vec3(0, 0, 0)
-                    self.mesh.scale = self._compute_scale(dim)
+                    self.mesh.scale = Vec3(1, 1, 1)
+                    self._update_subcubes_layout(dim)
                     self._angular_velocity = self._tilt_sign * 35.0
                     return
 
@@ -1005,12 +1059,12 @@ class BlockView(Entity):
                 self.pivot.rotation_z = -math.sin(p1 * math.pi) * 10.0
 
                 # Lateral funnel narrowing as it enters event horizon
-                scale_xz = u1 * max(0.12, 1.0 - p_plunge * 0.60)
-                self.mesh.scale = Vec3(scale_xz, u2, scale_xz)
+                factor_xz = max(0.12, 1.0 - p_plunge * 0.60)
+                self.mesh.scale = Vec3(factor_xz, 1.0, factor_xz)
 
                 # Fade when submerged beneath the floor plane
                 fade = max(0.0, 1.0 - (p1 - 0.55) / 0.45) if p1 > 0.55 else 1.0
-                self.mesh.color = color.rgba(0.25, 0.15, 0.45, fade)
+                self._set_mesh_color(color.rgba(0.25, 0.15, 0.45, fade))
 
                 # Swirling suction sparks
                 self._teleport_spark_timer += dt
@@ -1050,7 +1104,7 @@ class BlockView(Entity):
                 p_launch = (t - t_cut) / (1.0 - t_cut)  # 0.0 -> 1.0 (flight + impact settle)
 
                 # Source monolith and black hole are CUT OFF completely!
-                self.mesh.visible = False
+                self._set_mesh_visible(False)
                 self.pivot.visible = False
                 self._teleport_pad_src.visible = False
                 self._teleport_ring_1.visible = False
@@ -1303,7 +1357,7 @@ class BlockView(Entity):
             if self.pivot.y < -3.5:
                 fade = max(0.0, 1.0 - (-self.pivot.y - 3.5) / 5.5)
                 c_core = Palette.BLOCK_CORE
-                self.mesh.color = color.rgba(c_core.r, c_core.g, c_core.b, fade)
+                self._set_mesh_color(color.rgba(c_core.r, c_core.g, c_core.b, fade))
                 if self._falling_split_cube:
                     self._falling_split_cube.color = color.rgba(c_core.r, c_core.g, c_core.b, fade)
 
@@ -1311,7 +1365,7 @@ class BlockView(Entity):
             if self._fall_time >= fall_dur:
                 self._is_falling = False
                 self.is_animating = False
-                self.mesh.visible = False
+                self._set_mesh_visible(False)
                 self.pivot.visible = False
                 if self._falling_split_cube:
                     self._falling_split_cube.visible = False
@@ -1337,16 +1391,14 @@ class BlockView(Entity):
             self.pivot.rotation_y += vortex_spd * dt
 
             progress = min(1.0, self._victory_time / sink_dur)
-            dim = self.current_state.get_dimensions_3d() if self.current_state else (1, 1, 2)
-            base_scale = self._compute_scale(dim)
             if progress > 0.12:
                 shrink = max(0.02, 1.0 - ((progress - 0.12) / 0.88) * 0.98)
-                self.mesh.scale = base_scale * shrink
+                self.mesh.scale = Vec3(shrink, shrink, shrink)
 
             if self._victory_time >= sink_dur:
                 self._is_sinking_victory = False
                 self.is_animating = False
-                self.mesh.visible = False
+                self._set_mesh_visible(False)
                 if self._on_victory_complete:
                     cb = self._on_victory_complete
                     self._on_victory_complete = None

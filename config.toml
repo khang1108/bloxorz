@@ -81,6 +81,13 @@ switch_press_depth = 0.04       # Switch depression depth on contact
 switch_press_down_time = 0.08   # Switch depression duration in seconds
 switch_press_up_time = 0.12     # Switch rebound duration in seconds
 
+[background]
+# 3D city model (city.glb) beneath the board:
+# Set to false to disable the city mesh, significantly reducing RAM, GPU load, and preventing stuttering/OOM.
+# Set to true to display the full 3D cyberpunk city beneath the floating board.
+enable_city_model = true
+enable_wall_gifs = true
+
 [audio]
 enabled = true
 sample_rate = 44100             # CD quality sample rate in Hz

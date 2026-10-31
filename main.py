@@ -18,10 +18,18 @@ from bloxorz.solvers import UCSSolver  # noqa: E402
 from bloxorz.solvers.base import SolverAction  # noqa: E402
 
 
-def launch(solver: Optional[Callable[[Board], List[SolverAction]]] = None) -> BloxorzApp:
+def launch(
+    solver: Optional[Callable[[Board], List[SolverAction]]] = None,
+    enable_city: Optional[bool] = None,
+) -> BloxorzApp:
     """Launches the 3D Bloxorz app, optionally binding a custom solver function."""
+    if "--no-city" in sys.argv:
+        enable_city = False
+    elif "--city" in sys.argv:
+        enable_city = True
+
     app = Ursina()
-    bloxorz = BloxorzApp()
+    bloxorz = BloxorzApp(enable_city=enable_city)
 
     # Register solver (default to DFSSolver if not specified)
     active_solver = solver or DFSSolver()

@@ -38,7 +38,7 @@ class BloxorzApp:
 
     BOARD_WORLD_OFFSET = (10.0, 60, -45.0)
 
-    def __init__(self):
+    def __init__(self, enable_city: Optional[bool] = None):
         # Configure Ursina window from centralized config
         window.title = CONFIG.window.title
         window.borderless = CONFIG.window.borderless
@@ -94,7 +94,7 @@ class BloxorzApp:
             for item in pool:
                 item.entity.parent = self.fx_manager
         self.camera_ctrl = CameraController()
-        self.background_view = CyberGridBackground()
+        self.background_view = CyberGridBackground(enable_city=enable_city)
         self.board_view = BoardView()
         self.board_view.root.position = self.BOARD_WORLD_OFFSET
         self.block_view = BlockView()
@@ -741,10 +741,19 @@ class InputHandler(Entity):
 
 def main() -> None:
     """Application launcher."""
+    import sys
     from bloxorz.solvers import UCSSolver
-    from bloxorz.launcher import launch_game
 
-    launch_game(UCSSolver())
+    enable_city = None
+    if "--no-city" in sys.argv:
+        enable_city = False
+    elif "--city" in sys.argv:
+        enable_city = True
+
+    app = Ursina()
+    bloxorz = BloxorzApp(enable_city=enable_city)
+    bloxorz.register_solver(UCSSolver())
+    app.run()
 
 
 if __name__ == "__main__":

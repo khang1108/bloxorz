@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 import math
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from PIL import Image, ImageDraw, ImageFilter, ImageSequence
 from panda3d.core import (
@@ -42,12 +42,12 @@ class _PixelWallAnimation(Entity):
     FRAME_COUNT = 8
     PIXEL_SIZE = 0.42
 
-    CYAN = color.hex("#00F0FF")
-    PINK = color.hex("#FF38C8")
-    PURPLE = color.hex("#EC3697")
-    LIGHT_PINK = color.hex("#FF9AE8")
-    WHITE = color.hex("#F6F4FF")
-    DARK_BLUE = color.hex("#16234B")
+    CYAN = color.hex("#0284C7")
+    PINK = color.hex("#7C3AED")
+    PURPLE = color.hex("#4C1D95")
+    LIGHT_PINK = color.hex("#A855F7")
+    WHITE = color.hex("#94A3B8")
+    DARK_BLUE = color.hex("#050814")
     _frame_meshes: Optional[Tuple[Mesh, ...]] = None
 
     def __init__(self, parent: Entity, position: Vec3) -> None:
@@ -168,7 +168,7 @@ class _GifWallAnimation(Entity):
             rotation_y=rotation_y,
             scale=(width, height, 1),
             shader=unlit_shader,
-            color=color.white,
+            color=color.rgba(0.28, 0.28, 0.38, 0.55),
             transparency=True,
             double_sided=True,
         )
@@ -214,7 +214,7 @@ class CyberGridBackground(Entity):
     RUNNER_CORE_DEPTH = 0.015
     WALL_GIF_CLEARANCE = 0.3
     BACKGROUND_OPACITY = 1.0
-    GRID_OPACITY = 1.0
+    GRID_OPACITY = 0.28
     PIXEL_WALL_GIF_PATH = (
         Path(__file__).resolve().parents[1]
         / "assets"
@@ -241,24 +241,24 @@ class CyberGridBackground(Entity):
     CITY_MAX_FOOTPRINT_RATIO = 2.0
     CITY_MAX_HEIGHT_RATIO = 0.42
     CITY_BASE_FLOOR_CLEARANCE = 0.08
-    CITY_BASE_COLOR_GAMMA = 0.55
+    CITY_BASE_COLOR_GAMMA = 1.8
     CITY_FLOOR_CLEARANCE = 1.0
     CITY_GROUND_MATERIAL_NAME = "Meshpart1Mtl"
-    CITY_GROUND_COLOR = (92, 99, 102)
-    CITY_BOTTOM_FACE_COLOR = color.hex("#373A3D")
-    CITY_MISSING_COLOR = (128, 128, 128)
-    CITY_NEUTRAL_ARCHITECTURE_COLOR = (17, 17, 18)
+    CITY_GROUND_COLOR = (12, 14, 18)
+    CITY_BOTTOM_FACE_COLOR = color.hex("#05070B")
+    CITY_MISSING_COLOR = (13, 14, 18)
+    CITY_NEUTRAL_ARCHITECTURE_COLOR = (18, 20, 26)
     CITY_NEUTRAL_COLOR_MAX_CHANNEL_DIFFERENCE = 0.12
     CITY_NEUTRAL_COLOR_MIN_BRIGHTNESS = 0.35
     CITY_SHADOW_DIRECTION = (-0.55, -1.0, 0.35)
     CITY_SHADOW_RESOLUTION = 1024
-    CITY_SHADOW_OPACITY = 112
-    CITY_SHADOW_BLUR = 6
-    CITY_SHADOW_CLEARANCE = 0.15
+    CITY_SHADOW_OPACITY = 220
+    CITY_SHADOW_BLUR = 5
+    CITY_SHADOW_CLEARANCE = 0.08
     ENCLOSURE_FACE_CLEARANCE = 0.03
 
-    PURPLE = color.hex("#E91EA2")
-    TRAIL_PURPLE = color.hex("#EBDDFF")
+    PURPLE = color.hex("#4C1D95")
+    TRAIL_PURPLE = color.hex("#7C3AED")
 
     def __init__(self, enable_city: Optional[bool] = None) -> None:
         super().__init__(parent=scene, name="cyber_grid_background")
@@ -748,8 +748,8 @@ class CyberGridBackground(Entity):
             destroy(self._bottom_face)
             self._bottom_face = None
         self._build_face_gradients()
-        self._build_grid_layer("grid_glow", 0.14, 0.16, 0.025)
-        self._build_grid_layer("grid_core", 0.035, 1.0, 0.0)
+        self._build_grid_layer("grid_glow", 0.14, 0.08, 0.025)
+        self._build_grid_layer("grid_core", 0.035, 0.70, 0.0)
         self._build_pixel_wall()
         self._build_bottom_city()
 
@@ -837,6 +837,51 @@ class CyberGridBackground(Entity):
             self._pixel_wall.scale_y = 1 / self.scale_y
             self._pixel_wall.scale_z = 1 / self.scale_x
 
+    def _shade_city_material(self, material: Optional[Any]) -> Vec3:
+        """Map city model material to Deep Dark Fantasy gothic palette."""
+        if material is None:
+            return Vec3(*(c / 255 for c in self.CITY_MISSING_COLOR))
+
+        mat_name = material.getName() if hasattr(material, "getName") else ""
+        if mat_name == self.CITY_GROUND_MATERIAL_NAME:
+            return Vec3(*(c / 255 for c in self.CITY_GROUND_COLOR))
+
+        # Check emission for glowing windows, signs, and runes
+        if material.hasEmission() and material.getEmission().getXyz().lengthSquared() > 0:
+            em = material.getEmission().getXyz()
+            er, eg, eb = em.x, em.y, em.z
+            # Ethereal spectral dark fantasy mapping with controlled intensity
+            if eg > 0.6 and er < 0.3:  # Green -> eerie spectral teal
+                return Vec3(0.10, 0.35, 0.40)
+            if er > 0.8 and eg > 0.8 and eb > 0.8:  # White -> moonlit arcane silver
+                return Vec3(0.28, 0.34, 0.44)
+            if er > 0.6 and eb > 0.2:  # Magenta/pink -> eldritch violet
+                return Vec3(0.38, 0.16, 0.42)
+            if er > 0.6:  # Red/orange -> dark blood ruby ember
+                return Vec3(0.42, 0.14, 0.12)
+            if eb > 0.6:  # Cyan/blue -> cold soul flame
+                return Vec3(0.15, 0.32, 0.46)
+            return Vec3(min(0.40, er * 0.40), min(0.40, eg * 0.40), min(0.40, eb * 0.40))
+
+        # Check base color for architectural surfaces
+        if not material.hasBaseColor():
+            return Vec3(*(c / 255 for c in self.CITY_MISSING_COLOR))
+
+        base_color = material.getBaseColor().getXyz()
+        r, g, b = base_color.x, base_color.y, base_color.z
+        lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+        # Map luminance smoothly to dark basalt/slate tones
+        t = lum ** 1.5
+        val = 0.035 + 0.20 * t
+
+        # Subtle gothic undertones (midnight blue, dark plum, cold basalt)
+        if b > r + 0.03:  # Cool midnight undertone
+            return Vec3(val * 0.88, val * 0.98, val * 1.15)
+        if r > b + 0.03:  # Warm dark burgundy undertone
+            return Vec3(val * 1.12, val * 0.90, val * 0.95)
+        return Vec3(val * 0.95, val * 1.00, val * 1.05)
+
     def _build_bottom_city(self) -> None:
         if self._city_shadow_overlay is not None:
             destroy(self._city_shadow_overlay)
@@ -880,43 +925,7 @@ class CyberGridBackground(Entity):
                 ):
                     ground_geometry = geometry
 
-                if (
-                    material is not None
-                    and material.hasEmission()
-                    and material.getEmission().getXyz().lengthSquared() > 0
-                ):
-                    rgb = material.getEmission().getXyz()
-                elif material is None or not material.hasBaseColor():
-                    fallback_color = (
-                        self.CITY_GROUND_COLOR
-                        if material is not None
-                        and material.getName() == self.CITY_GROUND_MATERIAL_NAME
-                        else self.CITY_MISSING_COLOR
-                    )
-                    rgb = Vec3(
-                        *(channel / 255 for channel in fallback_color)
-                    )
-                else:
-                    base_color = material.getBaseColor().getXyz()
-                    channels = tuple(base_color)
-                    if (
-                        max(channels) - min(channels)
-                        <= self.CITY_NEUTRAL_COLOR_MAX_CHANNEL_DIFFERENCE
-                        and max(channels) >= self.CITY_NEUTRAL_COLOR_MIN_BRIGHTNESS
-                    ):
-                        rgb = Vec3(
-                            *(
-                                channel / 255
-                                for channel in self.CITY_NEUTRAL_ARCHITECTURE_COLOR
-                            )
-                        )
-                    else:
-                        rgb = Vec3(
-                            *(
-                                channel ** self.CITY_BASE_COLOR_GAMMA
-                                for channel in channels
-                            )
-                        )
+                rgb = self._shade_city_material(material)
                 color_scale = ColorScaleAttrib.make(
                     Vec4(rgb.x, rgb.y, rgb.z, 1)
                 )
@@ -1108,8 +1117,8 @@ class CyberGridBackground(Entity):
             unlit=True,
         )
         palettes = (
-            ("#07131F", "#100B1D", "#080D1C", "#0B1520"),
-            ("#100B1D", "#07131F", "#0B1520", "#080D1C"),
+            ("#040812", "#0A0614", "#050914", "#060D17"),
+            ("#0A0614", "#040812", "#060D17", "#050914"),
         )
         face_specs = (
             (1, self._floor_y, 1.0, 0),

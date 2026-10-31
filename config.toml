@@ -85,7 +85,7 @@ switch_press_up_time = 0.12     # Switch rebound duration in seconds
 # 3D city model (city.glb) beneath the board:
 # Set to false to disable the city mesh, significantly reducing RAM, GPU load, and preventing stuttering/OOM.
 # Set to true to display the full 3D cyberpunk city beneath the floating board.
-enable_city_model = false
+enable_city_model = true
 enable_wall_gifs = true
 
 [audio]

@@ -142,7 +142,7 @@ class ControlsConfig:
 @dataclass
 class BackgroundConfig:
     """Cyber grid environment and 3D background presentation settings."""
-    enable_city_model: bool = False  # Set to False to disable 3D city model (city.glb) and save RAM/GPU
+    enable_city_model: bool = True   # Set to True to display the 3D dark fantasy city model beneath the floating board
     enable_wall_gifs: bool = True    # Animated cyberpunk wall GIFs
 
 

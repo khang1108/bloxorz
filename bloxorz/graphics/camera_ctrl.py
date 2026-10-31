@@ -175,11 +175,10 @@ class CameraController(Entity):
 
     def animate_victory_focus(self, goal_x: int, goal_y: int, duration: float = 4.5):
         """Gently drifts, tilts, and smoothly zooms camera deep into the goal hole upon victory."""
-        tile_size = getattr(getattr(CONFIG, "board", None), "tile_size", 0.86)
         goal_pos = Vec3(
-            goal_x * tile_size + self._board_world_offset.x,
+            goal_x + self._board_world_offset.x,
             self._board_world_offset.y - 0.2,
-            -goal_y * tile_size + self._board_world_offset.z,
+            -goal_y + self._board_world_offset.z,
         )
 
         self._is_victory_zooming = True
@@ -243,9 +242,15 @@ class CameraController(Entity):
             # Smooth S-curve easing (cosine interpolation)
             s = 0.5 - 0.5 * math.cos(t * math.pi)
 
-            self.current_distance = self._victory_start_dist + (self._victory_target_dist - self._victory_start_dist) * s
-            self.current_center = self._victory_start_center + (self._victory_target_center - self._victory_start_center) * s
-            self.current_pitch = self._victory_start_pitch + (self._victory_target_pitch - self._victory_start_pitch) * s
+            self.current_distance = self._victory_start_dist + (
+                self._victory_target_dist - self._victory_start_dist
+            ) * s
+            self.current_center = self._victory_start_center + (
+                self._victory_target_center - self._victory_start_center
+            ) * s
+            self.current_pitch = self._victory_start_pitch + (
+                self._victory_target_pitch - self._victory_start_pitch
+            ) * s
             self.current_yaw = self._victory_start_yaw + (self._victory_target_yaw - self._victory_start_yaw) * s
 
             if t >= 1.0:
@@ -296,4 +301,3 @@ class CameraController(Entity):
             self.current_center.z + offset_z + self._shake_offset.z,
         )
         camera.rotation = Vec3(self.current_pitch, -self.current_yaw, 0)
-

@@ -142,33 +142,33 @@ class ControlsConfig:
 @dataclass
 class AnimationConfig:
     """Tuning parameters for Animation & VFX subsystem - Bloxpath Inspired Polish."""
-    # Sóng dập dìu cho các ô đi được (walkable board tiles floating like a raft on water)
-    wave_enabled: bool = True
+    # Legacy wave compatibility parameters; floor is permanently static at 0.0
+    wave_enabled: bool = False
     wave_amplitude: float = 0.09
     wave_freq_x: float = 0.40
     wave_freq_z: float = 0.35
     wave_speed: float = 1.6
 
-    # Bloxpath Column Sea (Ô nền bên ngoài gần như tĩnh, trồi lên sụt xuống bất đối xứng)
-    column_sea_enabled: bool = True
+    # Legacy column sea parameters; background column sea is disabled
+    column_sea_enabled: bool = False
     column_sea_padding: int = 8
     column_sea_amplitude: float = 0.50
     column_sea_speed: float = 1.50
     column_sea_freq_x: float = 0.40
     column_sea_freq_z: float = 0.35
     column_sea_base_y: float = -1.25
-    palette_mode: str = "obsidian"  # "obsidian" (Chuẩn Bloxpath dark minimal) | "alabaster"
+    palette_mode: str = "obsidian"  # "obsidian" (Bloxpath dark minimal) | "alabaster"
 
-    # Bloxpath Stage Assembly Intro (Gạch trồi lên từ hư không khi vào màn)
+    # Settled board geometry with simultaneous border brightness lift entry (150ms)
     stage_intro_anim: bool = True
-    stage_intro_duration: float = 0.32
-    stage_intro_stagger: float = 0.025
+    stage_intro_duration: float = 0.15
+    stage_intro_stagger: float = 0.0
 
-    # Bloxpath Tile Step Feedback (Ô gạch phát sáng nhẹ khi khối hộp bước lên)
+    # Ordinary tile border pulse feedback upon landing (120ms)
     tile_highlight_enabled: bool = True
-    tile_highlight_duration: float = 0.22
+    tile_highlight_duration: float = 0.12
 
-    # Mặt sàn vững chãi (Không thụt lún giật)
+    # Physical floor stability (rock-solid floor preserves stability without cushion sagging)
     cushion_depth: float = 0.0
     cushion_radius: float = 0.0
     cushion_duration: float = 0.0

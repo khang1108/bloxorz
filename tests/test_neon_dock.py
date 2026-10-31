@@ -62,7 +62,9 @@ def test_wide_boards_fit_left_of_the_sidebar_at_default_camera_position(game_app
     game_app.load_stage_by_index(stage, animate_camera=False)
     for x, y in game_app.game.board.base_tiles:
         for dx, dy in ((-.43, -.43), (-.43, .43), (.43, -.43), (.43, .43)):
-            relative = camera._cam.get_relative_point(scene, Point3(x + dx, 0, -y - dy))
+            relative = camera._cam.get_relative_point(
+                game_app.board_view.root, Point3(x + dx, 0, -y - dy)
+            )
             projected = Point2()
             assert camera.perspective_lens.project(relative, projected)
             assert -1 <= projected.x <= 1

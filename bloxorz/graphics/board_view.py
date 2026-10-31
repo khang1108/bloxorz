@@ -1,17 +1,8 @@
-"""3D Board visualizer implementing the minimalist Bloxpath-inspired design system.
-
-Features:
-- Rock-solid, pristine architectural monolith tiles (zero awkward wobbling)
-- Procedural Stage Intro Assembly (tiles gracefully rise into place upon loading)
-- Bloxpath-signature Tile Step Highlight (illuminates subtly upon block contact)
-- Distinct visual cues for fragile, switches, teleporters, and bridges
-- Frame-perfect 60-120+ FPS Ursina Entity delta-time update loop
-"""
+"""3D Board visualizer implementing Khoa's neo-minimalist architectural geometry with subtle border feedback."""
 
 import math
-from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
-from ursina import Entity, Mesh, color, destroy, curve, invoke, time, Vec3, Texture
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
+from ursina import Entity, Mesh, Vec3, color, destroy, curve, invoke, time
 from ursina.models.procedural.cylinder import Cylinder
 from ursina.shaders import unlit_shader
 
@@ -19,29 +10,18 @@ from bloxorz.core.constants import TileType
 from bloxorz.core.board import Board
 from bloxorz.ui.theme import Palette
 from bloxorz.config import CONFIG
-from bloxorz.graphics.fx_manager import FXManager
-from bloxorz.graphics.background_matrix import ColumnSea
-
-_TEX_PATH = Path(__file__).resolve().parent.parent / "assets" / "textures" / "tile_bevel.png"
-_TILE_TEX = Texture(str(_TEX_PATH)) if _TEX_PATH.exists() else None
-
-_MAGMA_TEX_PATH = Path(__file__).resolve().parent.parent / "assets" / "textures" / "magma_veins.png"
-_MAGMA_TEX = Texture(str(_MAGMA_TEX_PATH)) if _MAGMA_TEX_PATH.exists() else None
-if _MAGMA_TEX and hasattr(_MAGMA_TEX, "_texture") and _MAGMA_TEX._texture:
-    try:
-        from panda3d.core import SamplerState
-        _MAGMA_TEX._texture.setMinfilter(SamplerState.FT_linear_mipmap_linear)
-        _MAGMA_TEX._texture.setMagfilter(SamplerState.FT_linear)
-        _MAGMA_TEX._texture.setWrapU(SamplerState.WM_repeat)
-        _MAGMA_TEX._texture.setWrapV(SamplerState.WM_repeat)
-    except Exception:
-        pass
+from bloxorz.graphics.board_meshes import (
+    beveled_box_mesh,
+    deck_border_mesh,
+    deck_panel_mesh,
+    hollow_box_mesh,
+)
 
 
 class _PulseRing(Entity):
     """Blue neon ring that softly expands and fades around a soft switch."""
 
-    def __init__(self, parent, position, radius: float, accent) -> None:
+    def __init__(self, parent: Entity, position: Tuple[float, float, float], radius: float, accent) -> None:
         segments = 32
         vertices = []
         triangles = []
@@ -95,7 +75,7 @@ class _PulseRing(Entity):
 class _TeleportOrbit(Entity):
     """Rotating two-node teleport symbol joined by a neon connector."""
 
-    def __init__(self, parent: Entity, position, accent) -> None:
+    def __init__(self, parent: Entity, position: Tuple[float, float, float], accent) -> None:
         super().__init__(
             parent=parent,
             name="teleport_orbit",
@@ -148,7 +128,7 @@ class _TeleportOrbit(Entity):
 class _HeavySwitch(Entity):
     """Red heavy switch cross with a repeating warning blink."""
 
-    def __init__(self, parent: Entity, position, config) -> None:
+    def __init__(self, parent: Entity, position: Tuple[float, float, float], config) -> None:
         super().__init__(
             parent=parent,
             name="heavy_switch_pulse",
@@ -183,44 +163,6 @@ class _HeavySwitch(Entity):
                 base.g * brightness,
                 base.b * brightness,
             )
-
-
-class _LandingFlash(Entity):
-    """Brief translucent highlight that fades over a landed-on tile."""
-
-    DURATION = 0.38
-
-    def __init__(self, parent: Entity, x: float, z: float, tile_size: float) -> None:
-        half = tile_size / 2
-        super().__init__(
-            parent=parent,
-            name="tile_landing_flash",
-            model=Mesh(
-                vertices=[
-                    (-half, 0, -half),
-                    (half, 0, -half),
-                    (half, 0, half),
-                    (-half, 0, half),
-                ],
-                triangles=[(0, 1, 2), (0, 2, 3)],
-                static=True,
-            ),
-            position=(x, 0.018, z),
-            shader=unlit_shader,
-            color=color.rgba(1.0, 0.96, 0.68, 0.85),
-            transparency=True,
-            double_sided=True,
-        )
-        self._elapsed = 0.0
-
-    def update(self) -> None:
-        self._elapsed += max(0.0, time.dt)
-        progress = self._elapsed / self.DURATION
-        if progress >= 1:
-            destroy(self)
-            return
-        alpha = 0.85 * (1 - progress) ** 1.5
-        self.color = color.rgba(1.0, 0.96, 0.68, alpha)
 
 
 def _column_mesh(width: float, height: float, opacity: float) -> Mesh:
@@ -379,42 +321,66 @@ class _GoalBeacon(Entity):
             )
 
 
-class BoardView(Entity):
-    """Renders the 3D grid with clear void gaps, distinct tile types, and Bloxpath-style tactile feedback."""
+class BoardView:
+    """Renders the 3D grid with clear void gaps, distinct tile types, and dynamic tactile feedback."""
 
     _instance: Optional["BoardView"] = None
 
-    def __init__(self, **kwargs):
-        super().__init__(name="board_root", **kwargs)
+    def __init__(self):
         BoardView._instance = self
-
-        # Backward compatibility: self.root points to self
-        self.root = self
-
-        # Bloxpath Undulating Background Column Sea
-        self.column_sea = ColumnSea(parent=self)
-
-        # Container registries
-        self.tile_roots: Dict[Tuple[int, int], Entity] = {}
+        self.root = Entity(name="board_root")
         self.tile_entities: Dict[Tuple[int, int], Entity] = {}
         self.tile_types: Dict[Tuple[int, int], TileType] = {}
-        self.board: Optional[Board] = None
+        self.tile_parts: Dict[Tuple[int, int], List[Entity]] = {}
+        self.tile_roots: Dict[Tuple[int, int], Entity] = {}
+        self.tile_borders: Dict[Tuple[int, int], Entity] = {}
+        self._border_base_colors: Dict[Tuple[int, int], color.Color] = {}
+        self._border_revisions: Dict[Tuple[int, int], int] = {}
+        self._border_sizes: Dict[Tuple[int, int], float] = {}
+        self._border_width_factors: Dict[Tuple[int, int], float] = {}
+        self._last_bridge_states: Dict[str, bool] = {}
         self.switch_entities: Dict[Tuple[int, int], Entity] = {}
         self.bridge_entities: Dict[Tuple[int, int], Entity] = {}
-        self.bridge_roots: Dict[Tuple[int, int], Entity] = {}
-        self.pedestal_entities: List[Tuple[Entity, float]] = []
         self.goal_entity: Optional[Entity] = None
-        self.goal_floor: Optional[Entity] = None
-
-        # Fragile crumble tracking
+        self.crack_entity: Optional[Entity] = None
+        self._fragile_cracks: Dict[Tuple[int, int], Tuple[List, List]] = {}
+        self._fragile_crack_color: color.Color = color.hex(Palette.TILE_FRAGILE_INSET.hex_code)
+        self._bridge_revisions: Dict[Tuple[int, int], int] = {}
+        self._switch_rest_y: Dict[Tuple[int, int], float] = {}
+        self._switch_press_revisions: Dict[Tuple[int, int], int] = {}
+        self.board: Optional[Board] = None
         self._crumbling_tiles: Set[Tuple[int, int]] = set()
-        self._anim_time: float = 0.0
+        self._build_generation: int = 0
         self._wave_time: float = 0.0
+        self._anim_time: float = 0.0
+
+        # Propagate update loop through root entity
+        self.root.update = self.update
 
     @classmethod
     def get_instance(cls) -> Optional["BoardView"]:
         """Returns the active BoardView instance."""
         return cls._instance
+
+    def get_tile_border(self, cell: Tuple[int, int]) -> Optional[Entity]:
+        """Returns the neon border entity for the specified board cell."""
+        return self.tile_borders.get(cell)
+
+    def _compute_exposed_edges(self, board: Board, x: int, y: int) -> List[str]:
+        """Calculates which of the 4 local edges are exposed (adjacent to void or non-walkable tile)."""
+        # Local x_neg=(x-1, y), x_pos=(x+1, y), z_neg=(x, y+1), z_pos=(x, y-1)
+        neighbors = [
+            ("x_neg", (x - 1, y)),
+            ("x_pos", (x + 1, y)),
+            ("z_neg", (x, y + 1)),
+            ("z_pos", (x, y - 1)),
+        ]
+        exposed: List[str] = []
+        for edge_name, (nx, ny) in neighbors:
+            tile_type = board.get_tile(nx, ny)
+            if not board.is_tile_walkable(tile_type):
+                exposed.append(edge_name)
+        return exposed
 
     def _add_top_surface(
         self,
@@ -424,76 +390,37 @@ class BoardView(Entity):
         tile_size: float,
         gradient: Tuple[str, str, str, str],
         border_hex: str,
-        border_width_factor: float = 0.045,
+        border_width_factor: float = 0.018,
         parent: Optional[Entity] = None,
-    ) -> None:
-        half = tile_size / 2
-        vertices = [
-            (-half, 0, -half),
-            (half, 0, -half),
-            (half, 0, half),
-            (-half, 0, half),
-        ]
-        Entity(
+        exposed_edges: Optional[Iterable[str]] = None,
+        detailed: bool = False,
+    ) -> Tuple[Entity, Entity]:
+        panel_size = tile_size * 0.88
+        border_size = tile_size * 0.93
+        edges = exposed_edges if exposed_edges is not None else ("x_neg", "x_pos", "z_neg", "z_pos")
+
+        surface = Entity(
             parent=parent if parent is not None else self.root,
             name="tile_gradient_surface",
-            model=Mesh(
-                vertices=vertices,
-                triangles=[(0, 1, 2), (0, 2, 3)],
-                colors=[color.hex(value) for value in gradient],
-                static=True,
-            ),
+            model=deck_panel_mesh(panel_size, gradient, detailed=detailed),
             position=(x, y, z),
             shader=unlit_shader,
             double_sided=True,
         )
 
-        border_width = tile_size * border_width_factor
-        border_vertices = []
-        border_triangles = []
-        for start, end in (
-            ((-half, -half), (half, -half)),
-            ((half, -half), (half, half)),
-            ((half, half), (-half, half)),
-            ((-half, half), (-half, -half)),
-        ):
-            base = len(border_vertices)
-            if start[0] == end[0]:
-                border_vertices.extend(
-                    (
-                        (start[0] - border_width / 2, 0, start[1]),
-                        (start[0] + border_width / 2, 0, start[1]),
-                        (end[0] + border_width / 2, 0, end[1]),
-                        (end[0] - border_width / 2, 0, end[1]),
-                    )
-                )
-            else:
-                border_vertices.extend(
-                    (
-                        (start[0], 0, start[1] - border_width / 2),
-                        (start[0], 0, start[1] + border_width / 2),
-                        (end[0], 0, end[1] + border_width / 2),
-                        (end[0], 0, end[1] - border_width / 2),
-                    )
-                )
-            border_triangles.extend(((base, base + 1, base + 2), (base, base + 2, base + 3)))
         border_color = color.hex(border_hex)
-        Entity(
+        base_color = color.rgba(border_color.r, border_color.g, border_color.b, 0.98)
+        neon_border = Entity(
             parent=parent if parent is not None else self.root,
             name="tile_neon_border",
-            model=Mesh(
-                vertices=border_vertices,
-                triangles=border_triangles,
-                colors=[
-                    color.rgba(border_color.r, border_color.g, border_color.b, 0.98)
-                ] * len(border_vertices),
-                static=True,
-            ),
+            model=deck_border_mesh(border_size, edges, width_factor=border_width_factor),
             position=(x, y + 0.003, z),
             shader=unlit_shader,
+            color=base_color,
             transparency=True,
             double_sided=True,
         )
+        return surface, neon_border
 
     @staticmethod
     def _append_crack_segment(
@@ -521,68 +448,87 @@ class BoardView(Entity):
         vertices.extend((first, second, third, fourth))
         triangles.extend(((base, base + 1, base + 2), (base, base + 2, base + 3)))
 
-    def clear(self):
-        """Destroys all visual entities on the board."""
-        for child in list(self.children):
-            if child is not getattr(self, "column_sea", None):
-                destroy(child)
+    def _rebuild_batched_crack_mesh(self) -> None:
+        """Constructs or updates the single batched crack mesh for all intact fragile cells."""
+        if not self._fragile_cracks:
+            if self.crack_entity:
+                destroy(self.crack_entity)
+                self.crack_entity = None
+            return
 
-        if getattr(self, "column_sea", None):
-            self.column_sea.clear()
+        batched_vertices = []
+        batched_triangles = []
+        for verts, tris in self._fragile_cracks.values():
+            base = len(batched_vertices)
+            batched_vertices.extend(verts)
+            for t in tris:
+                batched_triangles.append((t[0] + base, t[1] + base, t[2] + base))
 
-        self._wave_time = 0.0
+        crack_model = Mesh(
+            vertices=batched_vertices,
+            triangles=batched_triangles,
+            colors=[self._fragile_crack_color] * len(batched_vertices),
+            static=True,
+        )
 
-        self.tile_roots.clear()
+        if self.crack_entity and getattr(self.crack_entity, "enabled", True):
+            self.crack_entity.model = crack_model
+        else:
+            self.crack_entity = Entity(
+                parent=self.root,
+                name="fragile_crack_mesh",
+                model=crack_model,
+                shader=unlit_shader,
+                color=color.white,
+                double_sided=True,
+            )
+
+    def clear(self) -> None:
+        """Destroys all visual entities on the board and invalidates active animation callbacks."""
+        self._build_generation += 1
+        for child in list(self.root.children):
+            destroy(child)
         self.tile_entities.clear()
         self.tile_types.clear()
-        self.board = None
+        self.tile_parts.clear()
+        self.tile_roots.clear()
+        self.tile_borders.clear()
+        self._border_base_colors.clear()
+        self._border_revisions.clear()
+        self._border_sizes.clear()
+        self._border_width_factors.clear()
+        self._last_bridge_states.clear()
         self.switch_entities.clear()
         self.bridge_entities.clear()
-        self.bridge_roots.clear()
-        self.pedestal_entities.clear()
         self._crumbling_tiles.clear()
+        self._fragile_cracks.clear()
+        self._bridge_revisions.clear()
+        self._switch_rest_y.clear()
+        self._switch_press_revisions.clear()
+        self.crack_entity = None
         self.goal_entity = None
-        self.goal_floor = None
+        self.board = None
+        self._wave_time = 0.0
 
-    def build(self, board: Board):
-        """Constructs 3D representations of all board elements with authentic Bloxpath plateau styling."""
+    def build(self, board: Board) -> None:
+        """Constructs 3D representations of all board elements with fixed settled geometry and border lift entry."""
         self.clear()
+        gen = self._build_generation
         self.board = board
         if hasattr(board, "base_tiles"):
             self.tile_types = dict(board.base_tiles)
 
-        # Build undulating background column sea around the stage
-        if getattr(self, "column_sea", None):
-            self.column_sea.build_around_board(board)
-
         c_normal = color.hex(Palette.TILE_NORMAL.hex_code)
         c_pedestal = color.hex(Palette.TILE_PEDESTAL.hex_code)
+        c_inset = color.hex(Palette.TILE_INSET.hex_code)
         c_fragile = color.hex(Palette.TILE_FRAGILE.hex_code)
-        c_under_rim = color.hex(Palette.UNDER_RIM.hex_code)
+        self._fragile_crack_color = color.hex(Palette.TILE_FRAGILE_INSET.hex_code)
         c_switch_soft = color.hex(Palette.SWITCH_SOFT.hex_code)
-        c_switch_heavy = color.hex(Palette.SWITCH_HEAVY.hex_code)
         c_bridge = color.hex(Palette.BRIDGE_ACTIVE.hex_code)
         c_goal_rim = color.hex(Palette.GOAL_RIM.hex_code)
         c_goal_void = color.hex(Palette.TILE_GOAL.hex_code)
         c_goal_glow = color.hex(Palette.GOAL_GLOW.hex_code)
 
-        tile_w = 0.97
-        tile_h = 0.35
-        base_depth = 2.40
-
-        # Stage Assembly Intro Animation parameters
-        intro_enabled = getattr(CONFIG.animation, "stage_intro_anim", True)
-        stagger = getattr(CONFIG.animation, "stage_intro_stagger", 0.018)
-        dur = getattr(CONFIG.animation, "stage_intro_duration", 0.28)
-
-        spawn_pos = board.spawn_state.get_center_3d() if hasattr(board, "spawn_state") else (0, 0, 0)
-        sp_x, sp_y = float(spawn_pos[0]), float(spawn_pos[1])
-
-        # Track occupied walkable cells for perimeter calculation
-        occupied: Set[Tuple[int, int]] = set(board.base_tiles.keys())
-        if hasattr(board, "bridges"):
-            for group in board.bridges.values():
-                occupied.update(group.tiles)
         cfg = CONFIG.board
         tile_size = cfg.tile_size
         crack_paths = (
@@ -594,442 +540,521 @@ class BoardView(Entity):
             ((-0.05, -0.05), (-0.25, -0.27)),
         )
 
+        intro_enabled = getattr(CONFIG.animation, "stage_intro_anim", True)
+
         for (x, y), tile_type in board.base_tiles.items():
             pos_x = float(x)
             pos_z = -float(y)
+            parts: List[Entity] = []
 
-            # Master container for tile
-            init_y = -3.6 if intro_enabled else 0.0
-            tile_root = Entity(
-                parent=self,
-                position=(pos_x, init_y, pos_z),
-                name=f"tile_root_{x}_{y}",
-            )
-            self.tile_roots[(x, y)] = tile_root
-
-            if intro_enabled:
-                dist = math.hypot(pos_x - sp_x, pos_z - (-sp_y))
-                delay = min(0.38, dist * stagger)
-                tile_root.animate_y(0.0, duration=dur + 0.12, delay=delay, curve=curve.out_back)
-
-            # Deep monolithic foundation dropping into the column sea with glowing magma veins
+            # Deep pedestal base reaching down into the void
             if tile_type != TileType.GOAL:
                 ped = Entity(
-                    parent=tile_root,
-                    model='cube',
-                    texture=_MAGMA_TEX,
-                    position=(0.0, -tile_h - base_depth / 2.0, 0.0),
-                    scale=(1.002, base_depth, 1.002),
-                    color=color.white if _MAGMA_TEX else c_pedestal,
+                    parent=self.root,
+                    model=beveled_box_mesh(ribbed=True),
+                    position=(pos_x, cfg.pedestal_y, pos_z),
+                    scale=(tile_size - cfg.pedestal_inset, cfg.pedestal_height, tile_size - cfg.pedestal_inset),
+                    color=c_pedestal,
                 )
-                if _MAGMA_TEX:
-                    ped.texture_scale = (0.70, 1.30)
-                    u_off = (float(x) * 0.28 + float(y) * 0.43) % 1.0
-                    ped.texture_offset = (u_off, 0.0)
-                    self.pedestal_entities.append((ped, u_off))
-
-                # Cyberpunk Magma heat collar anchoring the volcanic rock into the flowing lava
-                Entity(
-                    parent=tile_root,
-                    model='cube',
-                    position=(0.0, -1.73, 0.0),
-                    scale=(1.06, 0.05, 1.06),
-                    color=color.hex(Palette.LAVA_UNDERGLOW.hex_code),
-                    unlit=True,
-                )
+                parts.append(ped)
 
             if tile_type == TileType.NORMAL:
                 top_slab = Entity(
-                    parent=tile_root,
-                    model='cube',
-                    texture=_TILE_TEX,
-                    position=(0.0, -tile_h / 2.0, 0.0),
-                    scale=(tile_w, tile_h, tile_w),
+                    parent=self.root,
+                    model=beveled_box_mesh(ribbed=False),
+                    position=(pos_x, cfg.normal_slab_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
                     color=c_normal,
                 )
-                self.tile_entities[(x, y)] = top_slab
-                self._add_top_surface(
-                    0, 0, 0.002, tile_w,
-                    ("#070B13", "#0D1422", "#080D18", "#101827"),
+                exposed = self._compute_exposed_edges(board, x, y)
+                surf, border = self._add_top_surface(
+                    pos_x, pos_z, 0.002, tile_size,
+                    ("#152131", "#2B3B50", "#182638", "#2F4259"),
                     Palette.TILE_BORDER.hex_code,
-                    border_width_factor=0.065, parent=tile_root,
+                    border_width_factor=0.018,
+                    exposed_edges=exposed,
+                    detailed=True,
                 )
+                self.tile_entities[(x, y)] = top_slab
+                self.tile_roots[(x, y)] = top_slab
+                self.tile_borders[(x, y)] = border
+                self._border_base_colors[(x, y)] = border.color
+                self._border_sizes[(x, y)] = tile_size * 0.93
+                self._border_width_factors[(x, y)] = 0.018
+                parts.extend([top_slab, surf, border])
 
             elif tile_type == TileType.FRAGILE:
                 slab = Entity(
-                    parent=tile_root,
-                    model='cube',
-                    texture=_TILE_TEX,
-                    position=(0.0, -tile_h / 2.0, 0.0),
-                    scale=(tile_w, tile_h, tile_w),
+                    parent=self.root,
+                    model=beveled_box_mesh(ribbed=False),
+                    position=(pos_x, cfg.fragile_slab_y, pos_z),
+                    scale=(tile_size, cfg.fragile_slab_height, tile_size),
                     color=c_fragile,
                 )
-                self.tile_entities[(x, y)] = slab
-                self._add_top_surface(
-                    0, 0, 0.002, tile_w,
+                exposed = self._compute_exposed_edges(board, x, y)
+                surf, border = self._add_top_surface(
+                    pos_x, pos_z, 0.002, tile_size,
                     ("#482006", "#8A3B08", "#5A2608", "#A64A0A"),
-                    Palette.TILE_FRAGILE.hex_code, parent=tile_root,
+                    Palette.TILE_FRAGILE.hex_code,
+                    border_width_factor=0.018,
+                    exposed_edges=exposed,
+                    detailed=False,
                 )
-                vertices, triangles = [], []
+                cell_verts = []
+                cell_tris = []
                 for start, end in crack_paths:
                     self._append_crack_segment(
-                        vertices, triangles, 0, 0, start, end, width=0.014, y=0.014,
+                        cell_verts,
+                        cell_tris,
+                        pos_x,
+                        pos_z,
+                        (start[0] * tile_size, start[1] * tile_size),
+                        (end[0] * tile_size, end[1] * tile_size),
+                        width=0.014,
+                        y=0.014,
                     )
-                Entity(
-                    parent=tile_root, name="fragile_crack_mesh",
-                    model=Mesh(vertices=vertices, triangles=triangles, static=True),
-                    color=c_fragile, shader=unlit_shader, double_sided=True,
-                )
+                self._fragile_cracks[(x, y)] = (cell_verts, cell_tris)
+                self.tile_entities[(x, y)] = slab
+                self.tile_roots[(x, y)] = slab
+                self.tile_borders[(x, y)] = border
+                self._border_base_colors[(x, y)] = border.color
+                self._border_sizes[(x, y)] = tile_size * 0.93
+                self._border_width_factors[(x, y)] = 0.018
+                parts.extend([slab, surf, border])
 
             elif tile_type == TileType.GOAL:
-                # Open square void well
+                cfg_block_w = getattr(CONFIG.block, "unit_scale_1", 0.86)
+                goal_outer = 0.98
+                goal_aperture = min(goal_outer - 0.02, max(0.90, cfg_block_w + 0.04))
+                goal_inner_ratio = goal_aperture / goal_outer
+                hollow_mesh_halo = hollow_box_mesh(goal_inner_ratio)
+                hollow_mesh_well = hollow_box_mesh(goal_inner_ratio)
+
                 well = Entity(
-                    parent=tile_root,
-                    model='cube',
-                    position=(0.0, -tile_h - 0.40, 0.0),
-                    scale=(tile_w, 0.80, tile_w),
+                    parent=self.root,
+                    name="goal_well",
+                    model=hollow_mesh_well,
+                    position=(pos_x, cfg.goal_well_y, pos_z),
+                    scale=(goal_outer, cfg.goal_well_height, goal_outer),
                     color=c_goal_void,
                 )
-                # Golden halo rim framing 4 outer edges of the void hole
-                rim_t = 0.08
-                Entity(parent=tile_root, model='cube', position=(0.0, 0.01, -0.45), scale=(tile_w, 0.03, rim_t), color=c_goal_rim)
-                Entity(parent=tile_root, model='cube', position=(0.0, 0.01, 0.45), scale=(tile_w, 0.03, rim_t), color=c_goal_rim)
-                Entity(parent=tile_root, model='cube', position=(-0.45, 0.01, 0.0), scale=(rim_t, 0.03, tile_w), color=c_goal_rim)
-                Entity(parent=tile_root, model='cube', position=(0.45, 0.01, 0.0), scale=(rim_t, 0.03, tile_w), color=c_goal_rim)
-
-                # Pulsating arcane core floor at bottom of void well
-                goal_floor = Entity(
-                    parent=tile_root,
+                halo = Entity(
+                    parent=self.root,
+                    name="goal_halo",
+                    model=hollow_mesh_halo,
+                    position=(pos_x, cfg.goal_rim_y, pos_z),
+                    scale=(goal_outer, cfg.goal_rim_height, goal_outer),
+                    color=c_goal_rim,
+                )
+                floor = Entity(
+                    parent=self.root,
                     model='cube',
-                    position=(0.0, -tile_h - 0.78, 0.0),
-                    scale=(tile_w * 0.75, 0.04, tile_w * 0.75),
+                    position=(pos_x, cfg.goal_floor_y, pos_z),
+                    scale=(tile_size * cfg.goal_floor_ratio, cfg.goal_floor_height, tile_size * cfg.goal_floor_ratio),
                     color=c_goal_glow,
                 )
+                beacon = _GoalBeacon(self.root, pos_x, pos_z)
                 self.goal_entity = well
-                self.goal_floor = goal_floor
                 self.tile_entities[(x, y)] = well
-                _GoalBeacon(tile_root, 0, 0)
+                self.tile_roots[(x, y)] = well
+                parts.extend([well, halo, floor, beacon])
 
             elif tile_type in (TileType.SWITCH_SOFT, TileType.SWITCH_HEAVY):
                 base_slab = Entity(
-                    parent=tile_root,
-                    model='cube',
-                    texture=_TILE_TEX,
-                    position=(0.0, -tile_h / 2.0, 0.0),
-                    scale=(tile_w, tile_h, tile_w),
+                    parent=self.root,
+                    model=beveled_box_mesh(ribbed=False),
+                    position=(pos_x, cfg.normal_slab_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
                     color=c_normal,
                 )
                 self.tile_entities[(x, y)] = base_slab
+                self.tile_roots[(x, y)] = base_slab
                 is_soft = tile_type == TileType.SWITCH_SOFT
-                self._add_top_surface(
-                    0, 0, 0.002, tile_w,
+                exposed = self._compute_exposed_edges(board, x, y)
+                surf, border = self._add_top_surface(
+                    pos_x, pos_z, 0.002, tile_size,
                     (
                         ("#07172A", "#092445", "#06172A", "#0C1C32")
                         if is_soft
                         else ("#210A12", "#3B0B16", "#230913", "#44101A")
                     ),
                     (Palette.SWITCH_SOFT if is_soft else Palette.SWITCH_HEAVY).hex_code,
-                    parent=tile_root,
+                    border_width_factor=0.065,
+                    exposed_edges=exposed,
+                    detailed=False,
                 )
+                self.tile_borders[(x, y)] = border
+                self._border_base_colors[(x, y)] = border.color
+                self._border_sizes[(x, y)] = tile_size * 0.93
+                self._border_width_factors[(x, y)] = 0.065
+                parts.extend([base_slab, surf, border])
 
-                if tile_type == TileType.SWITCH_SOFT:
+                if is_soft:
                     plate = Entity(
-                        parent=tile_root,
+                        parent=self.root,
                         model=Cylinder(resolution=24),
-                        position=(0.0, 0.04, 0.0),
-                        scale=(0.52, 0.08, 0.52),
+                        position=(pos_x, cfg.switch_soft_y, pos_z),
+                        scale=(0.54, cfg.switch_soft_height, 0.54),
                         color=c_switch_soft,
                     )
-                    _PulseRing(
-                        parent=tile_root,
-                        position=(0, 0.09, 0),
-                        radius=cfg.switch_soft_radius * 0.78,
+                    ring = _PulseRing(
+                        parent=self.root,
+                        position=(pos_x, cfg.normal_slab_y + cfg.normal_slab_height / 2 + 0.003, pos_z),
+                        radius=0.34,
                         accent=c_switch_soft,
                     )
                     self.switch_entities[(x, y)] = plate
+                    self._switch_rest_y[(x, y)] = cfg.switch_soft_y
+                    parts.extend([plate, ring])
                 else:
+                    inset_plate = Entity(
+                        parent=self.root,
+                        model='cube',
+                        position=(pos_x, cfg.switch_heavy_y - 0.02, pos_z),
+                        scale=(0.74, 0.04, 0.74),
+                        color=c_inset,
+                    )
                     heavy_switch = _HeavySwitch(
-                        parent=tile_root,
-                        position=(0, 0.04, 0),
+                        parent=self.root,
+                        position=(pos_x, cfg.switch_heavy_y, pos_z),
                         config=cfg,
                     )
                     self.switch_entities[(x, y)] = heavy_switch
+                    self._switch_rest_y[(x, y)] = cfg.switch_heavy_y
+                    parts.extend([inset_plate, heavy_switch])
 
             elif tile_type == TileType.TELEPORT:
                 top_slab = Entity(
-                    parent=tile_root,
-                    model='cube',
-                    texture=_TILE_TEX,
-                    position=(0.0, -tile_h / 2.0, 0.0),
-                    scale=(tile_w, tile_h, tile_w),
+                    parent=self.root,
+                    model=beveled_box_mesh(ribbed=False),
+                    position=(pos_x, cfg.normal_slab_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
                     color=c_normal,
                 )
-                self._add_top_surface(
-                    0, 0, 0.002, tile_w,
+                c_teleport_accent = color.hex(Palette.TILE_TELEPORT.hex_code)
+                exposed = self._compute_exposed_edges(board, x, y)
+                surf, border = self._add_top_surface(
+                    pos_x, pos_z, 0.002, tile_size,
                     ("#1A0B2B", "#351454", "#200D38", "#45165C"),
                     Palette.TILE_TELEPORT.hex_code,
-                    parent=tile_root,
+                    border_width_factor=0.018,
+                    exposed_edges=exposed,
+                    detailed=False,
                 )
-                _TeleportOrbit(
-                    parent=tile_root, position=(0, 0.035, 0),
-                    accent=color.hex(Palette.TILE_TELEPORT.hex_code),
+                teleport_orbit = _TeleportOrbit(
+                    parent=self.root,
+                    position=(pos_x, cfg.normal_inset_y + 0.018, pos_z),
+                    accent=c_teleport_accent,
                 )
                 self.tile_entities[(x, y)] = top_slab
+                self.tile_roots[(x, y)] = top_slab
+                self.tile_borders[(x, y)] = border
+                self._border_base_colors[(x, y)] = border.color
+                self._border_sizes[(x, y)] = tile_size * 0.93
+                self._border_width_factors[(x, y)] = 0.018
+                parts.extend([top_slab, surf, border, teleport_orbit])
 
-        # Build bridge entities (Full architectural monolith columns matching normal tiles)
-        closed_y = -3.80
-        open_y = 0.0
+            self.tile_parts[(x, y)] = parts
+
+        if self._fragile_cracks:
+            self._rebuild_batched_crack_mesh()
+
+        # Build bridge entities (slatted architectural planks)
         for group in board.bridges.values():
             for (bx, by) in group.tiles:
                 pos_x = float(bx)
                 pos_z = -float(by)
-                bridge_root = Entity(
-                    parent=self,
-                    position=(pos_x, 0.0, pos_z),
-                    name=f"bridge_root_{bx}_{by}",
-                )
-                self.bridge_roots[(bx, by)] = bridge_root
-
-                # Full bridge column that rises up / sinks down
-                bridge_col = Entity(
-                    parent=bridge_root,
-                    position=(0.0, open_y if group.is_open else closed_y, 0.0),
+                bridge_tile = Entity(
+                    parent=self.root,
+                    model=beveled_box_mesh(ribbed=False),
+                    position=(pos_x, cfg.bridge_open_y if group.is_open else cfg.bridge_closed_y, pos_z),
+                    scale=(tile_size, cfg.normal_slab_height, tile_size),
+                    color=c_bridge,
                     visible=group.is_open,
-                    name=f"bridge_col_{bx}_{by}",
                 )
-                self.bridge_entities[(bx, by)] = bridge_col
-
-                # 1. Top walkable slab matching standard tiles
-                top_slab = Entity(
-                    parent=bridge_col,
-                    model='cube',
-                    texture=_TILE_TEX,
-                    position=(0.0, -tile_h / 2.0, 0.0),
-                    scale=(tile_w, tile_h, tile_w),
-                    color=c_normal,
-                )
-                self.tile_entities[(bx, by)] = top_slab
-                top_slab.color = c_bridge
-                self._add_top_surface(
-                    0, 0, 0.002, tile_w,
+                exposed = self._compute_exposed_edges(board, bx, by)
+                surf, border = self._add_top_surface(
+                    0, 0, cfg.normal_slab_height / 2 + 0.002, tile_size,
                     ("#684D00", "#B88A08", "#7D5E04", "#D8A810"),
-                    Palette.BRIDGE_BORDER.hex_code, parent=bridge_col,
+                    Palette.BRIDGE_BORDER.hex_code,
+                    border_width_factor=0.018,
+                    parent=bridge_tile,
+                    exposed_edges=exposed,
+                    detailed=False,
                 )
+                self.bridge_entities[(bx, by)] = bridge_tile
+                self.tile_borders[(bx, by)] = border
+                self._border_base_colors[(bx, by)] = border.color
+                self._border_sizes[(bx, by)] = tile_size * 0.93
+                self._border_width_factors[(bx, by)] = 0.018
 
-                # 2. Deep monolithic foundation with flowing magma veins
-                ped = Entity(
-                    parent=bridge_col,
-                    model='cube',
-                    texture=_MAGMA_TEX,
-                    position=(0.0, -tile_h - base_depth / 2.0, 0.0),
-                    scale=(1.002, base_depth, 1.002),
-                    color=color.white if _MAGMA_TEX else c_pedestal,
+        self._last_bridge_states = {b_id: group.is_open for b_id, group in board.bridges.items()}
+
+        # Simultaneous slight border brightness lift for 150ms entry
+        if intro_enabled:
+            intro_dur = getattr(CONFIG.animation, "stage_intro_duration", 0.15)
+            for cell, border in self.tile_borders.items():
+                base = self._border_base_colors.get(cell)
+                if not base:
+                    continue
+                lifted = color.rgba(
+                    base.r + (1.0 - base.r) * 0.12,
+                    base.g + (1.0 - base.g) * 0.12,
+                    base.b + (1.0 - base.b) * 0.12,
+                    base.a,
                 )
-                if _MAGMA_TEX:
-                    ped.texture_scale = (0.70, 1.30)
-                    u_off = (float(bx) * 0.28 + float(by) * 0.43) % 1.0
-                    ped.texture_offset = (u_off, 0.0)
-                    self.pedestal_entities.append((ped, u_off))
+                border.color = lifted
+                rev = self._border_revisions.get(cell, 0) + 1
+                self._border_revisions[cell] = rev
 
-                # 3. Cyberpunk Magma heat collar
-                Entity(
-                    parent=bridge_col,
-                    model='cube',
-                    position=(0.0, -1.73, 0.0),
-                    scale=(1.06, 0.05, 1.06),
-                    color=color.hex(Palette.LAVA_UNDERGLOW.hex_code),
-                    unlit=True,
-                )
+                def restore_border_intro(c=cell, r=rev, g=gen, bc=base):
+                    if self._build_generation == g and self._border_revisions.get(c) == r:
+                        b = self.tile_borders.get(c)
+                        if b:
+                            b.color = bc
 
-        # Setup ambient dust centered around the stage
-        if board.base_tiles:
-            xs = [x for x, _ in board.base_tiles.keys()]
-            ys = [y for _, y in board.base_tiles.keys()]
-            mid_x = (min(xs) + max(xs)) / 2.0
-            mid_z = -((min(ys) + max(ys)) / 2.0)
-            fx = FXManager.get_instance()
-            fx.setup_ambient_dust(center=Vec3(mid_x, 0.0, mid_z), bounds=max(len(xs), len(ys)) * 0.9)
+                border.animate_color(base, duration=intro_dur, curve=curve.out_quad)
+                invoke(restore_border_intro, delay=intro_dur)
 
-    # -------------------------------------------------------------------------
-    # Surface Elevation & Highlight Methods
-    # -------------------------------------------------------------------------
+    def update_bridges(self, board: Board) -> None:
+        """Smoothly animates bridge states with staggered architectural deployment."""
+        gen = self._build_generation
+        cfg = CONFIG.board
+        stagger_delay = 0.06
+        idx = 0
 
-    def compute_wave_y(self, world_x: float, world_z: float) -> float:
-        """Harmonic sea undulation for walkable tiles floating like an island on the sea."""
-        if not getattr(CONFIG.animation, "wave_enabled", True):
-            return 0.0
-        amp = getattr(CONFIG.animation, "wave_amplitude", 0.22)
-        speed = getattr(CONFIG.animation, "wave_speed", 1.35)
-        fx = getattr(CONFIG.animation, "wave_freq_x", 0.38)
-        fz = getattr(CONFIG.animation, "wave_freq_z", 0.32)
-        t = self._wave_time * speed
-        return (
-            amp * math.sin(t + world_x * fx + world_z * fz)
-            + (amp * 0.35) * math.cos(t * 0.85 - world_x * 0.25 + world_z * 0.45)
+        changed_bridge_ids: Set[str] = set()
+        for b_id, group in board.bridges.items():
+            if self._last_bridge_states.get(b_id) != group.is_open:
+                changed_bridge_ids.add(b_id)
+            self._last_bridge_states[b_id] = group.is_open
+
+        for group in board.bridges.values():
+            for (bx, by) in group.tiles:
+                ent = self.bridge_entities.get((bx, by))
+                if not ent:
+                    continue
+                delay = idx * stagger_delay
+                idx += 1
+                cell = (bx, by)
+                rev = self._bridge_revisions.get(cell, 0) + 1
+                self._bridge_revisions[cell] = rev
+
+                if group.is_open:
+                    ent.visible = True
+                    ent.animate_y(cfg.bridge_open_y, duration=0.42, delay=delay, curve=curve.out_back)
+                else:
+                    def hide_after_sink(c=cell, r=rev, g=gen):
+                        if self._build_generation == g and self._bridge_revisions.get(c) == r:
+                            e = self.bridge_entities.get(c)
+                            if e:
+                                e.visible = False
+
+                    ent.animate_y(cfg.bridge_closed_y, duration=0.38, delay=delay, curve=curve.in_cubic)
+                    invoke(hide_after_sink, delay=delay + 0.38)
+
+        # Skip mesh rebuild when bridge state is unchanged
+        if not changed_bridge_ids:
+            return
+
+        # Refresh edge hierarchy ONLY for tiles affected by changed bridge groups
+        for b_id in changed_bridge_ids:
+            group = board.bridges[b_id]
+            for (bx, by) in group.tiles:
+                if (bx, by) in self.tile_borders:
+                    b_size = self._border_sizes.get((bx, by), cfg.tile_size * 0.93)
+                    b_wf = self._border_width_factors.get((bx, by), 0.018)
+                    b_exposed = self._compute_exposed_edges(board, bx, by)
+                    self.tile_borders[(bx, by)].model = deck_border_mesh(
+                        b_size, b_exposed, width_factor=b_wf
+                    )
+                for nx, ny in ((bx - 1, by), (bx + 1, by), (bx, by + 1), (bx, by - 1)):
+                    if (nx, ny) in self.tile_borders:
+                        n_size = self._border_sizes.get((nx, ny), cfg.tile_size * 0.93)
+                        n_wf = self._border_width_factors.get((nx, ny), 0.018)
+                        n_exposed = self._compute_exposed_edges(board, nx, ny)
+                        self.tile_borders[(nx, ny)].model = deck_border_mesh(
+                            n_size, n_exposed, width_factor=n_wf
+                        )
+
+    def animate_switch_press(self, x: int, y: int) -> None:
+        """Micro-animation depressing switch plate when stepped on."""
+        cell = (x, y)
+        plate = self.switch_entities.get(cell)
+        if not plate:
+            return
+
+        gen = self._build_generation
+        cfg = CONFIG.board
+        rest_y = self._switch_rest_y.get(cell, plate.y)
+        rev = self._switch_press_revisions.get(cell, 0) + 1
+        self._switch_press_revisions[cell] = rev
+
+        depressed_y = rest_y - cfg.switch_press_depth
+        plate.animate_y(depressed_y, duration=cfg.switch_press_down_time, curve=curve.out_sine)
+
+        def restore_plate(c=cell, r=rev, g=gen, ry=rest_y):
+            if self._build_generation != g:
+                return
+            if self._switch_press_revisions.get(c) != r:
+                return
+            p = self.switch_entities.get(c)
+            if p:
+                p.animate_y(ry, duration=cfg.switch_press_up_time, curve=curve.out_sine)
+
+        invoke(
+            restore_plate,
+            delay=cfg.switch_press_down_time + 0.02,
         )
 
-    def get_surface_y(self, grid_x: float, grid_y: float) -> float:
-        """Returns the dynamic sea surface elevation at grid (x, y)."""
-        return self.compute_wave_y(float(grid_x), -float(grid_y))
-
-    def highlight_tiles(self, cells: List[Tuple[int, int]]) -> None:
-        """Bloxpath-signature tile illumination pulse when stepped on."""
+    def animate_landing(self, cells: Iterable[Tuple[int, int]]) -> None:
+        """Pulses borders of ordinary tiles for 120ms without spawning quads or recoloring slabs."""
         if not getattr(CONFIG.animation, "tile_highlight_enabled", True):
             return
 
-        palette_mode = getattr(CONFIG.animation, "palette_mode", "alabaster").lower()
-        if palette_mode == "alabaster":
-            c_highlight = color.hex(Palette.TILE_ALABASTER_HIGHLIGHT.hex_code)
-            c_normal = color.hex(Palette.TILE_ALABASTER.hex_code)
-        else:
-            c_highlight = color.hex(Palette.TILE_HIGHLIGHT.hex_code)  # Sáng màu hơn: Luminous platinum slate
-            c_normal = color.hex(Palette.TILE_NORMAL.hex_code)
+        gen = self._build_generation
+        highlight_dur = getattr(CONFIG.animation, "tile_highlight_duration", 0.12)
+        for cell in cells:
+            # Only ordinary walkable tiles receive landing border pulse
+            if self.tile_types.get(cell) != TileType.NORMAL:
+                continue
 
-        dur = getattr(CONFIG.animation, "tile_highlight_duration", 0.25)
+            border = self.tile_borders.get(cell)
+            if not border:
+                continue
 
-        for (cx, cy) in cells:
-            if self.tile_types and (cx, cy) in self.tile_types:
-                if self.tile_types[(cx, cy)] != TileType.NORMAL:
-                    continue
-            elif self.board and hasattr(self.board, "get_tile"):
-                if self.board.get_tile(cx, cy) != TileType.NORMAL:
-                    continue
+            base = self._border_base_colors.get(cell)
+            if not base:
+                continue
 
-            ent = self.tile_entities.get((cx, cy))
-            if ent and hasattr(ent, "color") and hasattr(ent, "animate_color"):
-                ent.color = c_highlight
-                ent.animate_color(c_normal, duration=dur, curve=curve.out_sine)
+            pulse_color = color.rgba(
+                base.r + (1.0 - base.r) * 0.18,
+                base.g + (1.0 - base.g) * 0.18,
+                base.b + (1.0 - base.b) * 0.18,
+                base.a,
+            )
+            border.color = pulse_color
+            rev = self._border_revisions.get(cell, 0) + 1
+            self._border_revisions[cell] = rev
+
+            def restore_border_landing(c=cell, r=rev, g=gen, bc=base):
+                if self._build_generation == g and self._border_revisions.get(c) == r:
+                    b = self.tile_borders.get(c)
+                    if b:
+                        b.color = bc
+
+            border.animate_color(base, duration=highlight_dur, curve=curve.out_quad)
+            invoke(restore_border_landing, delay=highlight_dur)
+
+    def highlight_tiles(self, cells: Iterable[Tuple[int, int]]) -> None:
+        """Compatibility delegate forwarding to canonical animate_landing."""
+        self.animate_landing(cells)
 
     def cushion_impact(self, impact_x: float, impact_y: float, intensity: float = 1.0) -> None:
-        """No floor depression in Bloxpath mode (rock-solid grid)."""
+        """Physical impact feedback on tiles (rock-solid floor preserves stability)."""
         pass
 
-    # -------------------------------------------------------------------------
-    # Fragile Tile Crumble & Collapse
-    # -------------------------------------------------------------------------
+    def get_surface_y(self, grid_x: float, grid_y: float) -> float:
+        """Returns board-local surface elevation at grid (x, y). Permanently static at 0.0."""
+        return 0.0
 
-    def animate_fragile_crumble(self, x: int, y: int, on_complete: Optional[callable] = None) -> None:
+    def compute_wave_y(self, world_x: float, world_z: float) -> float:
+        """Compatibility wave helper. Permanently static at 0.0."""
+        return 0.0
+
+    def animate_fragile_crumble(
+        self,
+        x: int,
+        y: int,
+        on_complete: Optional[Callable[[], None]] = None,
+    ) -> None:
         """Executes a 3-phase collapse: vibration -> fragment burst -> abyss fall."""
-        tile_root = self.tile_roots.get((x, y))
-        if not tile_root:
+        cell = (x, y)
+        parts = list(self.tile_parts.get(cell, []))
+        if not parts and cell in self.tile_entities:
+            parts = [self.tile_entities[cell]]
+
+        if not parts and cell not in self._fragile_cracks:
             if on_complete:
                 on_complete()
             return
 
-        self._crumbling_tiles.add((x, y))
-        orig_x = tile_root.x
-        orig_z = tile_root.z
+        gen = self._build_generation
+        self._crumbling_tiles.add(cell)
 
-        # Phase 1: Micro-vibration (0.12s)
-        fx = FXManager.get_instance()
-        fx.spawn_crumble_debris(tile_root.position, count=14)
+        # Detach cell crack geometry from the batched mesh so intact tiles keep batching
+        if cell in self._fragile_cracks:
+            cell_verts, cell_tris = self._fragile_cracks.pop(cell)
+            self._rebuild_batched_crack_mesh()
+            detached_crack = Entity(
+                parent=self.root,
+                name="detached_fragile_crack",
+                model=Mesh(
+                    vertices=cell_verts,
+                    triangles=cell_tris,
+                    colors=[self._fragile_crack_color] * len(cell_verts),
+                    static=True,
+                ),
+                shader=unlit_shader,
+                color=color.white,
+                double_sided=True,
+            )
+            parts.append(detached_crack)
 
-        def start_fall():
-            # Phase 2 & 3: Collapse into abyss
-            tile_root.x = orig_x
-            tile_root.z = orig_z
-            tile_root.animate_y(-8.0, duration=0.85, curve=curve.in_cubic)
-            if on_complete:
-                invoke(on_complete, delay=0.85)
+        # Phase 1: Micro-vibration and Debris Burst
+        try:
+            from bloxorz.graphics.fx_manager import FXManager
+            fx = FXManager.get_instance()
+            if fx and hasattr(fx, "spawn_crumble_debris"):
+                fx.spawn_crumble_debris(Vec3(float(x), 0.0, -float(y)), count=14)
+        except Exception:
+            pass
 
         shake_steps = 6
         step_dt = 0.02
+        orig_positions = [(ent, ent.x) for ent in parts if ent]
+
         for i in range(shake_steps):
-            sx = orig_x + (0.04 if i % 2 == 0 else -0.04) * (1.0 - i / shake_steps)
-            invoke(lambda p=sx: setattr(tile_root, 'x', p), delay=i * step_dt)
+            offset = (0.04 if i % 2 == 0 else -0.04) * (1.0 - i / shake_steps)
+
+            def apply_shake(off=offset, g=gen):
+                if self._build_generation != g:
+                    return
+                for ent, ox in orig_positions:
+                    if ent:
+                        ent.x = ox + off
+
+            invoke(apply_shake, delay=i * step_dt)
+
+        def start_fall(g=gen):
+            if self._build_generation != g:
+                return
+            # Reset X positions
+            for ent, ox in orig_positions:
+                if ent:
+                    ent.x = ox
+            # Phase 2 & 3: Collapse into abyss
+            for ent, _ in orig_positions:
+                if ent:
+                    ent.animate_y(ent.y - 8.0, duration=0.85, curve=curve.in_cubic)
+
+            def finish(g2=g):
+                if self._build_generation != g2:
+                    return
+                for ent, _ in orig_positions:
+                    if ent:
+                        destroy(ent)
+                if on_complete:
+                    on_complete()
+
+            invoke(finish, delay=0.85)
 
         invoke(start_fall, delay=shake_steps * step_dt)
 
-    # -------------------------------------------------------------------------
-    # Interactive Switch & Bridge Transitions
-    # -------------------------------------------------------------------------
-
-    def update_bridges(self, board: Board):
-        """Smoothly animates bridge states with staggered architectural deployment."""
-        stagger_delay = 0.06
-        idx = 0
-
-        closed_y = -3.80
-        open_y = 0.0
-
-        for group in board.bridges.values():
-            for (bx, by) in group.tiles:
-                col = self.bridge_entities.get((bx, by))
-                if not col:
-                    continue
-                delay = idx * stagger_delay
-                idx += 1
-
-                if group.is_open:
-                    col.visible = True
-                    invoke(
-                        lambda c=col: c.animate_y(open_y, duration=0.42, curve=curve.out_back),
-                        delay=delay,
-                    )
-                else:
-                    def hide_after_sink(c=col):
-                        c.visible = False
-                    invoke(
-                        lambda c=col: c.animate_y(closed_y, duration=0.38, curve=curve.in_cubic),
-                        delay=delay,
-                    )
-                    invoke(hide_after_sink, delay=delay + 0.38)
-
-    def animate_switch_press(self, x: int, y: int):
-        """Micro-animation depressing switch plate when stepped on."""
-        cfg = CONFIG.board
-        plate = self.switch_entities.get((x, y))
-        if plate:
-            orig_y = plate.y
-            plate.animate_y(orig_y - cfg.switch_press_depth, duration=cfg.switch_press_down_time, curve=curve.out_sine)
-            invoke(
-                lambda: plate.animate_y(orig_y, duration=cfg.switch_press_up_time, curve=curve.out_sine),
-                delay=cfg.switch_press_down_time + 0.02,
-            )
-
-    # -------------------------------------------------------------------------
-    # Per-Frame Delta-Time Engine Update Loop
-    # -------------------------------------------------------------------------
-
     def update(self) -> None:
-        """Delta-time loop: smooth sea undulation for walkable tiles and goal breathing."""
-        dt = time.dt
+        """Per-frame update loop advancing internal animation clocks."""
+        dt = max(0.0, time.dt)
         if dt <= 0.0:
             return
-
         self._anim_time += dt
         self._wave_time += dt
-
-        # Dập dìu như nổi trên mặt biển cho các ô đi được (walkable tiles)
-        if getattr(CONFIG.animation, "wave_enabled", True) and self.tile_roots:
-            for (x, y), root in self.tile_roots.items():
-                if (x, y) not in self._crumbling_tiles:
-                    root.y = self.compute_wave_y(float(x), -float(y))
-
-            for (bx, by), broot in self.bridge_roots.items():
-                broot.y = self.compute_wave_y(float(bx), -float(by))
-
-        # Flowing molten lava veins streaming down the walkable column pillars
-        if self.pedestal_entities:
-            flow_y = +(self._anim_time * 0.075)  # Flowing downward smoothly
-            heat_pulse = 0.94 + 0.10 * math.sin(self._anim_time * 2.2)
-            c_flow = color.rgba(heat_pulse, heat_pulse * 0.95, heat_pulse * 0.92, 1.0)
-            for ped, u_off in self.pedestal_entities:
-                ped.texture_offset = (u_off, flow_y)
-                ped.color = c_flow
-
-        # Pulsating arcane breathing glow for goal core floor
-        if self.goal_floor:
-            c_glow = Palette.GOAL_GLOW
-            glow_alpha = 0.70 + 0.30 * math.sin(self._anim_time * 2.2)
-            self.goal_floor.color = color.rgba(c_glow.r, c_glow.g, c_glow.b, glow_alpha)
-    def animate_landing(self, cells) -> None:
-        """Flash each occupied board cell as the block finishes a landing."""
-        tile_size = CONFIG.board.tile_size
-        for x, y in cells:
-            cell = (x, y)
-            if cell not in self.tile_entities and cell not in self.bridge_entities:
-                continue
-            parent = self.tile_roots.get(cell) or self.bridge_entities.get(cell)
-            if parent is not None:
-                _LandingFlash(parent, 0, 0, tile_size)

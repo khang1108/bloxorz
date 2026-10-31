@@ -1,21 +1,20 @@
 """3D Block representation and frame-perfect delta-time rolling animations.
 
 Features:
-- Wave Ground Anchor: tracks dynamic surface elevation of tiles beneath
-- Two-Phase Kinetic Roll Easing (in-quad acceleration + crisp out-cubic snap)
-- Ghost Echo Trail emission on roll takeoff
-- Ground Impact Cushion & Planar Shockwave ripple on landing
-- Landing Micro-Bounce & Squash/Stretch tactile physics
-- Teleport Split/Merge energy spark burst & shockwave effects
-- Victory vortex swirl & festive confetti celebration
-- Void dissolve fade-out during abyssal falls
+- Kinetic roll easing (smooth acceleration, fast turnover, crisp snap)
+- Ghost echo trail emission on roll takeoff
+- Ground impact cushion and dust spark emission on landing
+- Black hole suction & dual wormhole ballistic flight for teleport split/merge
+- Physical see-saw torque tilt on cantilever overhangs, fragile collapse, and void tumble
+- Victory vortex swirl and confetti celebration
+- Dual modular titanium textured cube skin restoring Bao's cyber aesthetic
 """
 
 import math
 import random
 from pathlib import Path
 from typing import Callable, Optional, Tuple, Any, List
-from ursina import Entity, Vec3, color, curve, time, Texture
+from ursina import Entity, Vec3, color, time, Texture
 
 from bloxorz.core.constants import Direction, BlockOrientation
 from bloxorz.core.block.base import BaseBlockState
@@ -39,17 +38,23 @@ def _evaluate_roll_curve(p: float) -> float:
     return p * p * (3.0 - 2.0 * p)
 
 
-
-
 class BlockView(Entity):
     """Manages 3D block mesh with frame-perfect delta-time rotation and physical VFX juice."""
 
-    def _get_block_color(self):
-        """Returns block color based on palette mode (Golden amber for Alabaster, Pure white for Cyber Titanium)."""
-        mode = getattr(CONFIG.animation, "palette_mode", "obsidian").lower()
-        if mode == "alabaster":
-            return color.hex(Palette.BLOCK_GOLDEN.hex_code)
-        return color.white
+    @classmethod
+    def _get_block_color(cls) -> color.Color:
+        """Returns the titanium hero block color from shared Palette tokens."""
+        return color.hex(Palette.BLOCK_CORE.hex_code)
+
+    @classmethod
+    def _get_active_split_color(cls) -> color.Color:
+        """Returns the bright white titanium token for the active split cube."""
+        return color.hex(Palette.BLOCK_SPLIT_ACTIVE.hex_code)
+
+    @classmethod
+    def _get_passive_split_color(cls) -> color.Color:
+        """Returns the dimmed slate titanium token for the passive split cube."""
+        return color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code)
 
     def _set_mesh_visible(self, vis: bool) -> None:
         """Sets visibility for parent mesh container and modular subcubes."""
@@ -59,7 +64,7 @@ class BlockView(Entity):
         if hasattr(self, "mesh_cube_2") and self.mesh_cube_2:
             self.mesh_cube_2.visible = vis
 
-    def _set_mesh_color(self, c) -> None:
+    def _set_mesh_color(self, c: color.Color) -> None:
         """Propagates color tint to parent mesh container and modular subcubes."""
         self.mesh.color = c
         if hasattr(self, "mesh_cube_1") and self.mesh_cube_1:
@@ -96,7 +101,9 @@ class BlockView(Entity):
             name="block_mesh",
         )
 
-        sub_scale = Vec3(0.94, 0.94, 0.94)
+        u1 = getattr(CONFIG.block, "unit_scale_1", 0.94)
+        sub_scale = Vec3(u1, u1, u1)
+
         self.mesh_cube_1 = Entity(
             parent=self.mesh,
             name="block_subcube_1",
@@ -116,12 +123,15 @@ class BlockView(Entity):
         self._update_subcubes_layout((1, 1, 2))
 
         # Dual 1x1x1 split cubes for teleport mechanics
+        c_active = self._get_active_split_color()
+        c_passive = self._get_passive_split_color()
+
         self.split_mesh_1 = Entity(
             parent=self,
             name="split_cube_1",
             model='cube',
             texture=_BLOCK_TEX,
-            color=color.white,
+            color=c_active,
             scale=sub_scale,
             visible=False,
         )
@@ -130,7 +140,7 @@ class BlockView(Entity):
             name="split_cube_2",
             model='cube',
             texture=_BLOCK_TEX,
-            color=color.rgba(0.48, 0.54, 0.62, 1.0),
+            color=c_passive,
             scale=sub_scale,
             visible=False,
         )
@@ -191,6 +201,7 @@ class BlockView(Entity):
         self._teleport_final_state: Optional[BaseBlockState] = None
         self._on_teleport_complete: Optional[Callable[[], None]] = None
         self._teleport_spark_timer: float = 0.0
+        self._teleport_has_landed: bool = False
 
         # 1x1x1 cube edge-pivot rolling animation state
         self._is_cube_rolling: bool = False
@@ -242,7 +253,7 @@ class BlockView(Entity):
             model='circle',
             rotation_x=90,
             scale=Vec3(1.48, 1.48, 1.0),
-            color=color.hex("#D946EF"),  # Radiant neon fuchsia accretion border
+            color=color.hex("#D946EF"),
             unlit=True,
             visible=False,
         )
@@ -251,7 +262,7 @@ class BlockView(Entity):
             model='circle',
             rotation_x=90,
             scale=Vec3(1.72, 1.72, 1.0),
-            color=color.hex("#00F0FF"),  # Electric cyan outer photon ring
+            color=color.hex("#00F0FF"),
             unlit=True,
             visible=False,
         )
@@ -308,7 +319,7 @@ class BlockView(Entity):
         self.board_view = board_view
 
     def _get_surface_y(self, grid_x: float, grid_y: float) -> float:
-        """Queries active board view for dynamic wave + cushion surface elevation."""
+        """Queries active board view for surface elevation (returns 0.0 on static floor)."""
         bv = self.board_view
         if bv is None:
             from bloxorz.graphics.board_view import BoardView
@@ -333,7 +344,7 @@ class BlockView(Entity):
         self._landing_bounce_time = 0.0
 
     def _spawn_landing_dust(self, cells: Optional[List[Tuple[int, int]]] = None) -> None:
-        """Spawns radiant incandescent fire ash sparks streaking outward from the contact rim upon touchdown."""
+        """Spawns radiant incandescent fire ash sparks streaking outward upon touchdown."""
         fx = FXManager.get_instance() if FXManager._instance else None
         if not fx:
             return
@@ -353,7 +364,6 @@ class BlockView(Entity):
 
         for (cx, cy) in target_cells:
             surf_y = self._get_surface_y(float(cx), float(cy))
-            # Spawn along contact perimeter pointing radially outward
             for _ in range(6):
                 ang = random.uniform(0, math.tau)
                 rad = random.uniform(0.48, 0.65)
@@ -372,7 +382,7 @@ class BlockView(Entity):
                     life=0.45,
                 )
 
-    def sync_to_state(self, state: BaseBlockState):
+    def sync_to_state(self, state: BaseBlockState, clear_fx: bool = True):
         """Immediately snaps the 3D block to the given state without animation."""
         self.current_state = state
         self.is_animating = False
@@ -398,9 +408,15 @@ class BlockView(Entity):
         self._landing_squash_y = 1.0
         self._landing_stretch_xz = 1.0
 
-        # Restore full core material opacity
-        c_active = self._get_block_color()
-        self._set_mesh_color(c_active)
+        if clear_fx:
+            fx = FXManager.get_instance() if FXManager._instance else None
+            if fx:
+                fx.clear_all()
+
+        # Restore full core material opacity & color
+        c_active = self._get_active_split_color()
+        c_passive = self._get_passive_split_color()
+        self._set_mesh_color(self._get_block_color())
 
         if getattr(state, "is_split", False):
             self._set_mesh_visible(False)
@@ -408,7 +424,7 @@ class BlockView(Entity):
             self.split_mesh_1.visible = True
             self.split_mesh_2.visible = True
 
-            u1 = getattr(CONFIG.block, "unit_scale_1", 0.94)
+            u1 = CONFIG.block.unit_scale_1
             half_u1 = u1 / 2.0
 
             b1 = getattr(state, "b1")
@@ -419,11 +435,11 @@ class BlockView(Entity):
 
             self.split_mesh_1.position = Vec3(float(b1.x), y1, -float(b1.y))
             self.split_mesh_1.rotation = Vec3(0, 0, 0)
+            self.split_mesh_1.scale = Vec3(u1, u1, u1)
+
             self.split_mesh_2.position = Vec3(float(b2.x), y2, -float(b2.y))
             self.split_mesh_2.rotation = Vec3(0, 0, 0)
-
-            c_active = color.white
-            c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
+            self.split_mesh_2.scale = Vec3(u1, u1, u1)
 
             if getattr(state, "active_index", 0) == 0:
                 self.split_mesh_1.color = c_active
@@ -526,11 +542,6 @@ class BlockView(Entity):
         self._is_teleporting = True
         self._teleport_time = 0.0
         self._teleport_spark_timer = 0.0
-        # =========================================================================
-        # CHỈNH THỜI GIAN ANIMATION TÁCH KHỐI (SPLIT) TẠI ĐÂY (Đơn vị: GIÂY):
-        # - Tăng giá trị để animation diễn ra chậm rãi hơn (vd: 1.25, 1.40)
-        # - Giảm giá trị để animation diễn ra nhanh hơn (vd: 0.85, 0.78)
-        # =========================================================================
         self._teleport_duration = getattr(CONFIG.motion, "teleport_flight_duration", 1.10)
         self._teleport_has_landed = False
 
@@ -549,24 +560,26 @@ class BlockView(Entity):
         surf_y_src = self._get_surface_y(x_src, y_src)
 
         # Monolithic block stays standing at the source tile during Phase 1
-        u1 = CONFIG.block.unit_scale_1
-        u2 = CONFIG.block.unit_scale_2
-        self.pivot.position = Vec3(x_src, u1 + surf_y_src, -y_src)
+        dim = standing_state.get_dimensions_3d()
+        self.pivot.position = Vec3(x_src, float(c[2]) + surf_y_src, -y_src)
         self.pivot.rotation = Vec3(0, 0, 0)
         self.pivot.visible = True
         self.mesh.position = Vec3(0, 0, 0)
         self.mesh.rotation = Vec3(0, 0, 0)
         self.mesh.scale = Vec3(1, 1, 1)
-        self._update_subcubes_layout((1, 1, 2))
+        self._update_subcubes_layout(dim)
         self._set_mesh_visible(True)
         self._set_mesh_color(self._get_block_color())
 
         # Hide split meshes initially
         self.split_mesh_1.visible = False
         self.split_mesh_2.visible = False
+        u1 = CONFIG.block.unit_scale_1
+        self.split_mesh_1.scale = Vec3(u1, u1, u1)
+        self.split_mesh_2.scale = Vec3(u1, u1, u1)
 
-        c_active = color.white
-        c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
+        c_active = self._get_active_split_color()
+        c_passive = self._get_passive_split_color()
         if getattr(split_state, "active_index", 0) == 0:
             self.split_mesh_1.color = c_active
             self.split_mesh_2.color = c_passive
@@ -603,7 +616,13 @@ class BlockView(Entity):
 
         fx = FXManager.get_instance() if FXManager._instance else None
         if fx:
-            fx.spawn_particles(Vec3(x_src, surf_y_src + 0.2, -y_src), count=10, token=Palette.TELEPORT_ENERGY, speed=2.2, life=0.35)
+            fx.spawn_particles(
+                Vec3(x_src, surf_y_src + 0.2, -y_src),
+                count=10,
+                token=Palette.TELEPORT_ENERGY,
+                speed=2.2,
+                life=0.35,
+            )
 
     def roll_animated(
         self,
@@ -653,7 +672,7 @@ class BlockView(Entity):
 
             def finish_merge():
                 play_sfx("merge")
-                self.sync_to_state(next_state)
+                self.sync_to_state(next_state, clear_fx=False)
                 self._spawn_landing_dust()
                 if on_complete:
                     on_complete()
@@ -680,7 +699,7 @@ class BlockView(Entity):
             act_prev = getattr(prev_state, "active_block")
 
             def finish_cube_move():
-                self.sync_to_state(next_state)
+                self.sync_to_state(next_state, clear_fx=False)
                 if on_complete:
                     on_complete()
 
@@ -711,7 +730,7 @@ class BlockView(Entity):
         fx = FXManager.get_instance()
         fx.spawn_ghost(self.pivot.position, self.pivot.rotation, self._compute_scale(dim_prev))
 
-        # Compute exact contact edge pivot on the undulating ground
+        # Compute exact contact edge pivot
         if direction == Direction.RIGHT:
             edge_x = center_world.x + half_x
             edge_z = center_world.z
@@ -741,7 +760,8 @@ class BlockView(Entity):
             rot_axis = "x"
             rot_angle = 90.0
         else:
-            self.sync_to_state(next_state)
+            self.is_animating = False
+            self.sync_to_state(next_state, clear_fx=False)
             if on_complete:
                 on_complete()
             return
@@ -843,19 +863,22 @@ class BlockView(Entity):
                 void_world = Vec3(float(void_x), 0.0, -float(void_y))
                 ground_y = self._get_surface_y(float(supp_x), float(supp_y))
                 dim = self.current_state.get_dimensions_3d()
+                c_center = self.current_state.get_center_3d()
+                wave_center = self._get_surface_y(float(c_center[0]), float(c_center[1]))
+                center_world = Vec3(float(c_center[0]), float(c_center[2]) + wave_center, -float(c_center[1]))
 
                 # Determine overhanging edge fulcrum & exact physical tilt direction
                 if self.current_state.orientation == BlockOrientation.LYING_X:
                     overhang_dir = 1.0 if void_world.x > supp_world.x else -1.0
                     edge_pos = Vec3(supp_world.x + overhang_dir * 0.5, ground_y, supp_world.z)
                     self._seesaw_axis = "z"
-                    self._tilt_sign = overhang_dir  # Positive X -> +tilt (down into void), Negative X -> -tilt (down into void)
+                    self._tilt_sign = overhang_dir  # +X -> +tilt (down into void), -X -> -tilt
                     self._is_seesaw = True
                 elif self.current_state.orientation == BlockOrientation.LYING_Y:
                     overhang_dir_z = 1.0 if void_world.z > supp_world.z else -1.0
                     edge_pos = Vec3(supp_world.x, ground_y, supp_world.z + overhang_dir_z * 0.5)
                     self._seesaw_axis = "x"
-                    self._tilt_sign = overhang_dir_z  # Positive Z (North) -> +tilt, Negative Z (South) -> -tilt
+                    self._tilt_sign = overhang_dir_z  # +Z (North) -> +tilt, -Z (South) -> -tilt
                     self._is_seesaw = True
 
                 if self._is_seesaw:
@@ -864,7 +887,7 @@ class BlockView(Entity):
                     self._current_tilt_angle = 0.0
                     self.pivot.position = edge_pos
                     self.pivot.rotation = Vec3(0, 0, 0)
-                    self.mesh.position = Vec3(0, 0.5, 0)
+                    self.mesh.position = center_world - edge_pos
                     self.mesh.rotation = Vec3(0, 0, 0)
                     self.mesh.scale = Vec3(1, 1, 1)
                     self._update_subcubes_layout(dim)
@@ -914,7 +937,7 @@ class BlockView(Entity):
         fx = FXManager.get_instance()
         fx.spawn_confetti(self.pivot.position, count=getattr(CONFIG.animation, "victory_confetti_count", 40))
 
-        # Camera juice shake
+        # Camera shake
         cam = CameraController.get_instance()
         if cam:
             cam.shake_camera(intensity=0.10)
@@ -951,33 +974,19 @@ class BlockView(Entity):
                     # Seamless tumble transition: freeze current 90-degree world position/rotation
                     world_pos = self.mesh.world_position
                     world_rot = self.mesh.world_rotation
-                    self.pivot.position = world_pos
+                    self.pivot.position = world_pos - self.world_position
                     self.pivot.rotation = world_rot
                     self.mesh.position = Vec3(0, 0, 0)
                     self.mesh.rotation = Vec3(0, 0, 0)
-                    self.is_animating = True  # Maintain continuous active animation state into fall
+                    self.is_animating = True
                 else:
-                    self.sync_to_state(self.current_state)
+                    self.sync_to_state(self.current_state, clear_fx=False)
                     self.is_animating = False
 
-                    # Bloxpath tile step-on highlight feedback & landing dust
                     if supported_cells:
                         self._spawn_landing_dust(supported_cells)
-                        bv = self.board_view or (BoardView.get_instance() if 'BoardView' in globals() else None)
-                        if bv is None:
-                            from bloxorz.graphics.board_view import BoardView
-                            bv = BoardView.get_instance()
-                        if bv and hasattr(bv, "highlight_tiles"):
-                            bv.highlight_tiles(supported_cells)
                     elif outcome == "SAFE":
                         self._spawn_landing_dust()
-                        if self.current_state:
-                            bv = self.board_view
-                            if bv is None:
-                                from bloxorz.graphics.board_view import BoardView
-                                bv = BoardView.get_instance()
-                            if bv and hasattr(bv, "highlight_tiles"):
-                                bv.highlight_tiles(self.current_state.occupied_cells)
 
                 if self._on_roll_complete:
                     cb = self._on_roll_complete
@@ -995,7 +1004,6 @@ class BlockView(Entity):
                     is_void_fall = (outcome == "FELL_VOID" and len(supported_cells) == 0)
 
                 if is_void_fall:
-                    # Natural gravity acceleration curve for tumbling over edge into void (doesn't decelerate)
                     p = self._roll_progress
                     t = p * (0.35 + 0.65 * p)
                 else:
@@ -1007,7 +1015,7 @@ class BlockView(Entity):
                     self.pivot.rotation_x = self._roll_angle * t
 
         # ---------------------------------------------------------------------
-        # 2. Sci-Fi Teleport & Recall ("Biến Về") Update Loop
+        # 2. Sci-Fi Teleport & Recall Update Loop
         # ---------------------------------------------------------------------
         elif self._is_teleporting:
             self._teleport_time += dt
@@ -1023,20 +1031,16 @@ class BlockView(Entity):
             surf_y_dst2 = self._get_surface_y(x_dst2, y_dst2)
 
             u1 = CONFIG.block.unit_scale_1
-            u2 = CONFIG.block.unit_scale_2
             half_u1 = u1 / 2.0
             fx = FXManager.get_instance() if FXManager._instance else None
             cam = CameraController.get_instance()
 
-            # Normalized cutoff point where source black hole finishes and dual ejection begins:
-            # Source cutoff at t_cut = 0.24 / 0.78 ≈ 0.308
             t_cut = 0.308
 
             # PHASE 1: SOURCE BLACK HOLE OPENS & MONOLITH PLUNGES DOWNWARD INTO HOLE (t < t_cut)
             if t < t_cut:
-                p1 = t / t_cut  # 0.0 -> 1.0
+                p1 = t / t_cut
 
-                # Rapid snappy opening of black hole under block's foot
                 p_open = min(1.0, p1 * 4.0)
                 r_hole = 1.35 * math.sin(p_open * math.pi * 0.5)
 
@@ -1055,34 +1059,35 @@ class BlockView(Entity):
                 self._teleport_pad_src.scale = Vec3(r_hole, r_hole, 1.0)
                 self._teleport_pad_src.rotation_y = p1 * 360.0
 
-                # Big block literally plunges straight downward through the hole
                 p_plunge = p1 ** 1.85
                 drop_dist = -4.2 * p_plunge
-                self.pivot.position = Vec3(x_src, (u1 + surf_y_src) + drop_dist, -y_src)
+                self.pivot.position = Vec3(x_src, (1.0 + surf_y_src) + drop_dist, -y_src)
 
-                # Vortex spin & suction tilt
                 self.pivot.rotation_y = p_plunge * 540.0
                 self.pivot.rotation_x = math.sin(p1 * math.pi) * 14.0
                 self.pivot.rotation_z = -math.sin(p1 * math.pi) * 10.0
 
-                # Lateral funnel narrowing as it enters event horizon
                 factor_xz = max(0.12, 1.0 - p_plunge * 0.60)
                 self.mesh.scale = Vec3(factor_xz, 1.0, factor_xz)
 
-                # Fade when submerged beneath the floor plane
                 fade = max(0.0, 1.0 - (p1 - 0.55) / 0.45) if p1 > 0.55 else 1.0
-                self._set_mesh_color(color.rgba(0.25, 0.15, 0.45, fade))
+                gold = self._get_block_color()
+                self._set_mesh_color(color.rgba(gold.r, gold.g, gold.b, fade))
 
-                # Swirling suction sparks
                 self._teleport_spark_timer += dt
                 if self._teleport_spark_timer >= 0.05:
                     self._teleport_spark_timer = 0.0
                     if fx:
-                        fx.spawn_particles(Vec3(x_src, surf_y_src + 0.1, -y_src), count=3, token=Palette.TELEPORT_ENERGY, speed=2.5, life=0.20)
+                        fx.spawn_particles(
+                            Vec3(x_src, surf_y_src + 0.1, -y_src),
+                            count=3,
+                            token=Palette.TELEPORT_ENERGY,
+                            speed=2.5,
+                            life=0.20,
+                        )
 
-                # Seamless overlap: as big block finishes plunging (p1 > 0.60), 2 destination black holes already open!
                 if p1 > 0.60:
-                    p_dst_open = (p1 - 0.60) / 0.40  # 0.0 -> 1.0
+                    p_dst_open = (p1 - 0.60) / 0.40
                     r_dst = 1.35 * math.sin(p_dst_open * math.pi * 0.5)
 
                     if hasattr(self, "_teleport_ring_dst1"):
@@ -1106,11 +1111,10 @@ class BlockView(Entity):
                     self._teleport_pad_dst2.scale = Vec3(r_dst, r_dst, 1.0)
                     self._teleport_pad_dst2.rotation_y = -p_dst_open * 540.0
 
-            # PHASE 2: EXACTLY AT SOURCE CUTOFF (t >= t_cut), IMMEDIATELY LAUNCH 2 CUBES UPWARD!
+            # PHASE 2: LAUNCH DUAL SPLIT CUBES UPWARD
             else:
-                p_launch = (t - t_cut) / (1.0 - t_cut)  # 0.0 -> 1.0 (flight + impact settle)
+                p_launch = (t - t_cut) / (1.0 - t_cut)
 
-                # Source monolith and black hole are CUT OFF completely!
                 self._set_mesh_visible(False)
                 self.pivot.visible = False
                 self._teleport_pad_src.visible = False
@@ -1122,17 +1126,13 @@ class BlockView(Entity):
                 self.split_mesh_1.scale = Vec3(u1, u1, u1)
                 self.split_mesh_2.scale = Vec3(u1, u1, u1)
 
-                # Flight phase takes first 68% of post-cutoff time
                 if p_launch < 0.68:
                     q = p_launch / 0.68
 
-                    # Parabolic ballistic trajectory under gravity (apex = 0.48 at q=0.5, lands at q=1.0)
                     h_vert = max(0.0, 4.0 * 0.48 * q * (1.0 - q))
-
                     y1 = half_u1 + surf_y_dst1 + h_vert
                     y2 = half_u1 + surf_y_dst2 + h_vert
 
-                    # Asymmetric angular momentum and physical tilt during flight
                     rot_x1 = 28.0 * math.sin(q * math.pi)
                     rot_z1 = -24.0 * math.sin(q * math.pi)
                     rot_y1 = q * 180.0
@@ -1146,7 +1146,6 @@ class BlockView(Entity):
                     self.split_mesh_2.position = Vec3(x_dst2, y2, -y_dst2)
                     self.split_mesh_2.rotation = Vec3(rot_x2, rot_y2, rot_z2)
 
-                    # Destination black holes seal and shrink shut as cubes fly up
                     r_close = max(0.0, 1.35 * (1.0 - q * 1.5))
                     self._teleport_pad_dst1.scale = Vec3(r_close, r_close, 1.0)
                     self._teleport_pad_dst2.scale = Vec3(r_close, r_close, 1.0)
@@ -1159,18 +1158,15 @@ class BlockView(Entity):
                         if hasattr(self, "_teleport_ring_dst1"):
                             self._teleport_ring_dst1.visible = False
                             self._teleport_ring_dst2.visible = False
-
-                # Ground impact SLAM, rebound bounce & tilt settle (last 32% of post-cutoff time, ~0.17s)
                 else:
-                    r = (p_launch - 0.68) / 0.32  # 0.0 -> 1.0
+                    r = (p_launch - 0.68) / 0.32
                     self._teleport_pad_dst1.visible = False
                     self._teleport_pad_dst2.visible = False
                     if hasattr(self, "_teleport_ring_dst1"):
                         self._teleport_ring_dst1.visible = False
                         self._teleport_ring_dst2.visible = False
 
-                    # Heavy ground impact trigger on first touchdown frame
-                    if not getattr(self, "_teleport_has_landed", False):
+                    if not self._teleport_has_landed:
                         self._teleport_has_landed = True
                         if fx:
                             fx.spawn_ember_ash(Vec3(x_dst1, surf_y_dst1 + 0.05, -y_dst1), count=8)
@@ -1178,12 +1174,10 @@ class BlockView(Entity):
                         if cam:
                             cam.shake_camera(intensity=0.07, duration=0.10)
 
-                    # Physical rebound bounce with restitution decay
                     bounce = 0.13 * math.exp(-7.0 * r) * abs(math.sin(r * math.pi * 2.0))
                     y1 = half_u1 + surf_y_dst1 + bounce
                     y2 = half_u1 + surf_y_dst2 + bounce
 
-                    # Gyroscopic tilt shock damping to 0 equilibrium
                     damp = math.exp(-7.5 * r) * math.cos(r * math.pi * 2.5)
                     rot_x1 = 18.0 * damp
                     rot_z1 = -15.0 * damp
@@ -1208,18 +1202,17 @@ class BlockView(Entity):
                 self.split_mesh_1.rotation = Vec3(0, 0, 0)
                 self.split_mesh_2.rotation = Vec3(0, 0, 0)
 
-                # Gentle dust puff upon completion
                 self._spawn_landing_dust([(int(x_dst1), int(y_dst1)), (int(x_dst2), int(y_dst2))])
 
                 final_state = self._teleport_final_state
-                on_complete = self._on_teleport_complete
+                cb = self._on_teleport_complete
                 self._teleport_final_state = None
                 self._on_teleport_complete = None
 
                 if final_state:
-                    self.sync_to_state(final_state)
-                if on_complete:
-                    on_complete()
+                    self.sync_to_state(final_state, clear_fx=False)
+                if cb:
+                    cb()
 
         # ---------------------------------------------------------------------
         # 3. 1x1x1 Cube Edge-Pivot Rolling Loop
@@ -1234,20 +1227,16 @@ class BlockView(Entity):
                 is_void_cube = (outcome == "FELL_VOID")
 
                 if is_void_cube:
-                    self.is_animating = True  # Maintain continuous active animation state into fall
+                    self.is_animating = True
                 else:
                     self.is_animating = False
                     if self._cube_rolling_mesh:
                         self._cube_rolling_mesh.rotation = Vec3(0, 0, 0)
 
-                    # Bloxpath tile step-on highlight and dust puff for split cube
                     if self.current_state and getattr(self.current_state, "is_split", False):
                         act = getattr(self.current_state, "active_block")
                         ax, ay = int(act.x), int(act.y)
                         self._spawn_landing_dust([(ax, ay)])
-                        bv = self.board_view or BoardView.get_instance()
-                        if bv and hasattr(bv, "highlight_tiles"):
-                            bv.highlight_tiles([(ax, ay)])
 
                 if self._on_cube_roll_complete:
                     cb = self._on_cube_roll_complete
@@ -1282,7 +1271,6 @@ class BlockView(Entity):
                         cube.position = Vec3(p.x, p.y + dy, p.z + dz)
                         cube.rotation = Vec3(angle, 0.0, 0.0)
 
-                    # Keep stationary passive cube undulating with ground wave during roll
                     if self.current_state and getattr(self.current_state, "is_split", False):
                         act_idx = getattr(self.current_state, "active_index", 0)
                         other_cube = self.split_mesh_2 if act_idx == 0 else self.split_mesh_1
@@ -1346,7 +1334,6 @@ class BlockView(Entity):
             elif getattr(self, "_fall_mode", "DIRECT") == "FRAGILE":
                 self._fall_velocity_y += g * dt
                 self.pivot.y -= self._fall_velocity_y * dt
-                # Micro-jitter as crumbling floor gives way
                 self.mesh.x = math.sin(self._fall_time * 30.0) * 0.015
                 self.mesh.rotation_z = math.sin(self._fall_time * 24.0) * 1.5
 
@@ -1363,10 +1350,10 @@ class BlockView(Entity):
             # Void Dissolve: Fade mesh alpha as it descends past Y = -3.5
             if self.pivot.y < -3.5:
                 fade = max(0.0, 1.0 - (-self.pivot.y - 3.5) / 5.5)
-                c_core = Palette.BLOCK_CORE
-                self._set_mesh_color(color.rgba(c_core.r, c_core.g, c_core.b, fade))
+                gold = self._get_block_color()
+                self._set_mesh_color(color.rgba(gold.r, gold.g, gold.b, fade))
                 if self._falling_split_cube:
-                    self._falling_split_cube.color = color.rgba(c_core.r, c_core.g, c_core.b, fade)
+                    self._falling_split_cube.color = color.rgba(gold.r, gold.g, gold.b, fade)
 
             fall_dur = Motion.FALL_DURATION
             if self._fall_time >= fall_dur:
@@ -1393,7 +1380,6 @@ class BlockView(Entity):
             self._fall_velocity_y += (0.42 * g) * dt
             self.pivot.y -= self._fall_velocity_y * dt
 
-            # Swirling vortex rotation into the goal core
             vortex_spd = getattr(CONFIG.animation, "victory_vortex_speed", 180.0)
             self.pivot.rotation_y += vortex_spd * dt
 
@@ -1406,16 +1392,16 @@ class BlockView(Entity):
                 self._is_sinking_victory = False
                 self.is_animating = False
                 self._set_mesh_visible(False)
+                self.mesh.scale = Vec3(1, 1, 1)
                 if self._on_victory_complete:
                     cb = self._on_victory_complete
                     self._on_victory_complete = None
                     cb()
 
         # ---------------------------------------------------------------------
-        # 6. Idle Wave Ground Anchor Synchronization
+        # 6. Idle Ground Elevation Synchronization
         # ---------------------------------------------------------------------
         else:
-            # Synchronize vertical position serenely with surface elevation beneath
             if self.current_state and not getattr(self, "_is_sinking_victory", False):
                 if getattr(self.current_state, "is_split", False):
                     b1 = getattr(self.current_state, "b1")
@@ -1428,7 +1414,6 @@ class BlockView(Entity):
                     self.split_mesh_2.y = y2
                 elif self.mesh.visible:
                     center = self.current_state.get_center_3d()
-                    wave_y = self._get_surface_y(float(center[0]), float(center[1]))
+                    surf_y = self._get_surface_y(float(center[0]), float(center[1]))
                     base_y = float(center[2])
-                    self.pivot.y = base_y + wave_y
-
+                    self.pivot.y = base_y + surf_y

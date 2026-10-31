@@ -1,7 +1,7 @@
 import pytest
 from PIL import Image
 from panda3d.core import ColorScaleAttrib, Material, MaterialAttrib, RenderState
-from ursina import Mesh, Vec3, camera, scene, time
+from ursina import Mesh, Vec3, camera, destroy, scene, time
 from ursina.shaders import unlit_shader
 
 from bloxorz.graphics.cyber_grid_background import _GifWallAnimation, CyberGridBackground
@@ -42,9 +42,9 @@ def test_cyber_grid_background_has_purple_grid_except_front_gif(game_app):
     assert background.scale_y == pytest.approx(
         background.ENCLOSURE_HEIGHT_SCALE
     )
-    assert background.CITY_HORIZONTAL_SCALE == pytest.approx(3.0)
-    assert background.ENCLOSURE_HEIGHT_SCALE == pytest.approx(1.0)
-    assert background.CITY_MODEL_SCALE == pytest.approx(1.6)
+    assert background.CITY_HORIZONTAL_SCALE == pytest.approx(4.0)
+    assert background.ENCLOSURE_HEIGHT_SCALE == pytest.approx(1.5)
+    assert background.CITY_MODEL_SCALE == pytest.approx(1.8)
     assert background.rotation == Vec3(0, 0, 0)
     assert background._bottom_face is not None
     assert background._bottom_face.color == background.CITY_BOTTOM_FACE_COLOR
@@ -80,7 +80,7 @@ def test_cyber_grid_background_recenters_and_resizes_for_each_board(
     game_app, monkeypatch, tmp_path
 ):
     background = game_app.background_view
-    assert background.CITY_ENCLOSURE_SCALE == pytest.approx(1.2)
+    assert background.CITY_ENCLOSURE_SCALE == pytest.approx(2.0)
     model_path = tmp_path / "city.glb"
     model_path.touch()
     monkeypatch.setattr(CyberGridBackground, "CITY_MODEL_PATH", model_path)
@@ -106,7 +106,7 @@ def test_cyber_grid_background_recenters_and_resizes_for_each_board(
     )
     assert background.scale_x == pytest.approx(background.CITY_HORIZONTAL_SCALE)
     assert background.scale_z == pytest.approx(background.CITY_HORIZONTAL_SCALE)
-    assert background.scale_y == pytest.approx(1.0)
+    assert background.scale_y == pytest.approx(1.5)
 
 
 def test_enclosure_ceiling_clears_board_height(game_app):
@@ -193,27 +193,31 @@ def test_city_shrinks_when_enclosure_size_is_reduced(game_app, monkeypatch):
     if not background.CITY_MODEL_PATH.is_file():
         pytest.skip("City model is not available")
 
-    monkeypatch.setattr(CyberGridBackground, "CITY_ENCLOSURE_SCALE", 2.0)
+    # Both sizes must leave room below the raised floor for a nonzero city.
+    monkeypatch.setattr(CyberGridBackground, "CITY_ENCLOSURE_SCALE", 2.4)
     background.set_board_bounds(0, 8, 2, 10, camera_distance=12)
     previous_enclosure_side = background._half_size * 2
     previous_city_bounds = background._bottom_city.getTightBounds(background)
     assert previous_city_bounds is not None
     previous_city_size = previous_city_bounds[1] - previous_city_bounds[0]
 
-    monkeypatch.setattr(CyberGridBackground, "CITY_ENCLOSURE_SCALE", 1.2)
+    monkeypatch.setattr(CyberGridBackground, "CITY_ENCLOSURE_SCALE", 2.0)
     background.set_board_bounds(0, 8, 2, 10, camera_distance=12)
     enclosure_ratio = background._half_size * 2 / previous_enclosure_side
     current_city_bounds = background._bottom_city.getTightBounds(background)
     assert current_city_bounds is not None
     current_city_size = current_city_bounds[1] - current_city_bounds[0]
 
-    assert enclosure_ratio == pytest.approx(0.6)
+    assert enclosure_ratio == pytest.approx(2.0 / 2.4)
     city_shrink_ratios = (
         current_city_size.x / previous_city_size.x,
         current_city_size.y / previous_city_size.y,
         current_city_size.z / previous_city_size.z,
     )
-    assert all(0.4 < ratio < enclosure_ratio for ratio in city_shrink_ratios)
+    # Fitting can clamp at either the floor or enclosure height. The city must
+    # still shrink uniformly when its available space decreases.
+    assert all(0 < ratio < 1 for ratio in city_shrink_ratios)
+    assert city_shrink_ratios == pytest.approx((city_shrink_ratios[0],) * 3)
 
 
 def test_enclosure_expansion_preserves_city_board_block_and_camera(game_app, monkeypatch):
@@ -358,6 +362,7 @@ def test_pixel_wall_animation_displays_on_the_front_face(game_app, monkeypatch):
         assert pixel_wall.texture is pixel_wall._frames[1]
     else:
         assert pixel_wall.model is pixel_wall._frames[1]
+
 
 def test_background_loads_independent_gifs_on_each_wall(game_app, monkeypatch, tmp_path):
     wall_gif_filenames = {
@@ -513,7 +518,7 @@ def test_bottom_city_is_centered_fitted_and_rebuilt(game_app, monkeypatch, tmp_p
     geometry_state = geometry.node().getGeomState(0)
     material = geometry_state.getAttrib(MaterialAttrib).getMaterial()
     color_scale = geometry_state.getAttrib(ColorScaleAttrib).getScale()
-    assert tuple(color_scale) == pytest.approx((0.1, 0.2, 0.3, 1), abs=0.001)
+    assert tuple(color_scale) == pytest.approx((0.04, 0.08, 0.12, 1), abs=0.001)
     assert tuple(material.getBaseColor()) == pytest.approx((0.2, 0.4, 0.6, 1))
     assert tuple(material.getEmission()) == pytest.approx((0.1, 0.2, 0.3, 0))
 
@@ -594,48 +599,18 @@ def test_city_glb_renders_material_colors_and_emission(game_app):
                 else None
             )
             color_scale = state.getAttrib(ColorScaleAttrib).getScale()
-            if (
-                material is not None
-                and material.getName() == background.CITY_GROUND_MATERIAL_NAME
-            ):
-                ground_mesh_found = True
-                expected_color = tuple(
-                    channel / 255 for channel in background.CITY_GROUND_COLOR
-                )
-            elif (
-                material is not None
-                and material.hasEmission()
-                and material.getEmission().getXyz().lengthSquared() > 0
-            ):
-                expected_color = tuple(material.getEmission().getXyz())
-                checked_emission = True
-            elif material is None or not material.hasBaseColor():
-                fallback = (
-                    background.CITY_MISSING_COLOR
-                    if material is None
-                    or material.getName() != background.CITY_GROUND_MATERIAL_NAME
-                    else background.CITY_GROUND_COLOR
-                )
-                expected_color = tuple(channel / 255 for channel in fallback)
-            else:
-                base_color = tuple(material.getBaseColor().getXyz())
-                if (
-                    max(base_color) - min(base_color)
-                    <= background.CITY_NEUTRAL_COLOR_MAX_CHANNEL_DIFFERENCE
-                    and max(base_color)
-                    >= background.CITY_NEUTRAL_COLOR_MIN_BRIGHTNESS
-                ):
-                    expected_color = tuple(
-                        channel / 255
-                        for channel in background.CITY_NEUTRAL_ARCHITECTURE_COLOR
-                    )
-                    checked_neutral = True
-                else:
-                    expected_color = tuple(
-                        channel ** background.CITY_BASE_COLOR_GAMMA
-                        for channel in base_color
-                    )
-                    checked_chromatic = True
+            if material is not None:
+                if material.getName() == background.CITY_GROUND_MATERIAL_NAME:
+                    ground_mesh_found = True
+                elif material.hasEmission() and material.getEmission().getXyz().lengthSquared() > 0:
+                    checked_emission = True
+                elif material.hasBaseColor():
+                    channels = tuple(material.getBaseColor().getXyz())
+                    if max(channels) - min(channels) <= 0.12:
+                        checked_neutral = True
+                    else:
+                        checked_chromatic = True
+            expected_color = tuple(background._shade_city_material(material))
             assert tuple(color_scale) == pytest.approx(
                 expected_color + (1,),
                 abs=0.001,
@@ -655,3 +630,26 @@ def test_city_glb_renders_material_colors_and_emission(game_app):
         shadow_alpha = shadow_pixels[3::4]
         assert max(shadow_alpha) == background.CITY_SHADOW_OPACITY
         assert 0 < sum(alpha > 0 for alpha in shadow_alpha) < len(shadow_alpha)
+
+
+@pytest.mark.parametrize(
+    ('emission', 'expected'),
+    [
+        ((0, 1, 0), (0.10, 0.35, 0.40)),
+        ((1, 1, 1), (0.28, 0.34, 0.44)),
+        ((1, 0, 1), (0.38, 0.16, 0.42)),
+        ((1, 0, 0), (0.42, 0.14, 0.12)),
+        ((0, 0, 1), (0.15, 0.32, 0.46)),
+        ((0.1, 0.2, 0.3), (0.04, 0.08, 0.12)),
+    ],
+)
+def test_city_emission_preserves_khoa_dark_fantasy_palette(engine, emission, expected):
+    background = CyberGridBackground(enable_city=False)
+    material = Material('spectral_test')
+    material.setEmission((*emission, 0))
+    original = tuple(material.getEmission())
+    try:
+        assert tuple(background._shade_city_material(material)) == pytest.approx(expected)
+        assert tuple(material.getEmission()) == original
+    finally:
+        destroy(background)

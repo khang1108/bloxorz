@@ -49,35 +49,6 @@ class BloxorzApp:
         window.show_ursina_splash = False
         window.vsync = CONFIG.window.vsync
 
-        # Setup Bloxpath directional sunlight, ambient fill light, and atmospheric fog
-        from panda3d.core import DirectionalLight, AmbientLight, Fog, Vec4
-        from ursina import application
-        base = getattr(application, "base", None)
-        if base:
-            # Overhead sun light for crisp top facet rendering
-            dlight = DirectionalLight('sun_light')
-            dlight.setColor(Vec4(0.92, 0.94, 0.98, 1.0))
-            dlnp = base.render.attachNewNode(dlight)
-            dlnp.setHpr(42, -50, 0)
-            base.render.setLight(dlnp)
-
-            # Cyberpunk Magma Upward Underlight (warm radiant molten underglow from lava abyss)
-            lava_light = DirectionalLight('lava_up_light')
-            lava_light.setColor(Vec4(0.48, 0.16, 0.04, 1.0))
-            lava_lnp = base.render.attachNewNode(lava_light)
-            lava_lnp.setHpr(42, 65, 0)
-            base.render.setLight(lava_lnp)
-
-            alight = AmbientLight('ambient_light')
-            alight.setColor(Vec4(0.38, 0.38, 0.44, 1.0))
-            alnp = base.render.attachNewNode(alight)
-            base.render.setLight(alnp)
-
-            fog = Fog('AbyssalFog')
-            fog.setColor(Vec4(0.040, 0.022, 0.042, 1.0))
-            fog.setExpDensity(0.034)
-            base.render.setFog(fog)
-
         # Find level files
         self.levels_dir = Path(__file__).parent / "levels"
         self.stage_files = sorted(self.levels_dir.glob("stage_*.json"))
@@ -87,12 +58,7 @@ class BloxorzApp:
         self.sound_mgr = SoundManager()
         self.sound_mgr.load_audio_objects()
 
-        self.fx_manager = FXManager()
-        self.fx_manager.position = self.BOARD_WORLD_OFFSET
-        for pool in (self.fx_manager._ghosts, self.fx_manager._rings,
-                     self.fx_manager._particles, self.fx_manager._ambient):
-            for item in pool:
-                item.entity.parent = self.fx_manager
+        self.fx_manager = FXManager(position=self.BOARD_WORLD_OFFSET)
         self.camera_ctrl = CameraController()
         self.background_view = CyberGridBackground(enable_city=enable_city)
         self.board_view = BoardView()
@@ -216,8 +182,8 @@ class BloxorzApp:
                 self.sound_mgr.play("restart")
             self.game.restart()
             self._sync_minimap()
-            if getattr(self, "board_view", None) and hasattr(self.board_view, "update_bridges"):
-                self.board_view.update_bridges(self.game.board)
+            if getattr(self, "board_view", None):
+                self.board_view.build(self.game.board)
             if getattr(self, "block_view", None) and hasattr(self.block_view, "sync_to_state"):
                 self.block_view.sync_to_state(self.game.board.spawn_state)
             if getattr(self, "hud", None):
@@ -225,7 +191,9 @@ class BloxorzApp:
                     self.hud.update_moves(0)
                 if hasattr(self.hud, "set_split_mode"):
                     self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
-                if hasattr(self.hud, "hide_banner"):
+                if trigger_sfx and hasattr(self.hud, "show_banner"):
+                    self.hud.show_banner("Argghhh let's try again", duration=2.5)
+                elif hasattr(self.hud, "hide_banner"):
                     self.hud.hide_banner()
             if getattr(self, "menu_mgr", None) and hasattr(self.menu_mgr, "close_all"):
                 self.menu_mgr.close_all()
@@ -238,6 +206,7 @@ class BloxorzApp:
                         self.game.board.min_y, self.game.board.max_y,
                         animate=True,
                         preserve_rotation=False,
+                        center_offset=self.BOARD_WORLD_OFFSET,
                     )
                 elif hasattr(self.camera_ctrl, "reset_view"):
                     self.camera_ctrl.reset_view(animate=True)
@@ -292,14 +261,20 @@ class BloxorzApp:
         def on_roll_finished():
             self._sync_minimap()
             if outcome in ("SAFE", "MERGED", "TELEPORT", "VICTORY", "FELL_FRAGILE"):
-                self.board_view.animate_landing(next_state.occupied_cells)
+                landing_cells = next_state.occupied_cells
+                if outcome == "SAFE" and prev_state.is_split and next_state.is_split:
+                    # The stationary split cube has not landed again.
+                    landing_cells = landing_cells - prev_state.occupied_cells
+                self.board_view.animate_landing(landing_cells)
             if outcome in ("SAFE", "MERGED", "TELEPORT"):
                 self.hud.update_moves(self.game.move_count)
                 self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
                 if outcome == "TELEPORT":
                     self.sound_mgr.play("switch")
+                    self.hud.show_banner("TELEPORT SPLIT")
                 elif outcome == "MERGED":
                     self.sound_mgr.play("merge")
+                    self.hud.show_banner("BLOCKS MERGED")
 
                 if detail and outcome in ("SAFE", "MERGED"):  # Toggled bridges
                     self.sound_mgr.play("switch")

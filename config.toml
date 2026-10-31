@@ -113,20 +113,20 @@ default_delay = 0.08            # Delay in seconds between animated solver moves
 arrow_scheme = "isometric"
 
 [animation]
-wave_enabled = true
+wave_enabled = false
 wave_amplitude = 0.22
 wave_freq_x = 0.38
 wave_freq_z = 0.32
 wave_speed = 1.35
-column_sea_enabled = true
+column_sea_enabled = false
 column_sea_padding = 8
 column_sea_base_y = -1.72
 palette_mode = "obsidian"
 stage_intro_anim = true
-stage_intro_duration = 0.32
-stage_intro_stagger = 0.025
+stage_intro_duration = 0.15
+stage_intro_stagger = 0.0
 tile_highlight_enabled = true
-tile_highlight_duration = 0.22
+tile_highlight_duration = 0.12
 cushion_depth = 0.0
 cushion_radius = 0.0
 cushion_duration = 0.0

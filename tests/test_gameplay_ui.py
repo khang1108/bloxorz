@@ -5,6 +5,7 @@ import threading
 import pytest
 from ursina import time as ursina_time
 
+from bloxorz.config import CONFIG
 from bloxorz.core.block import SplitBlockState
 from bloxorz.core.constants import Direction
 from bloxorz.core.game import Game
@@ -123,17 +124,25 @@ def test_real_moves_undo_and_restart_keep_minimap_on_the_game_state(game_app, mo
     assert tuple(app.minimap.block_markers[0].position) == spawn_position
 
 
-def test_completed_roll_flashes_the_landing_cell(game_app, monkeypatch):
+def test_completed_roll_pulses_only_the_landing_borders(game_app, monkeypatch):
     app = game_app
+    monkeypatch.setattr(CONFIG.animation, 'stage_intro_anim', False)
+    app.restart_stage()
+    borders = {
+        cell: next(part for part in parts if part.name == 'tile_neon_border')
+        for cell, parts in app.board_view.tile_parts.items()
+        if any(part.name == 'tile_neon_border' for part in parts)
+    }
+    original_colors = {cell: tuple(border.color) for cell, border in borders.items()}
     app.handle_move(Direction.RIGHT)
     monkeypatch.setattr(ursina_time, 'dt', .3, raising=False)
     app.block_view.update()
 
-    flashes = [
-        entity for entity in app.board_view.root.children
-        if entity.name == 'tile_landing_flash'
-    ]
-    assert { (round(flash.x), round(-flash.z)) for flash in flashes } == app.game.block.occupied_cells
+    pulsing_cells = {
+        cell for cell, border in borders.items() if tuple(border.color) != original_colors[cell]
+    }
+    assert pulsing_cells == app.game.block.occupied_cells
+    assert not any(entity.name == 'tile_landing_flash' for entity in app.board_view.root.children)
 
 
 def test_undo_between_solver_steps_cancels_the_remaining_playback(game_app, monkeypatch):

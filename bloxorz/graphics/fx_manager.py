@@ -6,7 +6,7 @@ memory fragmentation and frame-time spikes in the Ursina game loop.
 
 import math
 import random
-from typing import List, Optional, Tuple, Union, Sequence
+from typing import List, Optional, Sequence
 from ursina import Entity, Vec3, color, curve, time
 
 from bloxorz.config import CONFIG
@@ -17,8 +17,9 @@ class _GhostItem:
     """Pre-allocated ghost echo block mesh."""
     __slots__ = ("entity", "active", "alpha", "fade_speed", "r", "g", "b")
 
-    def __init__(self):
+    def __init__(self, parent: Optional[Entity] = None):
         self.entity = Entity(
+            parent=parent,
             name="fx_ghost",
             model='cube',
             unlit=True,
@@ -36,8 +37,9 @@ class _RingItem:
     """Pre-allocated expanding planar shockwave ripple."""
     __slots__ = ("entity", "active", "elapsed", "duration", "max_radius", "r", "g", "b")
 
-    def __init__(self):
+    def __init__(self, parent: Optional[Entity] = None):
         self.entity = Entity(
+            parent=parent,
             name="fx_shockwave_ring",
             model='quad',
             rotation_x=90,
@@ -61,8 +63,9 @@ class _ParticleItem:
         "is_ember", "drag"
     )
 
-    def __init__(self):
+    def __init__(self, parent: Optional[Entity] = None):
         self.entity = Entity(
+            parent=parent,
             name="fx_particle",
             model='cube',
             unlit=True,
@@ -87,8 +90,9 @@ class _AmbientDustItem:
     """Pre-allocated ambient atmospheric dust / molten magma ember."""
     __slots__ = ("entity", "base_pos", "phase_x", "phase_y", "phase_z", "speed", "amp", "alpha_base", "r", "g", "b")
 
-    def __init__(self):
+    def __init__(self, parent: Optional[Entity] = None):
         self.entity = Entity(
+            parent=parent,
             name="fx_ambient_dust",
             model='cube',
             unlit=True,
@@ -124,11 +128,11 @@ class FXManager(Entity):
         super().__init__(name="fx_manager_core", **kwargs)
         FXManager._instance = self
 
-        # 1. Pre-allocate pools
-        self._ghosts: List[_GhostItem] = [_GhostItem() for _ in range(self.POOL_GHOSTS)]
-        self._rings: List[_RingItem] = [_RingItem() for _ in range(self.POOL_RINGS)]
-        self._particles: List[_ParticleItem] = [_ParticleItem() for _ in range(self.POOL_PARTICLES)]
-        self._ambient: List[_AmbientDustItem] = [_AmbientDustItem() for _ in range(self.POOL_AMBIENT)]
+        # 1. Pre-allocate pools parented to self for consistent board-local coordinates
+        self._ghosts: List[_GhostItem] = [_GhostItem(parent=self) for _ in range(self.POOL_GHOSTS)]
+        self._rings: List[_RingItem] = [_RingItem(parent=self) for _ in range(self.POOL_RINGS)]
+        self._particles: List[_ParticleItem] = [_ParticleItem(parent=self) for _ in range(self.POOL_PARTICLES)]
+        self._ambient: List[_AmbientDustItem] = [_AmbientDustItem(parent=self) for _ in range(self.POOL_AMBIENT)]
 
         # Ambient dust state
         self._ambient_enabled: bool = False
@@ -241,6 +245,7 @@ class FXManager(Entity):
             if not p.active:
                 p.active = True
                 p.is_confetti = False
+                p.is_ember = False
                 p.base_scale = scale * random.uniform(0.8, 1.25)
                 p.life = life * random.uniform(0.75, 1.25)
                 p.max_life = p.life
@@ -293,7 +298,7 @@ class FXManager(Entity):
                 p.is_confetti = False
                 p.is_ember = True
                 p.drag = 4.5
-                # Tiny radiant spark mote scale (NOT chunky cube)
+                # Radiant spark mote scale
                 p.base_scale = random.uniform(0.020, 0.035)
                 p.life = life * random.uniform(0.85, 1.20)
                 p.max_life = p.life
@@ -319,7 +324,7 @@ class FXManager(Entity):
 
                 vy = random.uniform(0.6, 1.6)
                 p.vel = Vec3(vx, vy, vz)
-                p.rot_vel = Vec3(0, 0, 0)  # No 3D paper tumbling!
+                p.rot_vel = Vec3(0, 0, 0)
 
                 p.entity.position = position
                 p.entity.rotation = Vec3(0, 0, 0)
@@ -340,6 +345,7 @@ class FXManager(Entity):
             if not p.active:
                 p.active = True
                 p.is_confetti = True
+                p.is_ember = False
                 tok = tokens[spawned % len(tokens)]
                 p.base_scale = random.uniform(0.08, 0.14)
                 p.life = random.uniform(1.2, 1.8)
@@ -434,7 +440,7 @@ class FXManager(Entity):
     # -------------------------------------------------------------------------
 
     def clear_all(self) -> None:
-        """Deactivates all active VFX entities back into the dormant pool."""
+        """Deactivates all active transient VFX entities back into the dormant pool."""
         for g in self._ghosts:
             g.active = False
             g.entity.enabled = False
@@ -492,7 +498,6 @@ class FXManager(Entity):
                     progress = 1.0 - (p.life / p.max_life)
 
                     if getattr(p, "is_ember", False):
-                        # Aerodynamic drag deceleration (rapid initial shoot, then floating deceleration)
                         drag_factor = max(0.0, 1.0 - p.drag * dt)
                         p.vel.x *= drag_factor
                         p.vel.z *= drag_factor
@@ -500,30 +505,26 @@ class FXManager(Entity):
                         p.vel.y += 0.65 * dt  # Thermal buoyancy draft from heat
                         p.entity.position += p.vel * dt
 
-                        # Thermal cooling gradient: White-gold spark -> Molten magma amber -> Smoldering charcoal ash
+                        # Thermal cooling gradient: White-gold spark -> Molten magma amber -> Smoldering ash
                         if progress < 0.28:
-                            # 1. Incandescent White-Gold Spark
                             t_col = progress / 0.28
                             r = 1.0
                             g = 0.96 - 0.14 * t_col
                             b = 0.82 - 0.62 * t_col
                             alpha = 1.0
                         elif progress < 0.65:
-                            # 2. Glowing Molten Magma Amber Cinder
                             t_col = (progress - 0.28) / 0.37
                             r = 1.0
                             g = 0.82 - 0.45 * t_col
                             b = 0.20 - 0.15 * t_col
                             alpha = 0.95 - 0.15 * t_col
                         else:
-                            # 3. Extinguishing Charcoal Ash Smoke
                             t_col = (progress - 0.65) / 0.35
                             r = 1.0 - 0.60 * t_col
                             g = 0.37 - 0.14 * t_col
                             b = 0.05 + 0.15 * t_col
                             alpha = max(0.0, (1.0 - t_col) * 0.80)
 
-                        # Spark streak / needle mote: slight elongation along horizontal motion
                         speed_horiz = math.sqrt(p.vel.x * p.vel.x + p.vel.z * p.vel.z)
                         stretch = min(2.4, 1.0 + speed_horiz * 0.35)
                         s = p.base_scale * (1.0 - progress * 0.40)
@@ -548,24 +549,21 @@ class FXManager(Entity):
                         p.entity.scale = Vec3(s, s, s)
                         p.entity.color = color.rgba(p.r, p.g, p.b, alpha)
 
-        # 4. Update Ambient Magma Embers (Gentle Multiaxial Drift + Thermal Upward Rise)
+        # 4. Update Ambient Magma Embers
         if self._ambient_enabled:
             self._ambient_time += dt
             t = self._ambient_time
 
             for dust in self._ambient:
-                # Upward thermal convection from magma abyss
                 dust.base_pos.y += 0.25 * dt
                 if hasattr(self, "_ambient_center") and self._ambient_center:
                     if dust.base_pos.y > self._ambient_center.y + 4.5:
                         dust.base_pos.y = self._ambient_center.y - 1.6
 
-                # 3D Lissajous drift
                 dx = math.sin(t * dust.speed + dust.phase_x) * dust.amp
                 dy = math.sin(t * dust.speed * 0.7 + dust.phase_y) * (dust.amp * 0.4)
                 dz = math.cos(t * dust.speed * 0.8 + dust.phase_z) * dust.amp
                 dust.entity.position = dust.base_pos + Vec3(dx, dy, dz)
 
-                # Gentle breathing alpha
                 alpha = dust.alpha_base * (0.75 + 0.25 * math.sin(t * 1.8 + dust.phase_y))
                 dust.entity.color = color.rgba(dust.r, dust.g, dust.b, alpha)

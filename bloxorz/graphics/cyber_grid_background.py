@@ -143,6 +143,8 @@ class _PixelWallAnimation(Entity):
 class _GifWallAnimation(Entity):
     """Display an animated GIF across an enclosure wall."""
 
+    _cached_frames: Dict[Path, Tuple[Tuple[UrsinaTexture, ...], Tuple[float, ...], Tuple[int, int]]] = {}
+
     def __init__(
         self,
         parent: Entity,
@@ -171,10 +173,13 @@ class _GifWallAnimation(Entity):
             double_sided=True,
         )
 
-    @staticmethod
+    @classmethod
     def _load_frames(
+        cls,
         gif_path: Path,
     ) -> Tuple[Tuple[UrsinaTexture, ...], Tuple[float, ...], Tuple[int, int]]:
+        if gif_path in cls._cached_frames:
+            return cls._cached_frames[gif_path]
         frames = []
         durations = []
         with Image.open(gif_path) as gif:
@@ -185,7 +190,9 @@ class _GifWallAnimation(Entity):
                 frames.append(texture)
                 durations.append(max(frame.info.get("duration", 100) / 1000, 0.02))
 
-        return tuple(frames), tuple(durations), image_size
+        result = (tuple(frames), tuple(durations), image_size)
+        cls._cached_frames[gif_path] = result
+        return result
 
     def update(self) -> None:
         self._elapsed += max(0.0, time.dt)

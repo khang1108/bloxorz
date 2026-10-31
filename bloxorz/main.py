@@ -688,9 +688,11 @@ class InputHandler(Entity):
 def main() -> None:
     """Application launcher."""
     from bloxorz.solvers import UCSSolver
-    from bloxorz.launcher import launch_game
 
-    launch_game(UCSSolver())
+    app = Ursina()
+    bloxorz = BloxorzApp()
+    bloxorz.register_solver(UCSSolver())
+    app.run()
 
 
 if __name__ == "__main__":

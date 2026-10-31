@@ -27,6 +27,7 @@ from bloxorz.solvers import get_solver
 from bloxorz.graphics.camera_ctrl import CameraController
 from bloxorz.graphics.board_view import BoardView
 from bloxorz.graphics.block_view import BlockView
+from bloxorz.graphics.fx_manager import FXManager
 from bloxorz.audio.sound_manager import SoundManager
 from bloxorz.config import CONFIG
 
@@ -38,11 +39,41 @@ class BloxorzApp:
         # Configure Ursina window from centralized config
         window.title = CONFIG.window.title
         window.borderless = CONFIG.window.borderless
-        window.fullscreen = CONFIG.window.fullscreen
+        if getattr(CONFIG.window, "fullscreen", False):
+            window.fullscreen = True
         window.size = (CONFIG.window.width, CONFIG.window.height)
         window.color = color.hex(Palette.BACKGROUND.hex_code)
         window.show_ursina_splash = False
         window.vsync = CONFIG.window.vsync
+
+        # Setup Bloxpath directional sunlight, ambient fill light, and atmospheric fog
+        from panda3d.core import DirectionalLight, AmbientLight, Fog, Vec4
+        from ursina import application
+        base = getattr(application, "base", None)
+        if base:
+            # Overhead sun light for crisp top facet rendering
+            dlight = DirectionalLight('sun_light')
+            dlight.setColor(Vec4(0.92, 0.94, 0.98, 1.0))
+            dlnp = base.render.attachNewNode(dlight)
+            dlnp.setHpr(42, -50, 0)
+            base.render.setLight(dlnp)
+
+            # Cyberpunk Magma Upward Underlight (warm radiant molten underglow from lava abyss)
+            lava_light = DirectionalLight('lava_up_light')
+            lava_light.setColor(Vec4(0.48, 0.16, 0.04, 1.0))
+            lava_lnp = base.render.attachNewNode(lava_light)
+            lava_lnp.setHpr(42, 65, 0)
+            base.render.setLight(lava_lnp)
+
+            alight = AmbientLight('ambient_light')
+            alight.setColor(Vec4(0.38, 0.38, 0.44, 1.0))
+            alnp = base.render.attachNewNode(alight)
+            base.render.setLight(alnp)
+
+            fog = Fog('AbyssalFog')
+            fog.setColor(Vec4(0.040, 0.022, 0.042, 1.0))
+            fog.setExpDensity(0.034)
+            base.render.setFog(fog)
 
         # Find level files
         self.levels_dir = Path(__file__).parent / "levels"
@@ -53,9 +84,11 @@ class BloxorzApp:
         self.sound_mgr = SoundManager()
         self.sound_mgr.load_audio_objects()
 
+        self.fx_manager = FXManager()
         self.camera_ctrl = CameraController()
         self.board_view = BoardView()
         self.block_view = BlockView()
+        self.block_view.set_board_view(self.board_view)
         self.hud = HUD()
 
         # Solver & programmatic automation interface
@@ -126,6 +159,8 @@ class BloxorzApp:
         self.game = Game(board)
 
         # Build visuals
+        if getattr(self, "fx_manager", None):
+            self.fx_manager.clear_all()
         self.board_view.build(board)
         self.block_view.sync_to_state(board.spawn_state)
         self.camera_ctrl.frame_board(
@@ -170,13 +205,22 @@ class BloxorzApp:
                     self.hud.update_moves(0)
                 if hasattr(self.hud, "set_split_mode"):
                     self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
-                if trigger_sfx and hasattr(self.hud, "show_banner"):
-                    self.hud.show_banner("Argghhh let's try again", duration=2.5)
-                elif hasattr(self.hud, "hide_banner"):
+                if hasattr(self.hud, "hide_banner"):
                     self.hud.hide_banner()
             if getattr(self, "menu_mgr", None) and hasattr(self.menu_mgr, "close_all"):
                 self.menu_mgr.close_all()
+            if getattr(self, "fx_manager", None):
+                self.fx_manager.clear_all()
             if getattr(self, "camera_ctrl", None):
+                if hasattr(self.camera_ctrl, "frame_board") and self.game and hasattr(self.game, "board"):
+                    self.camera_ctrl.frame_board(
+                        self.game.board.min_x, self.game.board.max_x,
+                        self.game.board.min_y, self.game.board.max_y,
+                        animate=True,
+                        preserve_rotation=False,
+                    )
+                elif hasattr(self.camera_ctrl, "reset_view"):
+                    self.camera_ctrl.reset_view(animate=True)
                 self.camera_ctrl.enabled_controls = True
 
     def resume_game(self):
@@ -232,10 +276,8 @@ class BloxorzApp:
                 self.hud.set_split_mode(getattr(self.game.block, "is_split", False))
                 if outcome == "TELEPORT":
                     self.sound_mgr.play("switch")
-                    self.hud.show_banner("TELEPORT SPLIT")
                 elif outcome == "MERGED":
                     self.sound_mgr.play("merge")
-                    self.hud.show_banner("BLOCKS MERGED")
 
                 if detail and outcome in ("SAFE", "MERGED"):  # Toggled bridges
                     self.sound_mgr.play("switch")
@@ -266,6 +308,10 @@ class BloxorzApp:
                 banner_msg = "FRAGILE COLLAPSE" if outcome == "FELL_FRAGILE" else "FELL INTO VOID"
                 self.hud.show_banner(banner_msg)
 
+                if outcome == "FELL_FRAGILE":
+                    for cell in next_state.occupied_cells:
+                        self.board_view.animate_fragile_crumble(cell[0], cell[1])
+
                 def on_fall_done():
                     invoke(lambda: self.restart_stage(trigger_sfx=True), delay=0.2)
 
@@ -273,6 +319,7 @@ class BloxorzApp:
                     board=self.game.board,
                     direction=direction,
                     on_complete=on_fall_done,
+                    outcome=outcome,
                 )
 
             if on_done:
@@ -284,6 +331,8 @@ class BloxorzApp:
             direction,
             on_complete=on_roll_finished,
             on_split_takeoff=lambda: self.sound_mgr.play("switch"),
+            outcome=outcome,
+            board=self.game.board,
         )
 
     # =========================================================================

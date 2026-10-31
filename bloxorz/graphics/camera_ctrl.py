@@ -1,6 +1,6 @@
-"""Minimalist isometric camera controller with smooth framing, 3D orbit, and zoom."""
-
 import math
+import random
+from typing import Optional
 from ursina import Entity, camera, Vec3, mouse, time as u_time
 
 from bloxorz.config import CONFIG
@@ -9,8 +9,11 @@ from bloxorz.config import CONFIG
 class CameraController(Entity):
     """Manages isometric view angle, distance, smooth auto-framing, and interactive 3D orbit/zoom."""
 
+    _instance: Optional["CameraController"] = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        CameraController._instance = self
         cfg = CONFIG.camera
 
         # Configure projection
@@ -18,6 +21,10 @@ class CameraController(Entity):
         if getattr(application, "base", None):
             camera.orthographic = False
             camera.fov = cfg.fov
+
+        # Juice & Screen Shake State
+        self._shake_intensity: float = 0.0
+        self._shake_offset: Vec3 = Vec3(0, 0, 0)
 
         # Angle, Distance, and Center tracking
         self.default_pitch: float = cfg.angle_x
@@ -65,6 +72,17 @@ class CameraController(Entity):
         self._victory_target_dist: float = 0.0
         self._victory_target_pitch: float = 0.0
         self._victory_target_yaw: float = 0.0
+
+    @classmethod
+    def get_instance(cls) -> Optional["CameraController"]:
+        """Returns the active singleton CameraController instance."""
+        return cls._instance
+
+    def shake_camera(self, intensity: float = 0.05, duration: float = 0.12) -> None:
+        """Triggers a transient, non-destructive screen shake pulse."""
+        if not getattr(CONFIG.animation, "screen_shake_enabled", True):
+            return
+        self._shake_intensity = min(0.35, max(self._shake_intensity, intensity))
 
     def frame_board(
         self,
@@ -181,29 +199,33 @@ class CameraController(Entity):
             dt = 0.016
 
         # Check interactive mouse drag (supports both Right Mouse and Left Mouse when not clicking UI)
-        if mouse and hasattr(mouse, "position"):
-            curr_pos = mouse.position
-            hovered = getattr(mouse, "hovered_entity", None)
-            is_hovering_ui = bool(
-                hovered
-                and (
-                    getattr(hovered, "parent", None) == camera.ui
-                    or getattr(getattr(hovered, "parent", None), "parent", None) == camera.ui
+        from ursina import application
+        if getattr(application, "base", None) and mouse:
+            try:
+                curr_pos = mouse.position
+                hovered = getattr(mouse, "hovered_entity", None)
+                is_hovering_ui = bool(
+                    hovered
+                    and (
+                        getattr(hovered, "parent", None) == camera.ui
+                        or getattr(getattr(hovered, "parent", None), "parent", None) == camera.ui
+                    )
                 )
-            )
-            is_down = getattr(mouse, "right", False) or (
-                getattr(mouse, "left", False) and not is_hovering_ui
-            )
-            if self.enabled_controls and is_down:
-                if self._was_mouse_down:
-                    dx = curr_pos[0] - self._prev_mouse_pos[0]
-                    dy = curr_pos[1] - self._prev_mouse_pos[1]
-                    if dx != 0.0 or dy != 0.0:
-                        self.orbit(dx, dy)
-                self._was_mouse_down = True
-            else:
-                self._was_mouse_down = False
-            self._prev_mouse_pos = curr_pos
+                is_down = getattr(mouse, "right", False) or (
+                    getattr(mouse, "left", False) and not is_hovering_ui
+                )
+                if self.enabled_controls and is_down:
+                    if self._was_mouse_down:
+                        dx = curr_pos[0] - self._prev_mouse_pos[0]
+                        dy = curr_pos[1] - self._prev_mouse_pos[1]
+                        if dx != 0.0 or dy != 0.0:
+                            self.orbit(dx, dy)
+                    self._was_mouse_down = True
+                else:
+                    self._was_mouse_down = False
+                self._prev_mouse_pos = curr_pos
+            except Exception:
+                pass
 
         if self._is_victory_zooming:
             self._victory_zoom_time += dt
@@ -230,6 +252,18 @@ class CameraController(Entity):
             diff_center = self.target_center - self.current_center
             self.current_center += diff_center * damp
 
+        # Process screen shake damping
+        if self._shake_intensity > 0.001:
+            decay = getattr(CONFIG.animation, "shake_decay", 8.0)
+            self._shake_intensity = max(0.0, self._shake_intensity - self._shake_intensity * decay * dt)
+            rx = (random.random() * 2.0 - 1.0) * self._shake_intensity
+            ry = (random.random() * 2.0 - 1.0) * self._shake_intensity
+            rz = (random.random() * 2.0 - 1.0) * self._shake_intensity
+            self._shake_offset = Vec3(rx, ry, rz)
+        else:
+            self._shake_intensity = 0.0
+            self._shake_offset = Vec3(0, 0, 0)
+
         self._apply_camera_transform()
 
     def _apply_camera_transform(self):
@@ -247,8 +281,9 @@ class CameraController(Entity):
         offset_z = -h_dist * math.cos(rad_yaw)
 
         camera.position = Vec3(
-            self.current_center.x + offset_x,
-            self.current_center.y + offset_y,
-            self.current_center.z + offset_z,
+            self.current_center.x + offset_x + self._shake_offset.x,
+            self.current_center.y + offset_y + self._shake_offset.y,
+            self.current_center.z + offset_z + self._shake_offset.z,
         )
         camera.rotation = Vec3(self.current_pitch, -self.current_yaw, 0)
+

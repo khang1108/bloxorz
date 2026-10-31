@@ -56,6 +56,10 @@ scratch/
 *.synctex.gz
 *.toc
 *.out
-_minted-*
 docs/report/*.pdf
-
+# Temporary capture & frame studies
+clear_study/
+detail_frames/
+roll_study/
+video_frames/
+visual_verification*.png

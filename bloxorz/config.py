@@ -140,6 +140,13 @@ class ControlsConfig:
 
 
 @dataclass
+class BackgroundConfig:
+    """Cyber grid environment and 3D background presentation settings."""
+    enable_city_model: bool = False  # Set to False to disable 3D city model (city.glb) and save RAM/GPU
+    enable_wall_gifs: bool = True    # Animated cyberpunk wall GIFs
+
+
+@dataclass
 class AppConfig:
     """Root configuration tree aggregating all subsystem configurations."""
     window: WindowConfig = field(default_factory=WindowConfig)
@@ -147,6 +154,7 @@ class AppConfig:
     motion: MotionConfig = field(default_factory=MotionConfig)
     block: BlockConfig = field(default_factory=BlockConfig)
     board: BoardConfig = field(default_factory=BoardConfig)
+    background: BackgroundConfig = field(default_factory=BackgroundConfig)
     audio: AudioConfig = field(default_factory=AudioConfig)
     solver: SolverConfig = field(default_factory=SolverConfig)
     controls: ControlsConfig = field(default_factory=ControlsConfig)
@@ -215,11 +223,25 @@ def load_config(file_path: Optional[Path] = None) -> AppConfig:
     if "audio" in loaded_data and isinstance(loaded_data["audio"], dict):
         _apply_dict_to_dataclass(cfg.audio, loaded_data["audio"])
 
+    if "background" in loaded_data and isinstance(loaded_data["background"], dict):
+        _apply_dict_to_dataclass(cfg.background, loaded_data["background"])
+    elif isinstance(graphics, dict) and "enable_city_model" in graphics:
+        cfg.background.enable_city_model = bool(graphics["enable_city_model"])
+
     if "solver" in loaded_data and isinstance(loaded_data["solver"], dict):
         _apply_dict_to_dataclass(cfg.solver, loaded_data["solver"])
 
     if "controls" in loaded_data and isinstance(loaded_data["controls"], dict):
         _apply_dict_to_dataclass(cfg.controls, loaded_data["controls"])
+
+    # Environment variables override
+    import os
+    env_no_city = os.environ.get("BLOXORZ_NO_CITY", "").strip().lower()
+    env_enable_city = os.environ.get("BLOXORZ_ENABLE_CITY", "").strip().lower()
+    if env_no_city in ("1", "true", "yes"):
+        cfg.background.enable_city_model = False
+    elif env_enable_city in ("1", "true", "yes"):
+        cfg.background.enable_city_model = True
 
     return cfg
 

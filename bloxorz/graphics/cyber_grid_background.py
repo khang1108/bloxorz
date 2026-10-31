@@ -260,8 +260,17 @@ class CyberGridBackground(Entity):
     PURPLE = color.hex("#E91EA2")
     TRAIL_PURPLE = color.hex("#EBDDFF")
 
-    def __init__(self) -> None:
+    def __init__(self, enable_city: Optional[bool] = None) -> None:
         super().__init__(parent=scene, name="cyber_grid_background")
+        if enable_city is not None:
+            self.enable_city = bool(enable_city)
+        else:
+            from bloxorz.config import CONFIG
+            self.enable_city = getattr(
+                getattr(CONFIG, "background", None),
+                "enable_city_model",
+                False,
+            )
         self._animation_time = 0.0
         self._half_size = self.MIN_SIZE / 2
         self._floor_y = -self._half_size
@@ -280,6 +289,11 @@ class CyberGridBackground(Entity):
         self._city_shadow_overlay: Optional[Entity] = None
         self._has_board_bounds = False
         self._board_center_world = (0.0, 0.0, 0.0)
+
+    @property
+    def has_city_model(self) -> bool:
+        """Returns True if the 3D city model is enabled and its asset file exists."""
+        return bool(self.enable_city and self.CITY_MODEL_PATH.is_file())
 
     def _make_mesh_entity(
         self, mesh: Mesh, name: str, transparency: bool = True
@@ -373,7 +387,7 @@ class CyberGridBackground(Entity):
             board_depth,
             camera_distance * 2 * self.CAMERA_MARGIN,
         )
-        if self.CITY_MODEL_PATH.is_file():
+        if self.has_city_model:
             side_length *= self.CITY_ENCLOSURE_SCALE
 
         self.position = (
@@ -387,7 +401,7 @@ class CyberGridBackground(Entity):
         self._half_size = side_length / 2
         base_world_floor_y = (
             -self._half_size * self.CITY_BOTTOM_FACE_HEIGHT_RATIO
-            if self.CITY_MODEL_PATH.is_file()
+            if self.has_city_model
             else -self._half_size
         )
         self._wall_floor_y = base_world_floor_y / self.scale_y
@@ -830,7 +844,7 @@ class CyberGridBackground(Entity):
         if self._bottom_city is not None:
             destroy(self._bottom_city)
             self._bottom_city = None
-        if not self.CITY_MODEL_PATH.is_file():
+        if not self.has_city_model:
             return
 
         model = load_model(

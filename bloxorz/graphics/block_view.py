@@ -19,25 +19,25 @@ class BlockView(Entity):
 
     def __init__(self):
         super().__init__(name="block_view_controller")
-        c_block = color.hex(Palette.BLOCK_CORE.hex_code)
 
         # Permanent Pivot Entity: all rolling transformations occur on this pivot
-        self.pivot = Entity(name="block_pivot")
+        self.pivot = Entity(parent=self, name="block_pivot")
 
         # The Visual Mesh is permanently parented to the pivot (zero reparenting, zero flick)
         self.mesh = Entity(
             parent=self.pivot,
             name="block_mesh",
             model='cube',
-            color=c_block,
+            color=color.hex(Palette.BLOCK_CORE.hex_code),
         )
 
         # Dual 1x1x1 split cubes for teleport mechanics
         c_active = color.hex(Palette.BLOCK_CORE.hex_code)
-        c_passive = color.rgba(0.55, 0.60, 0.68, 0.85)
+        c_passive = color.hex("#B88F12")
         u1 = CONFIG.block.unit_scale_1
 
         self.split_mesh_1 = Entity(
+            parent=self,
             name="split_cube_1",
             model='cube',
             color=c_active,
@@ -45,6 +45,7 @@ class BlockView(Entity):
             visible=False,
         )
         self.split_mesh_2 = Entity(
+            parent=self,
             name="split_cube_2",
             model='cube',
             color=c_passive,
@@ -143,7 +144,7 @@ class BlockView(Entity):
             self.split_mesh_2.rotation = Vec3(0, 0, 0)
 
             c_active = color.hex(Palette.BLOCK_CORE.hex_code)
-            c_passive = color.rgba(0.55, 0.60, 0.68, 0.80)
+            c_passive = color.hex("#B88F12")
 
             if getattr(state, "active_index", 0) == 0:
                 self.split_mesh_1.color = c_active
@@ -269,7 +270,7 @@ class BlockView(Entity):
         self.split_mesh_2.rotation = Vec3(0, 0, 0)
 
         c_active = color.hex(Palette.BLOCK_CORE.hex_code)
-        c_passive = color.rgba(0.55, 0.60, 0.68, 0.85)
+        c_passive = color.hex("#B88F12")
         if getattr(split_state, "active_index", 0) == 0:
             self.split_mesh_1.color = c_active
             self.split_mesh_2.color = c_passive
@@ -614,7 +615,7 @@ class BlockView(Entity):
                         self._seesaw_phase = 2
                         world_pos = self.mesh.world_position
                         world_rot = self.mesh.world_rotation
-                        self.pivot.position = world_pos
+                        self.pivot.position = world_pos - self.world_position
                         self.pivot.rotation = world_rot
                         self.mesh.position = Vec3(0, 0, 0)
                         self.mesh.rotation = Vec3(0, 0, 0)

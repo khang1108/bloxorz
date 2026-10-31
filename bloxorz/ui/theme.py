@@ -51,8 +51,8 @@ class ColorToken:
 class Palette:
     """Unified Neo-Minimalist Bloxpath Palette."""
     # Background & Atmosphere (Deep Abyssal Void with depth fog)
-    BACKGROUND = ColorToken.from_hex("#0E1117")
-    BACKGROUND_SECONDARY = ColorToken.from_hex("#141820")
+    BACKGROUND = ColorToken.from_hex("#05070D")
+    BACKGROUND_SECONDARY = ColorToken.from_hex("#12161F")
 
     # Bloxpath Background Matrix Sea (Undulating column ocean)
     SEA_COLUMN_BODY = ColorToken.from_hex("#222630")
@@ -60,10 +60,10 @@ class Palette:
     SEA_COLUMN_CAP = ColorToken.from_hex("#262C38")
 
     # Board Tiles (Architectural Monoliths - Original Obsidian Slate)
-    TILE_NORMAL = ColorToken.from_hex("#262F3D")         # Top slate surface
+    TILE_NORMAL = ColorToken.from_hex("#080D18")         # Top slate surface
     TILE_PEDESTAL = ColorToken.from_hex("#131720")       # Deep under-slab reaching into abyss
-    TILE_INSET = ColorToken.from_hex("#1A202A")          # Inner architectural recessed plate
-    TILE_BORDER = ColorToken.from_hex("#3B4759")
+    TILE_INSET = ColorToken.from_hex("#0C1422")          # Inner architectural recessed plate
+    TILE_BORDER = ColorToken.from_hex("#168BFF")
     UNDER_RIM = ColorToken.from_hex("#1E293B")
 
     # Bloxpath Alabaster Theme Tokens (Steam release alternative)
@@ -80,14 +80,17 @@ class Palette:
     BLOCK_SHADOW = ColorToken.from_hex("#040508", 0.5)
 
     # Interactive / Special Tiles (Distinctive Visual Cues)
-    TILE_FRAGILE = ColorToken.from_hex("#E06D28")        # Vivid Terracotta
-    TILE_FRAGILE_INSET = ColorToken.from_hex("#9A3412")  # Warning inner core
+    TILE_FRAGILE = ColorToken.from_hex("#FF9A1F")        # Amber-orange fragile surface
+    TILE_FRAGILE_INSET = ColorToken.from_hex("#FFD166")  # Fissure highlight
+    TILE_TELEPORT = ColorToken.from_hex("#A855F7")        # Purple splitter tile
     TILE_GOAL = ColorToken.from_hex("#040507")           # Absolute Void Hole
     GOAL_RIM = ColorToken.from_hex("#F59E0B")            # Radiant Gold Rim
     GOAL_GLOW = ColorToken.from_hex("#D97706")
-    SWITCH_SOFT = ColorToken.from_hex("#38BDF8")         # Electric Cyan (Soft Touch)
+    GOAL_BEAM = ColorToken.from_hex("#FFD21F")
+    BRIDGE_ACTIVE = ColorToken.from_hex("#FFD21F")       # Gold active bridge
+    BRIDGE_BORDER = ColorToken.from_hex("#FF3434")       # Red neon bridge outline
+    SWITCH_SOFT = ColorToken.from_hex("#168BFF")         # Electric blue (Soft Touch)
     SWITCH_HEAVY = ColorToken.from_hex("#EF4444")        # Vivid Crimson (Heavy 'X' Cross)
-    BRIDGE_ACTIVE = ColorToken.from_hex("#334155")       # Structural Slate Bridge
     BRIDGE_INACTIVE = ColorToken.from_hex("#0F131A", 0.2)
 
     # Typography & HUD

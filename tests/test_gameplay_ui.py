@@ -123,6 +123,19 @@ def test_real_moves_undo_and_restart_keep_minimap_on_the_game_state(game_app, mo
     assert tuple(app.minimap.block_markers[0].position) == spawn_position
 
 
+def test_completed_roll_flashes_the_landing_cell(game_app, monkeypatch):
+    app = game_app
+    app.handle_move(Direction.RIGHT)
+    monkeypatch.setattr(ursina_time, 'dt', .3, raising=False)
+    app.block_view.update()
+
+    flashes = [
+        entity for entity in app.board_view.root.children
+        if entity.name == 'tile_landing_flash'
+    ]
+    assert { (round(flash.x), round(-flash.z)) for flash in flashes } == app.game.block.occupied_cells
+
+
 def test_undo_between_solver_steps_cancels_the_remaining_playback(game_app, monkeypatch):
     app = game_app
     monkeypatch.setattr(ursina_time, 'dt', .3, raising=False)

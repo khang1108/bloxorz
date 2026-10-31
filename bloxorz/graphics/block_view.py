@@ -86,7 +86,7 @@ class BlockView(Entity):
         c_block = self._get_block_color()
 
         # Permanent Pivot Entity: all rolling transformations occur on this pivot
-        self.pivot = Entity(name="block_pivot")
+        self.pivot = Entity(parent=self, name="block_pivot")
 
         # The Visual Mesh is permanently parented to the pivot (zero reparenting, zero flick).
         # Constructed with dual modular 1x1x1 subcubes to ensure distortion-free 1:1 UV mapping
@@ -117,6 +117,7 @@ class BlockView(Entity):
 
         # Dual 1x1x1 split cubes for teleport mechanics
         self.split_mesh_1 = Entity(
+            parent=self,
             name="split_cube_1",
             model='cube',
             texture=_BLOCK_TEX,
@@ -125,6 +126,7 @@ class BlockView(Entity):
             visible=False,
         )
         self.split_mesh_2 = Entity(
+            parent=self,
             name="split_cube_2",
             model='cube',
             texture=_BLOCK_TEX,
@@ -271,6 +273,11 @@ class BlockView(Entity):
             unlit=True,
             visible=False,
         )
+
+        # Keep teleport effects in the same board-local frame as the block.
+        for name, entity in vars(self).items():
+            if name.startswith("_teleport_") and isinstance(entity, Entity):
+                entity.parent = self
 
     @staticmethod
     def _build_cross_beam(name: str, token: ColorToken) -> Entity:
@@ -1306,7 +1313,7 @@ class BlockView(Entity):
                         self._seesaw_phase = 2
                         world_pos = self.mesh.world_position
                         world_rot = self.mesh.world_rotation
-                        self.pivot.position = world_pos
+                        self.pivot.position = world_pos - self.world_position
                         self.pivot.rotation = world_rot
                         self.mesh.position = Vec3(0, 0, 0)
                         self.mesh.rotation = Vec3(0, 0, 0)

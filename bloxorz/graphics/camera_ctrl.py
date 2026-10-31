@@ -1,6 +1,6 @@
 import math
 import random
-from typing import Optional
+from typing import Optional, Tuple
 from ursina import Entity, camera, Vec3, mouse, time as u_time
 
 from bloxorz.config import CONFIG
@@ -92,6 +92,7 @@ class CameraController(Entity):
         max_y: int,
         animate: bool = True,
         preserve_rotation: bool = False,
+        center_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0),
     ):
         """Calculates optimal camera position to frame the board symmetrically."""
         self._is_victory_zooming = False
@@ -110,7 +111,12 @@ class CameraController(Entity):
         self.min_zoom_distance = self.base_distance * cfg.min_distance_factor
         self.max_zoom_distance = self.base_distance * cfg.max_distance_factor
 
-        self.default_center = Vec3(center_x, 0.0, center_z)
+        self._board_world_offset = Vec3(*center_offset)
+        self.default_center = Vec3(
+            center_x + self._board_world_offset.x,
+            self._board_world_offset.y,
+            center_z + self._board_world_offset.z,
+        )
         self.target_center = Vec3(self.default_center)
         self.target_distance = self.base_distance
 
@@ -170,7 +176,11 @@ class CameraController(Entity):
     def animate_victory_focus(self, goal_x: int, goal_y: int, duration: float = 4.5):
         """Gently drifts, tilts, and smoothly zooms camera deep into the goal hole upon victory."""
         tile_size = getattr(getattr(CONFIG, "board", None), "tile_size", 0.86)
-        goal_pos = Vec3(goal_x * tile_size, -0.2, -goal_y * tile_size)
+        goal_pos = Vec3(
+            goal_x * tile_size + self._board_world_offset.x,
+            self._board_world_offset.y - 0.2,
+            -goal_y * tile_size + self._board_world_offset.z,
+        )
 
         self._is_victory_zooming = True
         self._victory_zoom_time = 0.0

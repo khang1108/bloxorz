@@ -25,6 +25,7 @@ from bloxorz.ui.minimap import MiniMap
 from bloxorz.ui.gameplay_dock import GameplayDock
 from bloxorz.solvers import get_solver
 from bloxorz.graphics.camera_ctrl import CameraController
+from bloxorz.graphics.cyber_grid_background import CyberGridBackground
 from bloxorz.graphics.board_view import BoardView
 from bloxorz.graphics.block_view import BlockView
 from bloxorz.audio.sound_manager import SoundManager
@@ -33,6 +34,8 @@ from bloxorz.config import CONFIG
 
 class BloxorzApp:
     """Master application coordinator managing graphics, input, audio, and state."""
+
+    BOARD_WORLD_OFFSET = (10.0, 60, -45.0)
 
     def __init__(self):
         # Configure Ursina window from centralized config
@@ -54,8 +57,11 @@ class BloxorzApp:
         self.sound_mgr.load_audio_objects()
 
         self.camera_ctrl = CameraController()
+        self.background_view = CyberGridBackground()
         self.board_view = BoardView()
+        self.board_view.root.position = self.BOARD_WORLD_OFFSET
         self.block_view = BlockView()
+        self.block_view.position = self.BOARD_WORLD_OFFSET
         self.hud = HUD()
 
         # Solver & programmatic automation interface
@@ -132,6 +138,15 @@ class BloxorzApp:
             board.min_x, board.max_x, board.min_y, board.max_y,
             animate=animate_camera,
             preserve_rotation=True,
+            center_offset=self.BOARD_WORLD_OFFSET,
+        )
+        self.background_view.set_board_bounds(
+            board.min_x,
+            board.max_x,
+            board.min_y,
+            board.max_y,
+            self.camera_ctrl.max_zoom_distance,
+            board_height=self.BOARD_WORLD_OFFSET[1],
         )
 
         # Update HUD
@@ -227,6 +242,8 @@ class BloxorzApp:
 
         def on_roll_finished():
             self._sync_minimap()
+            if outcome in ("SAFE", "MERGED", "TELEPORT", "VICTORY", "FELL_FRAGILE"):
+                self.board_view.animate_landing(next_state.occupied_cells)
             if outcome in ("SAFE", "MERGED", "TELEPORT"):
                 self.hud.update_moves(self.game.move_count)
                 self.hud.set_split_mode(getattr(self.game.block, "is_split", False))

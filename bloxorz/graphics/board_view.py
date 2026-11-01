@@ -550,6 +550,7 @@ class BoardView(Entity):
         c_normal = color.hex(Palette.TILE_NORMAL.hex_code)
         c_pedestal = color.hex(Palette.TILE_PEDESTAL.hex_code)
         c_fragile = color.hex(Palette.TILE_FRAGILE.hex_code)
+        c_fragile_inset = color.hex(Palette.TILE_FRAGILE_INSET.hex_code)
         c_under_rim = color.hex(Palette.UNDER_RIM.hex_code)
         c_switch_soft = color.hex(Palette.SWITCH_SOFT.hex_code)
         c_switch_heavy = color.hex(Palette.SWITCH_HEAVY.hex_code)

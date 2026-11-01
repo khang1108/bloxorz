@@ -226,6 +226,7 @@ class BloxorzApp:
                         self.game.board.min_y, self.game.board.max_y,
                         animate=True,
                         preserve_rotation=False,
+                        center_offset=self.BOARD_WORLD_OFFSET,
                     )
                 elif hasattr(self.camera_ctrl, "reset_view"):
                     self.camera_ctrl.reset_view(animate=True)

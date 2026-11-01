@@ -356,7 +356,7 @@ class BlockView(Entity):
                 sin_a = math.sin(ang)
                 px = float(cx) + cos_a * rad
                 pz = -float(cy) + sin_a * rad
-                pos = Vec3(px, surf_y + 0.04, pz)
+                pos = self.world_position + Vec3(px, surf_y + 0.04, pz)
                 out_dir = Vec3(cos_a, 0.0, sin_a)
                 fx.spawn_ember_ash(
                     position=pos,
@@ -606,7 +606,7 @@ class BlockView(Entity):
 
         fx = FXManager.get_instance() if FXManager._instance else None
         if fx:
-            fx.spawn_particles(Vec3(x_src, surf_y_src + 0.2, -y_src), count=10, token=Palette.TELEPORT_ENERGY, speed=2.2, life=0.35)
+            fx.spawn_particles(self.world_position + Vec3(x_src, surf_y_src + 0.2, -y_src), count=10, token=Palette.TELEPORT_ENERGY, speed=2.2, life=0.35)
 
     def roll_animated(
         self,
@@ -712,7 +712,7 @@ class BlockView(Entity):
 
         # Spawn ghost echo trail at previous roll orientation
         fx = FXManager.get_instance()
-        fx.spawn_ghost(self.pivot.position, self.pivot.rotation, self._compute_scale(dim_prev))
+        fx.spawn_ghost(self.pivot.world_position, self.pivot.world_rotation, self._compute_scale(dim_prev))
 
         # Compute exact contact edge pivot on the undulating ground
         if direction == Direction.RIGHT:
@@ -915,7 +915,7 @@ class BlockView(Entity):
 
         # Spawn celebratory confetti burst
         fx = FXManager.get_instance()
-        fx.spawn_confetti(self.pivot.position, count=getattr(CONFIG.animation, "victory_confetti_count", 40))
+        fx.spawn_confetti(self.pivot.world_position, count=getattr(CONFIG.animation, "victory_confetti_count", 40))
 
         # Camera juice shake
         cam = CameraController.get_instance()
@@ -954,7 +954,7 @@ class BlockView(Entity):
                     # Seamless tumble transition: freeze current 90-degree world position/rotation
                     world_pos = self.mesh.world_position
                     world_rot = self.mesh.world_rotation
-                    self.pivot.position = world_pos
+                    self.pivot.position = world_pos - self.world_position
                     self.pivot.rotation = world_rot
                     self.mesh.position = Vec3(0, 0, 0)
                     self.mesh.rotation = Vec3(0, 0, 0)
@@ -1176,8 +1176,8 @@ class BlockView(Entity):
                     if not getattr(self, "_teleport_has_landed", False):
                         self._teleport_has_landed = True
                         if fx:
-                            fx.spawn_ember_ash(Vec3(x_dst1, surf_y_dst1 + 0.05, -y_dst1), count=8)
-                            fx.spawn_ember_ash(Vec3(x_dst2, surf_y_dst2 + 0.05, -y_dst2), count=8)
+                            fx.spawn_ember_ash(self.world_position + Vec3(x_dst1, surf_y_dst1 + 0.05, -y_dst1), count=8)
+                            fx.spawn_ember_ash(self.world_position + Vec3(x_dst2, surf_y_dst2 + 0.05, -y_dst2), count=8)
                         if cam:
                             cam.shake_camera(intensity=0.07, duration=0.10)
 

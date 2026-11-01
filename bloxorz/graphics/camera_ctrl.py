@@ -45,6 +45,7 @@ class CameraController(Entity):
         self.default_center: Vec3 = Vec3(0, 0, 0)
         self.current_center: Vec3 = Vec3(0, 0, 0)
         self.target_center: Vec3 = Vec3(0, 0, 0)
+        self._board_world_offset: Vec3 = Vec3(0, 0, 0)
 
         # Config sensitivity & limits
         self.orbit_speed_x: float = cfg.orbit_speed_x
@@ -94,7 +95,7 @@ class CameraController(Entity):
         max_y: int,
         animate: bool = True,
         preserve_rotation: bool = False,
-        center_offset: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        center_offset: Optional[Tuple[float, float, float]] = None,
     ):
         """Calculates optimal camera position to frame the board symmetrically."""
         self._is_victory_zooming = False
@@ -113,7 +114,11 @@ class CameraController(Entity):
         self.min_zoom_distance = self.base_distance * cfg.min_distance_factor
         self.max_zoom_distance = self.base_distance * cfg.max_distance_factor
 
-        self._board_world_offset = Vec3(*center_offset)
+        if center_offset is not None:
+            self._board_world_offset = Vec3(*center_offset)
+        elif not hasattr(self, "_board_world_offset"):
+            self._board_world_offset = Vec3(0, 0, 0)
+
         self.default_center = Vec3(
             center_x + self._board_world_offset.x,
             self._board_world_offset.y,
@@ -177,11 +182,10 @@ class CameraController(Entity):
 
     def animate_victory_focus(self, goal_x: int, goal_y: int, duration: float = 4.5):
         """Gently drifts, tilts, and smoothly zooms camera deep into the goal hole upon victory."""
-        tile_size = getattr(getattr(CONFIG, "board", None), "tile_size", 0.86)
         goal_pos = Vec3(
-            goal_x * tile_size + self._board_world_offset.x,
+            float(goal_x) + self._board_world_offset.x,
             self._board_world_offset.y - 0.2,
-            -goal_y * tile_size + self._board_world_offset.z,
+            -float(goal_y) + self._board_world_offset.z,
         )
 
         self._is_victory_zooming = True

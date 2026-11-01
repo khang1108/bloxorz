@@ -848,7 +848,7 @@ class BoardView(Entity):
             mid_x = (min(xs) + max(xs)) / 2.0
             mid_z = -((min(ys) + max(ys)) / 2.0)
             fx = FXManager.get_instance()
-            fx.setup_ambient_dust(center=Vec3(mid_x, 0.0, mid_z), bounds=max(len(xs), len(ys)) * 0.9)
+            fx.setup_ambient_dust(center=self.world_position + Vec3(mid_x, 0.0, mid_z), bounds=max(len(xs), len(ys)) * 0.9)
 
     # -------------------------------------------------------------------------
     # Surface Elevation & Highlight Methods
@@ -922,7 +922,7 @@ class BoardView(Entity):
 
         # Phase 1: Micro-vibration (0.12s)
         fx = FXManager.get_instance()
-        fx.spawn_crumble_debris(tile_root.position, count=14)
+        fx.spawn_crumble_debris(tile_root.world_position, count=14)
 
         def start_fall():
             # Phase 2 & 3: Collapse into abyss

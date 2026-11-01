@@ -20,6 +20,13 @@ CONFIG.window.height = 1080
 CONFIG.window.fullscreen = False
 
 app = Ursina()
+window.fps_counter.enabled = False
+window.exit_button.visible = False
+if hasattr(window, "entity_counter"):
+    window.entity_counter.enabled = False
+if hasattr(window, "collider_counter"):
+    window.collider_counter.enabled = False
+
 from direct.showbase.ShowBaseGlobal import base
 from bloxorz.main import BloxorzApp
 from bloxorz.core.block.split import SplitBlockState, SingleBlock
@@ -35,10 +42,12 @@ def step_frames(count: int = 15):
 
 # --- 1. Stage Select Menu ---
 print("[1/6] Capturing stage select menu...")
+bloxorz._set_gameplay_ui_visible(False)
 bloxorz.menu_mgr.show_stage_select_menu(current_stage=1, page=1)
 step_frames(20)
 base.screenshot(str(images_dir / "menu_stages.png"), defaultFilename=False)
 bloxorz.menu_mgr.close_all()
+bloxorz._set_gameplay_ui_visible(True)
 step_frames(10)
 
 # --- 2. 3D Gameplay & Tactical Minimap (Stage 01) ---
@@ -93,9 +102,17 @@ base.screenshot(str(images_dir / "gameplay_split.png"), defaultFilename=False)
 # --- 6. AI Solver Execution & Automation ---
 print("[6/6] Capturing AI Solver execution...")
 bloxorz.load_stage_by_index(1, animate_camera=False)
+# Execute moves so block is navigating the path
+bloxorz.game.roll(Direction.RIGHT)
+bloxorz.block_view.sync_to_state(bloxorz.game.block)
+bloxorz.game.roll(Direction.RIGHT)
+bloxorz.block_view.sync_to_state(bloxorz.game.block)
+bloxorz.solver_widget.current_algorithm = "A*"
+bloxorz.set_active_solver("A*")
 bloxorz.solver_widget.set_running_state(True)
-bloxorz.solver_widget.status_text.text = "A* SOLVING · OPTIMAL SEARCH"
-bloxorz.hud.update_moves(6)
+bloxorz.solver_widget.status_text.text = "A* EXECUTING · OPTIMAL PATH"
+bloxorz.hud.update_moves(2)
+bloxorz.hud.show_banner("SOLVER: 16 MOVES (OPTIMAL)", duration=None)
 bloxorz._sync_minimap()
 step_frames(25)
 base.screenshot(str(images_dir / "gameplay_solver.png"), defaultFilename=False)

@@ -5,20 +5,20 @@ Các bài toán tìm kiếm đường đi và lập kế hoạch chuyển độn
 lưới rời rạc đã thu hút sự chú ý sâu sắc của cộng đồng Trí tuệ
 Nhân tạo và Khoa học Máy tính lý thuyết trong nhiều thập kỷ
 \cite{russell2020aima, edelkamp2011heuristic}. Trong phần này,
-nhóm khảo cứu các nền tảng lý thuyết liên quan trực tiếp đến
-đồ án, bao gồm: lý thuyết độ phức tạp của bài toán lăn khối,
+nhóm khảo sát các nền tảng lý thuyết liên quan trực tiếp đến
+đồ án, bao gồm: lý thuyết độ phức tạp của bài toán di chuyển khối,
 các giải thuật tìm kiếm đồ thị kinh điển, lý thuyết thiết kế
 hàm đánh giá Heuristic, và các tiêu chuẩn đánh giá thực nghiệm.
 
-\subsection{Lý thuyết Độ phức tạp và Bài toán Lăn khối Đa diện}
+\subsection{Lý thuyết độ phức tạp}
 \label{subsec:related_complexity}
 Khác với các bài toán điều hướng chất điểm truyền thống trong mê cung,
-bài toán lăn các vật thể đa diện trên mặt phẳng lưới $2\text{D}$ đặt
+bài toán di chuyển các vật thể đa diện trên mặt phẳng lưới $2\text{D}$ đặt
 ra những ràng buộc chuyển động đặc biệt về hình học và cấu hình không gian.
 
 Buchin và các cộng sự (2007) \cite{buchin2007rolling} đã tiến hành
-nghiên cứu sâu sắc về tính chất không gian trạng thái của bài toán lăn
-khối lập phương trên lưới ô vuông. Các tác giả chỉ ra rằng khi các mặt
+nghiên cứu về tính chất không gian trạng thái của bài toán di chuyển
+khối lập phương trên một lưới ô vuông. Các tác giả chỉ ra rằng khi các mặt
 của khối lập phương được gán nhãn hoặc chịu điều kiện tiếp xúc, đồ thị
 trạng thái chuyển tiếp có cấu trúc chu trình phức tạp, đòi hỏi số bước
 di chuyển lớn hơn đáng kể so với khoảng cách hình học thông thường.
@@ -32,9 +32,9 @@ $1 \times 1 \times 2$ (có ba tư thế định hướng khác nhau) và các c�
 chế sàn tương tác (công tắc, cầu lật, gạch mong manh, phân thân) làm
 gia tăng đột biến độ phức tạp bài toán. Nghiên cứu mang tính bước ngoặt
 của van der Zanden và Bodlaender (2014) \cite{vanderzanden2014bloxorz}
-đã chứng minh một cách tường minh rằng: bài toán xác định tính đến
-được của Bloxorz tổng quát là \textbf{PSPACE-complete}. Để thiết lập
-chứng minh này, các tác giả đã quy giảm từ bài toán thỏa mãn biểu thức
+đã chứng minh rằng: bài toán xác định đường đi của Bloxorz
+tổng quát là \textbf{PSPACE-complete}. Để thiết lập chứng minh này,
+các tác giả đã quy giảm từ bài toán thỏa mãn biểu thức
 logic định lượng luân phiên (QBF) thông qua việc xây dựng các cổng
 logic cơ học (AND, OR, NOT) bằng chính hệ thống công tắc và cầu nối trong
 Bloxorz. Kết quả này khẳng định rằng không tồn tại bất kỳ giải thuật
@@ -42,48 +42,74 @@ thời gian đa thức nào có thể giải quyết trọn vẹn mọi bản đ
 (trừ khi $\text{P} = \text{PSPACE}$), do đó việc áp dụng các giải thuật
 tìm kiếm thông minh và hàm Heuristic cắt tỉa không gian là hoàn toàn tất yếu.
 
-\subsection{Các Giải thuật Tìm kiếm Không Gian Trạng thái Kinh điển}
+\subsection{Các công trình liên quan}
+\label{subsec:related_work}
 \label{subsec:related_search}
-Để giải quyết bài toán không gian trạng thái được mô hình hóa dưới dạng
-đồ thị có hướng hữu hạn $G = (V, E)$, các giải thuật tìm kiếm không
-thông tin cung cấp nền tảng chuẩn mực:
 
-\begin{itemize}[--]
-    \item \textbf{Tìm kiếm theo Chiều rộng (BFS):}
-    Được công bố lần đầu bởi Moore (1959) \cite{moore1959bfs} trong bài
-    toán tìm đường thoát mê cung ngắn nhất. BFS duyệt không gian theo từng
-    lớp độ sâu thông qua hàng đợi FIFO. Trong đồ thị có trọng số cạnh
-    đồng nhất (mỗi bước lật khối tính là 1 bước di chuyển), BFS bảo đảm
-    tính đầy đủ và tính tối ưu về số bước đi. Tuy nhiên, nhược điểm chí
-    mạng của BFS là độ phức tạp không gian $O(b^d)$, trong đó $b$ là hệ
-    số nhánh và $d$ là độ sâu lời giải ngắn nhất, khiến giải thuật dễ cạn
-    kiệt bộ nhớ RAM đối với các bản đồ phức tạp \cite{russell2020aima}.
+Các bài toán giải đố tổ hợp trên lưới rời rạc luôn là môi trường
+lý tưởng để phát triển và kiểm chứng các giải thuật tìm kiếm trong
+không gian trạng thái \cite{russell2020aima, edelkamp2011heuristic}.
+Đối với các trò chơi có độ phức tạp cao như Sokoban hay câu đố di chuyển
+khối hình học, không gian trạng thái bùng nổ theo cấp số mũ do các
+cơ chế tương tác gián tiếp. Junghanns và Schaeffer (2001)
+\cite{junghanns2001sokoban} trên hệ thống \textit{Rolling Stone}
+đã chỉ ra rằng các bài toán thuộc lớp $\text{PSPACE-complete}$ đòi
+hỏi các kỹ thuật suy luận miền tri thức và biểu diễn trạng thái tinh
+gọn để tránh bế tắc. Culberson và Schaeffer (1998) \cite{culberson1998pdb}
+tiên phong đề xuất kỹ thuật Cơ sở Dữ liệu Mẫu (Pattern Databases hay PDB),
+lưu trữ trước chi phí tối ưu của các không gian con trừu tượng để
+tạo hàm Heuristic có tính chấp nhận được. Về phương diện di chuyển khối,
+Buchin và cộng sự (2007) \cite{buchin2007rolling} cùng Hearn và
+Demaine (2009) \cite{hearn2009games} khẳng định rằng các ràng buộc về
+mặt tiếp xúc và hướng quay của khối tạo nên cấu trúc đồ thị chuyển
+tiếp phức tạp, nơi một tọa độ mặt sàn có thể tương ứng với nhiều cấu
+hình trạng thái khác nhau. Đặc biệt, van der Zanden và Bodlaender (2014)
+\cite{vanderzanden2014bloxorz} đã chứng minh bài toán tìm đường đi
+trong Bloxorz tổng quát là $\text{PSPACE-complete}$ thông qua quy giảm
+từ bài toán QBF.
 
-    \item \textbf{Tìm kiếm theo Chiều sâu (DFS):}
-    Được hình thức hóa bởi Tarjan (1972) \cite{tarjan1972dfs} trong ngữ
-    cảnh xử lý đồ thị tuyến tính. DFS khai thác tối đa một nhánh tìm kiếm
-    thông qua cấu trúc ngăn xếp LIFO. Trong các bài toán có không gian
-    trạng thái chứa chu trình vô hạn (như việc lăn khối qua lại giữa hai
-    ô liền kề), DFS thuần túy sẽ rơi vào vòng lặp vô tận. Do đó, việc
-    kết hợp một tập hợp ghi nhận các trạng thái đã duyệt (\texttt{visited})
-    là yêu cầu bắt buộc để đảm bảo tính hữu hạn và dừng của giải thuật
-    \cite{edelkamp2011heuristic}. Mặc dù tiết kiệm bộ nhớ trong các nhánh
-    nông, DFS không bảo đảm tính tối ưu và có xu hướng sinh ra chuỗi hành
-    động dài bất thường. Korf (1985) \cite{korf1985ids} đã đề xuất giải
-    thuật Tìm kiếm Sâu dần (IDS) để kết hợp ưu thế bộ nhớ tuyến tính của
-    DFS với tính tối ưu độ sâu của BFS.
+Để duyệt đồ thị trạng thái $G = (V, E)$, các giải thuật tìm kiếm kinh
+điển đóng vai trò nền tảng. Moore (1959) \cite{moore1959bfs} đặt nền
+móng với Tìm kiếm theo Chiều rộng (BFS), bảo đảm tính đầy đủ và tối ưu
+số bước đi trong đồ thị trọng số đồng nhất, song bị hạn chế bởi độ
+phức tạp không gian $O(b^d)$ khiến bộ nhớ nhanh chóng cạn kiệt ở các màn
+chơi sâu \cite{russell2020aima}. Trái lại, Tarjan (1972) \cite{tarjan1972dfs}
+hình thức hóa Tìm kiếm theo Chiều sâu (DFS) với ưu thế bộ nhớ tuyến tính
+$O(bm)$, nhưng trong môi trường chuyển động khả nghịch như Bloxorz, DFS
+bắt buộc phải sử dụng tập đóng (\textit{visited set}) để tránh lặp vô hạn
+và không bảo đảm tính tối ưu \cite{edelkamp2011heuristic, korf1985ids}.
+Khi bài toán mở rộng với chi phí bước đi không đồng nhất, giải thuật
+đường đi ngắn nhất của Dijkstra (1959) \cite{dijkstra1959graph} -- tổng
+quát hóa thành Tìm kiếm Chi phí Đồng nhất (UCS) -- bảo đảm tối ưu toàn cục
+nhờ mở rộng trạng thái theo chi phí tích lũy $g(n)$, cho phép định hướng
+tác tử né tránh các vùng gạch cam nguy hiểm.
 
-    \item \textbf{Tìm kiếm Chi phí Đồng nhất (UCS):}
-    Là một biến thể tương đương với giải thuật đường đi ngắn nhất của
-    Dijkstra (1959) \cite{dijkstra1959graph}. Thay vì mở rộng nút theo
-    thứ tự độ sâu, UCS sử dụng hàng đợi ưu tiên để luôn mở rộng trạng thái
-    có tổng chi phí tích lũy $g(n)$ nhỏ nhất. UCS đạt tính tối ưu toàn cục
-    ngay cả khi chi phí di chuyển giữa các ô không bằng nhau. Trong đồ án
-    này, UCS đóng vai trò then chốt khi gán trọng số phạt cho các ô gạch
-    cam nguy hiểm nhằm mô phỏng tác tử né tránh rủi ro nứt vỡ sàn.
-\end{itemize}
+Nhằm khắc phục sự bùng nổ tổ hợp của tìm kiếm mù, Hart, Nilsson và
+Raphael (1968) \cite{hart1968astar} giới thiệu giải thuật A* kết hợp
+chi phí thực tế $g(n)$ với hàm Heuristic $h(n)$. Dechter và Pearl (1985)
+\cite{dechter1985astar} cùng Pearl (1984) \cite{pearl1984heuristics}
+chứng minh rằng khi $h(n)$ chấp nhận được ($h(n) \le h^*(n)$) và nhất
+quán, A* đạt tính tối ưu toàn cục và hiệu quả tối ưu về số nút mở rộng.
+Về phương diện đánh giá thực nghiệm, Sturtevant (2012)
+\cite{sturtevant2012benchmarks} đã chuẩn hóa phương pháp luận đánh giá
+tìm kiếm trên lưới, nhấn mạnh việc tách biệt thời gian giải thuật khỏi
+thời gian hiển thị đồ họa và đo lường số nút mở rộng độc lập với phần cứng.
 
-\subsection{Tìm kiếm Heuristic và Tính Chất Chấp Nhận Được}
+Mặc dù nền tảng lý thuyết đã hoàn thiện, các nghiên cứu trước đây như
+van der Zanden và Bodlaender (2014) \cite{vanderzanden2014bloxorz} chỉ
+dừng ở chứng minh độ phức tạp trừu tượng mà chưa xây dựng bộ giải thực
+tế hoàn chỉnh; trong khi các mã nguồn cộng đồng thường bỏ qua cơ chế
+tương tác sàn cam, mạng lưới cầu động và cơ chế phân thân -- hợp nhất,
+đồng thời sao chép mảng đường đi gây tốn bộ nhớ $O(d)$. Đồ án này
+làm ra để có thể trình bày các đóng góp sau: (1) Mô hình hóa không
+gian trạng thái 3D với đầy đủ 3 tư thế và cơ chế phân thân; (2) Hiện
+thực bộ 4 giải thuật trên cấu trúc nút bất biến \texttt{SearchNode} với
+liên kết ngược $O(1)$; (3) Thiết kế và chứng minh toán học tính chấp
+nhận được của hàm Heuristic Manhattan nới lỏng; và (4) Thiết lập quy
+trình benchmark định lượng chuẩn hóa theo Sturtevant (2012) kết hợp mô
+phỏng đồ họa 3D trực quan.
+
+\subsection{Tìm kiếm Heuristic}
 \label{subsec:related_heuristics}
 Nhằm khắc phục sự bùng nổ tổ hợp của các phương pháp duyệt mù, giải thuật
 A* được giới thiệu bởi Hart, Nilsson và Raphael (1968) \cite{hart1968astar}
@@ -132,12 +158,12 @@ tối ưu của A*:
 Để thiết kế hàm Heuristic thỏa mãn tính chấp nhận được cho Bloxorz, kỹ thuật
 thư giãn bài toán \cite{pearl1984heuristics} thường được áp dụng: bỏ qua các
 chướng ngại vật rơi tự do, bỏ qua sự nứt vỡ của gạch cam và giả định khối
-có thể lướt hoặc lăn tự do trên mặt phẳng lưới. Trong đồ án này, nhóm
+có thể lướt hoặc di chuyển tự do trên mặt phẳng lưới. Trong đồ án này, nhóm
 xây dựng hàm Heuristic dựa trên khoảng cách Manhattan chia đôi (vì mỗi bước
 lật khối có thể di chuyển trọng tâm $2$ đơn vị) kết hợp phạt sai lệch tư thế
 không gian.
 
-\subsection{Phương Pháp Thực Nghiệm và Đánh Giá Hiệu Năng}
+\subsection{Phương pháp thực nghiệm}
 \label{subsec:related_benchmarks}
 Nhằm đảm bảo tính khách quan và khoa học trong việc so sánh các giải
 thuật tìm kiếm, Sturtevant (2012) \cite{sturtevant2012benchmarks} đã đề

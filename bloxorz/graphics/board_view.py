@@ -813,6 +813,7 @@ class BoardView(Entity):
                     position=(0.0, open_y if group.is_open else closed_y, 0.0),
                     visible=group.is_open,
                     name=f"bridge_col_{bx}_{by}",
+                    color=c_bridge,
                 )
                 self.bridge_entities[(bx, by)] = bridge_col
 
@@ -823,13 +824,14 @@ class BoardView(Entity):
                     texture=_TILE_TEX,
                     position=(0.0, -tile_h / 2.0, 0.0),
                     scale=(tile_w, tile_h, tile_w),
-                    color=c_normal,
+                    color=c_bridge,
                 )
                 self._add_top_surface(
                     0.0, 0.0, 0.002, tile_size,
-                    ("#684D00", "#B88A08", "#7D5E04", "#D8A810"),
+                    ("#FFE57F", "#FFD21F", "#F59E0B", "#FBBF24"),
                     Palette.BRIDGE_BORDER.hex_code,
-                    parent=top_slab,
+                    border_width_factor=0.065,
+                    parent=bridge_col,
                 )
                 self.tile_entities[(bx, by)] = top_slab
 

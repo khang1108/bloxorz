@@ -1,0 +1,51 @@
+stage,variant_id,variant_name,is_admissible,execution_time_ms,peak_memory_kib,expanded_nodes,solution_length,optimal_length,optimality_gap,is_optimal
+stage_04,H0,Null Heuristic (UCS),True,31.19,181.08,69,28,28,0,True
+stage_04,H1,Unrelaxed Manhattan (Non-admissible),False,31.19,209.96,67,28,28,0,True
+stage_04,H2,Relaxed Manhattan Only,True,32.94,194.71,69,28,28,0,True
+stage_04,H3,Relaxed + Orientation Penalty,True,34.9,194.71,68,28,28,0,True
+stage_04,H4,Full Proposed Heuristic,True,30.81,194.71,68,28,28,0,True
+stage_12,H0,Null Heuristic (UCS),True,225.27,868.28,324,65,65,0,True
+stage_12,H1,Unrelaxed Manhattan (Non-admissible),False,143.64,791.43,285,65,65,0,True
+stage_12,H2,Relaxed Manhattan Only,True,145.73,728.16,290,65,65,0,True
+stage_12,H3,Relaxed + Orientation Penalty,True,213.53,739.91,287,65,65,0,True
+stage_12,H4,Full Proposed Heuristic,True,169.17,739.91,287,65,65,0,True
+stage_14,H0,Null Heuristic (UCS),True,251.72,1076.34,460,67,67,0,True
+stage_14,H1,Unrelaxed Manhattan (Non-admissible),False,289.47,897.98,459,67,67,0,True
+stage_14,H2,Relaxed Manhattan Only,True,267.04,1057.86,460,67,67,0,True
+stage_14,H3,Relaxed + Orientation Penalty,True,233.08,1057.86,459,67,67,0,True
+stage_14,H4,Full Proposed Heuristic,True,229.45,1057.86,459,67,67,0,True
+stage_15,H0,Null Heuristic (UCS),True,4763.37,16749.05,4636,57,57,0,True
+stage_15,H1,Unrelaxed Manhattan (Non-admissible),False,6056.8,17272.02,4556,57,57,0,True
+stage_15,H2,Relaxed Manhattan Only,True,4681.27,11854.66,3869,57,57,0,True
+stage_15,H3,Relaxed + Orientation Penalty,True,5549.52,11871.64,3869,57,57,0,True
+stage_15,H4,Full Proposed Heuristic,True,2948.64,8494.55,2385,57,57,0,True
+stage_18,H0,Null Heuristic (UCS),True,504.21,1516.61,598,85,85,0,True
+stage_18,H1,Unrelaxed Manhattan (Non-admissible),False,558.69,1838.98,627,85,85,0,True
+stage_18,H2,Relaxed Manhattan Only,True,511.39,1553.42,597,85,85,0,True
+stage_18,H3,Relaxed + Orientation Penalty,True,568.95,1553.42,597,85,85,0,True
+stage_18,H4,Full Proposed Heuristic,True,532.51,1553.42,597,85,85,0,True
+stage_29,H0,Null Heuristic (UCS),True,2782.65,4769.23,2299,104,104,0,True
+stage_29,H1,Unrelaxed Manhattan (Non-admissible),False,2685.97,6023.02,2285,104,104,0,True
+stage_29,H2,Relaxed Manhattan Only,True,2569.54,5350.16,2294,104,104,0,True
+stage_29,H3,Relaxed + Orientation Penalty,True,2805.2,5329.52,2293,104,104,0,True
+stage_29,H4,Full Proposed Heuristic,True,2309.66,5329.52,2293,104,104,0,True
+stage_32,H0,Null Heuristic (UCS),True,419.86,1658.25,630,129,129,0,True
+stage_32,H1,Unrelaxed Manhattan (Non-admissible),False,358.94,1604.1,594,129,129,0,True
+stage_32,H2,Relaxed Manhattan Only,True,422.75,1620.01,606,129,129,0,True
+stage_32,H3,Relaxed + Orientation Penalty,True,368.99,1620.01,605,129,129,0,True
+stage_32,H4,Full Proposed Heuristic,True,498.4,1620.01,605,129,129,0,True
+stage_36,H0,Null Heuristic (UCS),True,41.95,147.27,55,8,8,0,True
+stage_36,H1,Unrelaxed Manhattan (Non-admissible),False,16.07,98.2,17,8,8,0,True
+stage_36,H2,Relaxed Manhattan Only,True,17.07,106.75,23,8,8,0,True
+stage_36,H3,Relaxed + Orientation Penalty,True,14.75,106.75,23,8,8,0,True
+stage_36,H4,Full Proposed Heuristic,True,13.78,106.75,23,8,8,0,True
+stage_70,H0,Null Heuristic (UCS),True,180.67,533.66,244,26,26,0,True
+stage_70,H1,Unrelaxed Manhattan (Non-admissible),False,85.62,1029.79,115,26,26,0,True
+stage_70,H2,Relaxed Manhattan Only,True,149.3,824.2,233,26,26,0,True
+stage_70,H3,Relaxed + Orientation Penalty,True,148.48,804.84,232,26,26,0,True
+stage_70,H4,Full Proposed Heuristic,True,137.42,833.34,232,26,26,0,True
+stage_82,H0,Null Heuristic (UCS),True,12217.13,41102.73,9748,26,26,0,True
+stage_82,H1,Unrelaxed Manhattan (Non-admissible),False,6254.4,42699.53,5911,26,26,0,True
+stage_82,H2,Relaxed Manhattan Only,True,8677.09,39645.15,5902,26,26,0,True
+stage_82,H3,Relaxed + Orientation Penalty,True,7978.26,39354.67,5902,26,26,0,True
+stage_82,H4,Full Proposed Heuristic,True,1463.76,12274.37,1171,26,26,0,True

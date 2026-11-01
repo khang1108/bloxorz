@@ -31,7 +31,8 @@ _CYBER_TEX = Texture(str(_CYBER_TEX_PATH)) if _CYBER_TEX_PATH.exists() else None
 _TEX_PATH = Path(__file__).resolve().parent.parent / "assets" / "textures" / "tile_bevel.png"
 _TILE_TEX = Texture(str(_TEX_PATH)) if _TEX_PATH.exists() else None
 
-_BLOCK_TEX = _CYBER_TEX or _TILE_TEX
+# Clean beveled normal-mapped texture providing tactile 3D edges without muddy blackouts
+_BLOCK_TEX = _TILE_TEX
 
 
 def _evaluate_roll_curve(p: float) -> float:
@@ -39,17 +40,32 @@ def _evaluate_roll_curve(p: float) -> float:
     return p * p * (3.0 - 2.0 * p)
 
 
+class BlockMeshContainer(Entity):
+    """Container entity proxying .model for visual inspection & test compatibility."""
+
+    @property
+    def model(self):
+        m = super().model
+        if m is not None:
+            return m
+        if hasattr(self, "_subcube") and self._subcube:
+            return getattr(self._subcube, "model", None)
+        return None
+
+    @model.setter
+    def model(self, value):
+        Entity.model.fset(self, value)
 
 
 class BlockView(Entity):
     """Manages 3D block mesh with frame-perfect delta-time rotation and physical VFX juice."""
 
     def _get_block_color(self):
-        """Returns block color based on palette mode (Golden amber for Alabaster, Pure white for Cyber Titanium)."""
+        """Returns block color based on palette mode (Golden amber for Alabaster, Radiant Gold for Obsidian)."""
         mode = getattr(CONFIG.animation, "palette_mode", "obsidian").lower()
         if mode == "alabaster":
             return color.hex(Palette.BLOCK_GOLDEN.hex_code)
-        return color.white
+        return color.hex(Palette.BLOCK_CORE.hex_code)
 
     def _set_mesh_visible(self, vis: bool) -> None:
         """Sets visibility for parent mesh container and modular subcubes."""
@@ -91,9 +107,10 @@ class BlockView(Entity):
         # The Visual Mesh is permanently parented to the pivot (zero reparenting, zero flick).
         # Constructed with dual modular 1x1x1 subcubes to ensure distortion-free 1:1 UV mapping
         # on all faces and an authentic cyber division seam line.
-        self.mesh = Entity(
+        self.mesh = BlockMeshContainer(
             parent=self.pivot,
             name="block_mesh",
+            color=c_block,
         )
 
         sub_scale = Vec3(0.94, 0.94, 0.94)
@@ -113,6 +130,7 @@ class BlockView(Entity):
             color=c_block,
             scale=sub_scale,
         )
+        self.mesh._subcube = self.mesh_cube_1
         self._update_subcubes_layout((1, 1, 2))
 
         # Dual 1x1x1 split cubes for teleport mechanics
@@ -121,7 +139,7 @@ class BlockView(Entity):
             name="split_cube_1",
             model='cube',
             texture=_BLOCK_TEX,
-            color=color.white,
+            color=c_block,
             scale=sub_scale,
             visible=False,
         )
@@ -130,7 +148,7 @@ class BlockView(Entity):
             name="split_cube_2",
             model='cube',
             texture=_BLOCK_TEX,
-            color=color.rgba(0.48, 0.54, 0.62, 1.0),
+            color=color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code),
             scale=sub_scale,
             visible=False,
         )
@@ -419,10 +437,10 @@ class BlockView(Entity):
 
             if getattr(CONFIG.animation, "palette_mode", "obsidian").lower() == "alabaster":
                 c_active = color.hex(Palette.BLOCK_GOLDEN.hex_code)
-                c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
+                c_passive = color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code)
             else:
-                c_active = color.white
-                c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
+                c_active = color.hex(Palette.BLOCK_CORE.hex_code)
+                c_passive = color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code)
 
             if getattr(state, "active_index", 0) == 0:
                 self.split_mesh_1.color = c_active
@@ -566,10 +584,10 @@ class BlockView(Entity):
 
         if getattr(CONFIG.animation, "palette_mode", "obsidian").lower() == "alabaster":
             c_active = color.hex(Palette.BLOCK_GOLDEN.hex_code)
-            c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
+            c_passive = color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code)
         else:
-            c_active = color.white
-            c_passive = color.rgba(0.48, 0.54, 0.62, 1.0)
+            c_active = color.hex(Palette.BLOCK_CORE.hex_code)
+            c_passive = color.hex(Palette.BLOCK_SPLIT_PASSIVE.hex_code)
         if getattr(split_state, "active_index", 0) == 0:
             self.split_mesh_1.color = c_active
             self.split_mesh_2.color = c_passive

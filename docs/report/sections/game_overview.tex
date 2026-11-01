@@ -2,13 +2,14 @@
 \label{sec:game_overview}
 
 Để xây dựng các tác tử giải thuật có khả năng suy luận và giải quyết
-bài toán Bloxorz, bước tiên quyết là hình thức hóa luật chơi vật lý
-dưới góc nhìn của ngành Trí tuệ Nhân tạo. Chương này trình bày chi tiết
-khung phân loại môi trường PEAS, mô hình động học không gian của khối,
+bài toán Bloxorz, bước tiên quyết là triển khai được một môi trường không gian
+với đầy đủ các luật chơi và ràng buộc, cũng như là cung cấp cách thức để cho 
+các tác tử ấy có thể tương tác. Chương này trình bày chi tiết
+khung phân loại môi trường PEAS \cite{russell2020aima}, mô hình động học không gian của khối,
 các quy tắc tương tác địa hình phức tạp, và kiến trúc phần mềm phân tầng
 được thiết kế cho hệ thống mô phỏng.
 
-\subsection{Hình thức hóa Môi trường Tác tử theo Khung PEAS}
+\subsection{Triển khai Môi trường Tác tử theo Khung PEAS}
 \label{subsec:peas_framework}
 Theo lý thuyết của Russell và Norvig \cite{russell2020aima}, bài toán
 Bloxorz được đặc tả đầy đủ qua bộ tiêu chí PEAS được tổng hợp tại
@@ -95,13 +96,12 @@ mô phỏng Bloxorz trên nền tảng màn chơi khởi đầu (Stage 01).
 
 Giao diện quan sát trong Hình \ref{fig:gui_3d} thể hiện đầy đủ các thành
 phần cảm biến và tương tác của môi trường tác tử. Khối hộp chữ nhật
-kích thước $1 \times 1 \times 2$ được đặt tại ô xuất phát với tư thế đứng
-chuẩn mực. Ô đích màu xanh lục neon phát sáng thể hiện vị trí mục tiêu
-cần tiếp cận. Bảng hiển thị ở góc trên cung cấp thông tin màn chơi hiện tại
-và số bước lật đã thực hiện. Bản đồ thu nhỏ Tactical Minimap tại góc dưới
-bên phải chiếu toàn cảnh mặt bằng lưới hai chiều $\mathbb{Z}^2$, phản ánh
-trực tiếp nguyên lý quan sát toàn phần khi tác tử có thể nhận biết tức thời
-vị trí của bản thân và toàn bộ bố cục địa hình xung quanh. Ngoài ra, bảng
+kích thước $1 \times 1 \times 2$ được đặt tại ô xuất phát với tư thế đứng.
+Kế đó là ô đích màu vàng neon phát sáng thể hiện vị trí mục tiêu
+cần tiếp cận. Bên phải có một bảng hiển thị cung cấp thông tin màn chơi hiện tại
+và số bước lật đã thực hiện ngay dưới đó có một bản đồ thu nhỏ 
+Tactical Minimap dùng để chiếu toàn cảnh mặt bằng lưới hai chiều $\mathbb{Z}^2$, 
+cho ta thấy được một góc nhìn rõ nhất vê toàn bộ trò chơi. Ngoài ra, bảng
 điều khiển giải thuật Neon HUD tại góc trên bên phải cho phép người dùng
 chọn nhanh một trong bốn giải thuật (BFS, DFS, UCS, A*) để khởi động quá
 trình tìm kiếm và tự động hóa điều khiển.
@@ -209,8 +209,8 @@ trên màn chơi nâng cao (Stage 08).
 
 Như quan sát trong Hình \ref{fig:gameplay_split}, sau khi kích hoạt ô
 dịch chuyển, khối chính bị chia thành hai khối lập phương đơn lẻ nằm ở
-hai phân vùng bản đồ độc lập. Khối đang nhận quyền điều khiển tích cực
-được làm nổi bật với màu sắc viền sáng, trong khi khối thụ động mang sắc
+hai phân vùng bản đồ độc lập. Khối đang nhận quyền điều khiển hiện tại
+được làm nổi bật với màu sắc viền sáng, trong khi khối không có quyền sẽ mang sắc
 thái dịu hơn nhằm giúp người quan sát phân biệt rõ ràng. Tactical Minimap
 đồng thời cập nhật hai điểm định vị phân tách, cho phép theo dõi tương tác
 song song của cả hai thực thể trước khi điều hướng chúng hội tụ về các ô
@@ -246,9 +246,6 @@ Không gian Bloxorz bao gồm các ô gạch có đặc tính tương tác vật
     khối rơi xuyên qua sàn.
 \end{enumerate}
 
-Hình \ref{fig:gameplay_fragile} minh họa địa hình gạch cam mong manh
-trên màn chơi Stage 04.
-
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.88\textwidth]{images/gameplay_fragile.png}
@@ -264,8 +261,8 @@ thể lăn khối nằm ngang qua các ô màu cam này mà không gặp trở n
 nhiên, chỉ cần một thao tác dựng khối thẳng đứng trên bất kỳ ô cam nào,
 sàn sẽ lập tức nứt vỡ và khiến khối rơi vào trạng thái thất bại. Vì vậy,
 trong không gian trạng thái, các trạng thái đứng trên gạch cam bị loại bỏ
-như nhánh cụt chết người, hoặc được gán chi phí phạt rất cao trong hàm
-đánh giá chi phí của giải thuật UCS.
+như nhánh cụt, hoặc được gán chi phí phạt rất cao trong hàm
+đánh giá chi phí của giải thuật UCS hoặc A*.
 
 \begin{enumerate}[resume,leftmargin=*]
     \item \textbf{Công tắc Cơ học và Cầu lật Động:}
@@ -284,9 +281,6 @@ như nhánh cụt chết người, hoặc được gán chi phí phạt rất ca
     hành vi đảo trạng thái, luôn mở, hoặc luôn đóng.
 \end{enumerate}
 
-Hình \ref{fig:gameplay_bridge} thể hiện cấu trúc địa hình liên kết giữa
-hệ thống công tắc và các nhịp cầu lật trên Stage 02.
-
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.88\textwidth]{images/gameplay_bridge.png}
@@ -304,30 +298,41 @@ tạo nên tính chất tuần tự chặt chẽ trong quá trình giải quyế
 
 \subsection{Kiến trúc Phần mềm Phân tầng}
 \label{subsec:architecture}
-Để đảm bảo hiệu năng tìm kiếm tính bằng micro-giây trong khi vẫn duy trì
-trải nghiệm người dùng 3D mượt mà ở tần số $60\text{ FPS}$, đồ án áp dụng
-nguyên lý phân tách mối quan tâm theo kiến trúc phân tầng rõ ràng.
+Nhằm đảm bảo tính mô-đun hóa, khả năng kiểm thử độc lập và tách biệt hoàn toàn
+giữa quá trình xử lý không gian trạng thái với tầng hiển thị trực quan, hệ thống
+được thiết kế theo nguyên lý phân tách mối quan tâm (\textit{Separation of Concerns} -- SoC).
+Kiến trúc này cho phép các thuật toán tìm kiếm thao tác trực tiếp trên các cấu trúc
+dữ liệu trừu tượng với chi phí tối thiểu, không bị phụ thuộc vào vòng lặp kết xuất
+(\textit{rendering loop}) của giao diện đồ họa.
 
-Hệ thống được cấu trúc thành $3$ phân tầng độc lập:
+Hệ thống được tổ chức thành ba phân tầng chức năng chính:
 \begin{enumerate}[1.]
     \item \textbf{Tầng Lõi Logic Thuần túy (\texttt{bloxorz.core}):}
-    Được viết bằng Python nguyên bản, không phụ thuộc vào bất kỳ thư viện
-    đồ họa nào. Bao gồm các cấu trúc dữ liệu biểu diễn trạng thái khối
-    nguyên bản, trạng thái khối phân thân và bàn cờ. Tầng này đảm nhận
-    nhiệm vụ kiểm tra tính hợp lệ của các bước đi, cập nhật trạng thái cầu,
-    và xử lý chuyển đổi trạng thái với tốc độ cao (đạt hơn $50.000$ trạng
-    thái mỗi giây).
+    Đảm nhận toàn bộ quy tắc mô phỏng bài toán và sinh không gian trạng thái
+    độc lập với hệ thống đồ họa. Phân tầng này tập trung giải quyết ba bài toán
+    kỹ thuật trọng tâm:
+    (i) \textit{Mô hình hóa trạng thái bất biến:} Các trạng thái của khối
+    (\texttt{NormalBlockState}, \texttt{SplitBlockState}) và hệ thống cầu nối
+    được đóng gói dưới dạng các cấu trúc dữ liệu bất biến,
+    cung cấp cơ chế sinh khóa băm trạng thái phục vụ cho việc
+    truy vấn và loại trừ trạng thái trùng lặp trong tập đóng với chi phí $O(1)$;
+    (ii) \textit{Triển khai động học và chuyển tiếp trạng thái:} Cài đặt các
+    phép lật khối 4 hướng trong không gian rời rạc, cơ chế phân thân thành hai khối
+    lập phương độc lập qua cổng dịch chuyển, cơ chế hoán đổi quyền điều khiển và tự động
+    tái hợp nhất khi hai khối tiếp giáp;
+    (iii) \textit{Mô phỏng ràng buộc vật lý và sinh không gian kế tiếp:} Kiểm định tính
+    hợp lệ của từng bước đi (loại bỏ trạng thái rơi vào ô rỗng, sập sàn gạch cam khi dựng đứng),
+    đồng thời kích hoạt liên kết đóng/mở cầu nối từ hệ thống công tắc. Tầng này cung cấp hàm
+    sinh trạng thái kế tiếp gọn nhẹ, tối ưu hóa để phục vụ trực
+    tiếp cho các giải thuật tìm kiếm.
 
-    \item \textbf{Tầng Thuật toán Trí tuệ Nhân tạo (\texttt{bloxorz.solvers}):}
+    \item \textbf{Tầng Thuật toán (\texttt{bloxorz.solvers}):}
     Hoạt động hoàn toàn trên tầng lõi, bao gồm lớp cơ sở cho bộ giải,
     cấu trúc nút tìm kiếm và hiện thực của 4 giải thuật BFS, DFS, UCS, A*.
     Tầng này không can thiệp vào giao diện người dùng mà chỉ trả về đối
     tượng kết quả chuẩn hóa bao gồm danh sách hành động, thời gian tìm kiếm,
     số lượng nút mở rộng và bộ nhớ tiêu thụ.
 \end{enumerate}
-
-Hình \ref{fig:gameplay_solver} minh họa quá trình tác tử tự động hóa thực
-thi chuỗi hành động tìm kiếm trực tiếp trên môi trường đồ họa 3D.
 
 \begin{figure}[H]
     \centering
@@ -352,9 +357,6 @@ người quan sát dễ dàng theo dõi và kiểm chứng tính đúng đắn c
     gian ba chiều, tính toán trục xoay linh hoạt để tạo hiệu ứng lật khối
     trơn tru, hiển thị bảng chọn màn chơi và cung cấp bản đồ thu nhỏ trực quan.
 \end{enumerate}
-
-Hình \ref{fig:menu_stages} trình bày giao diện lựa chọn màn chơi với hệ thống
-phân trang hiện đại của ứng dụng.
 
 \begin{figure}[H]
     \centering

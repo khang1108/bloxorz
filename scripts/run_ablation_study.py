@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Ablation Study Experiment Runner for Bloxorz A* Heuristic Components.
 
-Systematically evaluates 4 heuristic variants across benchmark stages:
+Systematically evaluates 6 heuristic variants across 10 benchmark stages:
   - H0 (Null Heuristic / UCS Baseline): h(n) = 0
   - H1 (Standard Unrelaxed Manhattan): h(n) = min Manhattan distance (non-admissible, h > h*)
   - H2 (Relaxed Manhattan Only): h(n) = ceil(min Manhattan / 2.0) (admissible baseline)
   - H3 (Relaxed Manhattan + Orientation Penalty): adds h_orient = 2 if on goal but lying down
   - H4 (Full Proposed Heuristic): H3 + h_merge = max(0, dist_between_cubes - 1) for split cubes
+  - H5 (True-Distance Heuristic - SoCS 2009 / Sturtevant et al.): Precomputed backward BFS on relaxed grid
 
 Outputs results to data/ablation_results.json and data/ablation_results.csv.
 """
@@ -16,7 +17,6 @@ import json
 import math
 import sys
 import time
-import tracemalloc
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 
@@ -29,6 +29,7 @@ from bloxorz.core.board import Board
 from bloxorz.core.constants import BlockOrientation
 from bloxorz.core.level_loader import LevelLoader
 from bloxorz.solvers.astar import AstarSolver
+from bloxorz.solvers.heuristics import TrueDistanceHeuristic
 
 
 # --- HEURISTIC COMPONENT DEFINITIONS ---
@@ -95,12 +96,13 @@ def h4_full_proposed(block: BaseBlockState, board: Board) -> float:
 
 # --- EXPERIMENT HARNESS ---
 
-HEURISTIC_VARIANTS: List[Tuple[str, str, Callable[[BaseBlockState, Board], float], bool]] = [
-    ("H0", "Null Heuristic (UCS)", h0_null, True),
-    ("H1", "Unrelaxed Manhattan (Non-admissible)", h1_unrelaxed_manhattan, False),
-    ("H2", "Relaxed Manhattan Only", h2_relaxed_manhattan_only, True),
-    ("H3", "Relaxed + Orientation Penalty", h3_relaxed_plus_orientation, True),
-    ("H4", "Full Proposed Heuristic", h4_full_proposed, True),
+HEURISTIC_FACTORIES: List[Tuple[str, str, Callable[[Board], Callable[[BaseBlockState, Board], float]], bool]] = [
+    ("H0", "Null Heuristic (UCS)", lambda b: h0_null, True),
+    ("H1", "Unrelaxed Manhattan (Non-admissible)", lambda b: h1_unrelaxed_manhattan, False),
+    ("H2", "Relaxed Manhattan Only", lambda b: h2_relaxed_manhattan_only, True),
+    ("H3", "Relaxed + Orientation Penalty", lambda b: h3_relaxed_plus_orientation, True),
+    ("H4", "Full Proposed Heuristic", lambda b: h4_full_proposed, True),
+    ("H5", "True-Distance Heuristic (SoCS 2009)", lambda b: TrueDistanceHeuristic(b), True),
 ]
 
 SEEDED_STAGES = [
@@ -113,13 +115,12 @@ def run_ablation_study() -> List[Dict[str, Any]]:
     levels_dir = REPO_ROOT / "bloxorz" / "levels"
     results: List[Dict[str, Any]] = []
 
-    print("=" * 80)
-    print("RUNNING ABLATION STUDY ON A* HEURISTIC COMPONENTS")
+    print("=" * 85)
+    print("RUNNING EXTENDED ABLATION STUDY (H0 -> H5)")
     print(f"Stages ({len(SEEDED_STAGES)}): {', '.join(SEEDED_STAGES)}")
-    print(f"Variants ({len(HEURISTIC_VARIANTS)}): {', '.join(v[0] for v in HEURISTIC_VARIANTS)}")
-    print("=" * 80)
+    print(f"Variants ({len(HEURISTIC_FACTORIES)}): {', '.join(v[0] for v in HEURISTIC_FACTORIES)}")
+    print("=" * 85)
 
-    # First determine ground-truth optimal moves using H4 (or H0)
     optimal_moves: Dict[str, int] = {}
 
     for stage_name in SEEDED_STAGES:
@@ -130,13 +131,14 @@ def run_ablation_study() -> List[Dict[str, Any]]:
 
         board = LevelLoader.load_json_level(stage_file)
 
-        # First run full solver to get optimal baseline
+        # Baseline optimal length
         solver_opt = AstarSolver(heuristic_fn=h4_full_proposed)
         res_opt = solver_opt.solve(board.clone())
         optimal_moves[stage_name] = res_opt.solution_length
 
-        for var_id, var_name, fn, is_admissible in HEURISTIC_VARIANTS:
-            solver = AstarSolver(heuristic_fn=fn)
+        for var_id, var_name, factory, is_admissible in HEURISTIC_FACTORIES:
+            heuristic_fn = factory(board)
+            solver = AstarSolver(heuristic_fn=heuristic_fn)
 
             start_time = time.perf_counter()
             res = solver.solve(board.clone())
@@ -163,7 +165,7 @@ def run_ablation_study() -> List[Dict[str, Any]]:
             }
             results.append(record)
             print(
-                f"[{stage_name}] {var_id:2s} ({var_name:30s}) -> "
+                f"[{stage_name}] {var_id:2s} ({var_name:35s}) -> "
                 f"Nodes: {res.expanded_nodes:5d} | "
                 f"Time: {execution_ms:7.2f}ms | "
                 f"Mem: {peak_mem_kib:7.1f}KiB | "

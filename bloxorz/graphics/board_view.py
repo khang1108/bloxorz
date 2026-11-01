@@ -858,10 +858,10 @@ class BoardView(Entity):
     # -------------------------------------------------------------------------
 
     def compute_wave_y(self, world_x: float, world_z: float) -> float:
-        """Harmonic sea undulation for walkable tiles floating like an island on the sea."""
-        if not getattr(CONFIG.animation, "wave_enabled", True):
+        """Returns 0.0 for rock-solid architectural platform stability (wave disabled)."""
+        if not getattr(CONFIG.animation, "wave_enabled", False):
             return 0.0
-        amp = getattr(CONFIG.animation, "wave_amplitude", 0.22)
+        amp = getattr(CONFIG.animation, "wave_amplitude", 0.0)
         speed = getattr(CONFIG.animation, "wave_speed", 1.35)
         fx = getattr(CONFIG.animation, "wave_freq_x", 0.38)
         fz = getattr(CONFIG.animation, "wave_freq_z", 0.32)
@@ -1012,15 +1012,7 @@ class BoardView(Entity):
         self._anim_time += dt
         self._wave_time += dt
 
-        # Dập dìu như nổi trên mặt biển cho các ô đi được (walkable tiles)
-        if getattr(CONFIG.animation, "wave_enabled", True) and self.tile_roots:
-            for (x, y), root in self.tile_roots.items():
-                if (x, y) not in self._crumbling_tiles:
-                    root.y = self.compute_wave_y(float(x), -float(y))
-
-            for (bx, by), broot in self.bridge_roots.items():
-                broot.y = self.compute_wave_y(float(bx), -float(by))
-
+        # Rock-solid architectural floor: wave undulation deleted
         # Pulsating arcane breathing glow for goal core floor
         if self.goal_floor:
             c_glow = Palette.GOAL_GLOW

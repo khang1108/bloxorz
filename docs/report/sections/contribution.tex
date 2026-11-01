@@ -2,10 +2,10 @@
 \label{sec:contribution}
 
 \subsection{Bảng Phân công Nhiệm vụ và Tỷ lệ Đóng góp}
-Dự án được thực hiện bởi nhóm gồm 3 thành viên thuộc Khoa Công nghệ
+Dự án được thực hiện bởi nhóm gồm 4 thành viên thuộc Khoa Công nghệ
 Thông tin, Trường Đại học Khoa học Tự nhiên -- ĐHQG-HCM. Toàn bộ các hạng
 mục công việc từ thiết kế kiến trúc, hiện thực giải thuật, kiểm thử
-tự động, đo lường benchmark cho đến soạn thảo báo cáo đều được phân bổ
+hệ thống, đo lường benchmark cho đến soạn thảo báo cáo đều được phân bổ
 rõ ràng và hoàn thành đúng tiến độ. Bảng \ref{tab:team_contributions}
 chi tiết hóa vai trò, nhiệm vụ và tỷ lệ hoàn thành của từng thành viên.
 
@@ -21,26 +21,28 @@ trong nhóm}
 & \textbf{Nhiệm vụ Đảm nhiệm} & \textbf{Tỷ lệ} \\
 \midrule
 \textbf{Nguyễn Phúc Khang} & 24120068 &
-- Trưởng nhóm, điều phối mã nguồn qua Git và GitHub PRs.\\
-& & - Thiết kế kiến trúc tổng thể Core Engine (\texttt{bloxorz.core}).\\
-& & - Hiện thực giao diện đồ họa 3D Ursina và Tactical Minimap.\\
-& & - Hiện thực giải thuật BFS và A*, chứng minh tính Admissible.\\
-& & - Thiết kế khung Benchmark thực nghiệm tự động và vẽ biểu đồ.\\
-& & - Soạn thảo và chuẩn hóa báo cáo LaTeX theo chuẩn hội nghị. & 100\% \\
+- Trưởng nhóm: thiết kế hệ thống tổng thể, định hình ý tưởng (brainstorm) và thiết kế giao diện đồ họa (GUI) nền tảng.\\
+& & - Thiết kế cấu trúc dự án và phân công công việc cho các thành viên trong nhóm.\\
+& & - Thiết kế Core Engine (\texttt{bloxorz.core}) mô hình hóa toàn bộ các trạng thái và luật chơi của hệ thống.\\
+& & - Hiện thực giải thuật tìm kiếm A* và chứng minh toán học tính chấp nhận được (\textit{Admissible}).\\
+& & - Thiết kế khung Benchmark thực nghiệm, chạy phân tích bóc tách (\textit{Ablation Study}), trực quan hóa dữ liệu và soạn thảo báo cáo đồ án. & 100\% \\
 \midrule
 \textbf{Phạm Minh Trọng} & 24120151 &
-- Hiện thực cơ chế gạch nâng cao: công tắc chữ X, hệ thống cầu lật.\\
-& & - Hiện thực giải thuật Tìm kiếm Chi phí Đồng nhất (UCS).\\
-& & - Thiết kế hàm chi phí nhận thức rủi ro gạch cam (\texttt{fragile\_cost}).\\
-& & - Tham gia đo đạc benchmark và phân tích câu hỏi nghiên cứu.\\
-& & - Soạn thảo phần nội dung giải thuật UCS và gạch nâng cao. & 100\% \\
+- Hiện thực giải thuật Tìm kiếm Chi phí Đồng nhất (UCS).\\
+& & - Kiểm thử toàn diện và rà soát lỗi cho toàn bộ chương trình (\textit{testing \& debugging}).\\
+& & - Thiết kế giao diện đồ họa và tối ưu hóa các hiệu ứng chuyển động (\textit{animation}).\\
+& & - Quay và biên tập video minh họa triển khai sản phẩm.\\
+& & - Đọc duyệt, rà soát và phản biện nội dung báo cáo đồ án. & 100\% \\
 \midrule
-\textbf{Hoàng Trọng Nghĩa} & 24120103 &
-- Hiện thực bộ nạp màn chơi (\texttt{level\_loader}) từ tập dữ liệu bản đồ.\\
-& & - Hiện thực giải thuật DFS với bảng băm chu trình.\\
-& & - Xây dựng bộ kiểm thử tự động (Pytest suite: 42/42 tests pass).\\
-& & - Sản xuất và biên tập video demo sản phẩm đăng tải YouTube.\\
-& & - Soạn thảo phần liên quan đến DFS và kiểm thử phần mềm. & 100\% \\
+\textbf{Trần Nguyễn Anh Khoa} & 24120075 &
+- Hiện thực giải thuật Tìm kiếm theo Chiều rộng (BFS).\\
+& & - Thiết kế giao diện và hoạt cảnh môi trường xung quanh cho trò chơi (\textit{cyber grid background, skybox}).\\
+& & - Thiết kế và lập trình các hiệu ứng chuyển động (\textit{animation}) trực quan. & 100\% \\
+\midrule
+\textbf{Bùi Nhật Bảo} & 24120167 &
+- Hiện thực giải thuật Tìm kiếm theo Chiều sâu (DFS) và cơ chế phát hiện, xử lý chu trình trạng thái.\\
+& & - Thiết kế các thành phần giao diện cho toàn bộ game engine (\textit{UI elements, HUD, menu, panels}).\\
+& & - Tối ưu hóa hiệu năng đồ họa và các hiệu ứng chuyển động (\textit{animation optimization}). & 100\% \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -57,7 +59,7 @@ giải đố của 4 thuật toán AI được đăng tải công khai tại:
 \end{itemize}
 
 \subsection{Tuyên bố Sử dụng Công cụ Trí tuệ Nhân tạo}
-Tuân thủ nguyên tắc trung thực học thuật và đạo đức nghiên cứu, nhóm xin
+Tuân thủ nguyên tắc trung thực học thuật trong đồ án môn học, nhóm xin
 tuyên bố minh bạch việc sử dụng các công cụ trợ lý AI như sau:
 
 \begin{enumerate}[1.]
@@ -66,12 +68,15 @@ tuyên bố minh bạch việc sử dụng các công cụ trợ lý AI như sau
     \begin{itemize}[--]
         \item Hỗ trợ rà soát cú pháp LaTeX, định dạng bảng biểu và ngắt dòng mã
         nguồn ($\le 80$ ký tự/dòng) phục vụ hiển thị cửa sổ chia đôi.
-        \item Tham khảo cấu trúc tổ chức báo cáo đồ án kỹ thuật chuẩn mực.
+        \item Tham khảo cấu trúc tổ chức báo cáo đồ án kỹ thuật.
+        \item Hỗ trợ trông việc brainstorm để có thể thiết kế và hiểu được bản chất của các thuật toán.
         \item Hỗ trợ refactor và tối ưu hóa cú pháp mã nguồn Python tuân thủ
-        nghiêm ngặt quy chuẩn PEP 8.
+        quy chuẩn PEP 8.
+        \item Hỗ trợ trong việc thiết kế giao diện, triển khai các animation va hiệu ứng
+        cho các trạng thái, các bước di chuyển. 
     \end{itemize}
 
-    \item \textbf{Khẳng định Tính Độc lập và Toàn vẹn Học thuật:}
+    \item \textbf{Khẳng định:}
     Toàn bộ các nội dung cốt lõi sau đây đều do chính các thành viên trong nhóm
     tự lập luận, thiết kế, hiện thực và chịu trách nhiệm $100\%$:
     \begin{itemize}[--]
@@ -81,6 +86,6 @@ tuyên bố minh bạch việc sử dụng các công cụ trợ lý AI như sau
         \item Toàn bộ mã nguồn logic game engine (\texttt{bloxorz.core}) và
         bộ 4 giải thuật tìm kiếm (BFS, DFS, UCS, A*).
         \item Toàn bộ dữ liệu thực nghiệm đo đạc từ 40 lượt chạy benchmark
-        và các phân tích trả lời câu hỏi nghiên cứu (RQ1 -- RQ4).
+        và các phân tích đối sánh hiệu năng chi tiết theo từng tiêu chí đánh giá.
     \end{itemize}
 \end{enumerate}

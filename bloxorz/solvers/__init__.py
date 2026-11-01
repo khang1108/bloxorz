@@ -6,6 +6,7 @@ from bloxorz.solvers.bfs import BFSSolver, BFSSolverResult
 from bloxorz.solvers.dfs import DFSSolver, DFSSolverResult
 from bloxorz.solvers.astar import AstarSolver
 from bloxorz.solvers.costs import CostFunction, fragile_cost
+from bloxorz.solvers.heuristics import TrueDistanceHeuristic
 from bloxorz.solvers.ucs import UCSSolver
 
 SOLVER_REGISTRY: Dict[str, Optional[Type[BaseSolver]]] = {
@@ -37,6 +38,7 @@ __all__ = [
     "DFSSolver",
     "DFSSolverResult",
     "AstarSolver",
+    "TrueDistanceHeuristic",
     "CostFunction",
     "fragile_cost",
     "UCSSolver",

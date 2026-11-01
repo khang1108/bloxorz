@@ -156,8 +156,8 @@ class Motion:
     FADE_TRANSITION = CONFIG.motion.fade_transition
 
     # Animation & VFX Motion Constants
-    WAVE_ENABLED = getattr(CONFIG.animation, "wave_enabled", True)
-    WAVE_AMPLITUDE = getattr(CONFIG.animation, "wave_amplitude", 0.04)
+    WAVE_ENABLED = False
+    WAVE_AMPLITUDE = 0.0
     CUSHION_DEPTH = getattr(CONFIG.animation, "cushion_depth", 0.0)
     GHOST_ALPHA = getattr(CONFIG.animation, "ghost_alpha", 0.18)
     GHOST_FADE_SPEED = getattr(CONFIG.animation, "ghost_fade_speed", 2.5)

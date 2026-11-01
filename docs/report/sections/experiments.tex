@@ -2,78 +2,65 @@
 \label{sec:experiments}
 
 Chương này trình bày toàn bộ quy trình thực nghiệm khoa học nhằm đánh
-giá định lượng hiệu năng của 4 giải thuật tìm kiếm (BFS, DFS, UCS, A*)
-trên tập dữ liệu bản đồ Bloxorz. Mục tiêu cốt lõi là phân tích sự đánh đổi
-giữa thời gian thực thi, mức tiêu thụ bộ nhớ, số nút mở rộng và tính
-tối ưu của đường đi.
+giá định lượng hiệu năng của các giải thuật tìm kiếm trên tập dữ liệu
+bản đồ Bloxorz. Mục tiêu cốt lõi là phân tích đa chiều sự đánh đổi giữa
+thời gian thực thi, mức tiêu thụ bộ nhớ đỉnh, năng lực cắt tỉa không gian
+trạng thái và tính tối ưu của lời giải, đồng thời thực hiện quá trình phân tích
+và đánh giá chuyên sâu nhằm kiểm chứng vai trò của từng
+thành phần trong hàm đánh giá heuristic.
 
 \subsection{Thiết kế Thực nghiệm và Thiết lập Benchmark}
 \label{subsec:exp_setup}
 
 \subsubsection{Phương pháp Lấy mẫu Tập Dữ liệu}
-Để ngăn ngừa thiên kiến lựa chọn, nhóm sử dụng phương pháp lấy mẫu
-ngẫu nhiên có kiểm soát hạt giống với $\text{seed} = 42$ từ tập dữ liệu hơn
-80 màn chơi Bloxorz. Mẫu được chọn gồm $10$ màn đại diện ($N=10$):
-\texttt{stage\_04}, \texttt{stage\_12}, \texttt{stage\_14},
-\texttt{stage\_15}, \texttt{stage\_18}, \texttt{stage\_29}, \texttt{stage\_32},
-\texttt{stage\_36}, \texttt{stage\_70}, và \texttt{stage\_82}.
-Tập mẫu này bao quát đầy đủ 4 nhóm đặc trưng cơ học của trò chơi:
-\begin{itemize}[--]
-    \item \textbf{Nhóm Cơ bản:} Bản đồ sàn gạch bền kinh điển
-    (ví dụ: \texttt{stage\_36}).
-    \item \textbf{Nhóm Gạch mong manh:} Màn chơi chứa nhiều ô gạch cam
-    đòi hỏi kiểm soát tư thế nghiêm ngặt (ví dụ: \texttt{stage\_04}).
-    \item \textbf{Nhóm Mạng lưới Cầu \& Công tắc:} Màn chơi có nhiều cụm
-    cầu mở/đóng đan xen bởi công tắc tròn và công tắc X
-    (ví dụ: \texttt{stage\_12}, \texttt{stage\_14}, \texttt{stage\_18},
-    \texttt{stage\_29}, \texttt{stage\_32}, \texttt{stage\_70}).
-    \item \textbf{Nhóm Phân thân Đa thực thể:} Màn chơi nâng cao chứa
-    cổng dịch chuyển phân tách khối thành hai khối lập phương
-    $1 \times 1 \times 1$ độc lập
-    (ví dụ: \texttt{stage\_15}, \texttt{stage\_82}).
-\end{itemize}
+Nhằm ngăn ngừa thiên kiến lựa chọn chủ quan, nhóm đã áp dụng
+phương pháp lấy mẫu ngẫu nhiên có kiểm soát hạt giống ($\text{seed} = 42$)
+từ toàn bộ kho dữ liệu gồm hơn 80 màn chơi Bloxorz. Mẫu kiểm thử chuẩn
+được chọn gồm 10 màn chơi đại diện ($N=10$): \texttt{stage\_04},
+\texttt{stage\_12}, \texttt{stage\_14}, \texttt{stage\_15},
+\texttt{stage\_18}, \texttt{stage\_29}, \texttt{stage\_32},
+\texttt{stage\_36}, \texttt{stage\_70}, và \texttt{stage\_82}. Tập mẫu
+này bao quát đầy đủ bốn chiều kích cơ học đặc trưng của bài toán: nhóm
+sàn cơ bản bền vững với địa hình thuần túy (\texttt{stage\_36}); nhóm gạch
+mong manh cam đòi hỏi kiểm soát tư thế đứng nghiêm ngặt (\texttt{stage\_04});
+nhóm mạng lưới cầu và công tắc tròn, công tắc chéo đan xen phức tạp
+(\texttt{stage\_12}, \texttt{stage\_14}, \texttt{stage\_18},
+\texttt{stage\_29}, \texttt{stage\_32}, \texttt{stage\_70}); và nhóm cơ chế
+phân thân đa thực thể chứa cổng dịch chuyển tách khối thành hai nửa
+$1 \times 1 \times 1$ hoạt động độc lập (\texttt{stage\_15},
+\texttt{stage\_82}).
 
-\subsubsection{Môi trường Thử nghiệm và Công cụ Đo đạc}
-Tất cả 40 lượt thử nghiệm (10 màn $\times$ 4 thuật toán) đều được thực hiện
-trên cùng một môi trường phần cứng và phần mềm nhất quán:
-\begin{itemize}[--]
-    \item \textbf{Hệ điều hành \& Phần cứng:} Linux x86\_64 (Arch Linux),
-    CPU Intel Core đa nhân, 16 GB RAM DDR4.
-    \item \textbf{Môi trường Thực thi:} CPython 3.14 ảo hóa (\texttt{.venv}).
-    \item \textbf{Tách biệt Môi trường Đo:} Mỗi lượt chạy thuật toán được
-    thực thi ở chế độ chạy ngầm không giao diện, loại bỏ hoàn toàn các luồng
-    xử lý đồ họa GPU nhằm loại trừ nhiễu độ trễ khung hình.
-    \item \textbf{Đo lường Bộ nhớ:} Sử dụng mô-đun chuẩn \texttt{tracemalloc}
-    \cite{python2024tracemalloc} để đo chính xác dung lượng bộ nhớ đỉnh mà
-    thuật toán cấp phát trong suốt quá trình duyệt đồ thị.
-\end{itemize}
+\subsubsection{Môi trường Thử nghiệm và Giao thức Đo đạc}
+Toàn bộ các lượt thử nghiệm được tiến hành trên môi trường đồng nhất
+với hệ điều hành Linux x86\_64 (Arch Linux), vi xử lý Intel Core đa nhân
+và 16 GB bộ nhớ RAM DDR4. Môi trường thực thi sử dụng trình thông dịch
+CPython 3.14 trong môi trường ảo hóa biệt lập. Nhằm triệt tiêu tối đa
+sai số đo lường và độ trễ đồ họa, mỗi thuật toán được khởi chạy ở chế độ
+chạy ngầm phi giao diện. Chỉ số bộ nhớ đỉnh (Peak Memory)
+được thu thập chính xác thông qua mô-đun chuẩn \texttt{tracemalloc}
+\cite{python2024tracemalloc}, đo lường chính xác lượng bộ nhớ RAM lớn nhất
+được hệ điều hành cấp phát trong toàn bộ vòng đời tìm kiếm.
 
-\subsubsection{Các Câu hỏi Nghiên cứu}
-Nhóm thiết lập $4$ câu hỏi nghiên cứu định lượng:
-\begin{itemize}
-    \item \textbf{RQ1 -- Thời gian tìm kiếm:} Giải thuật nào đạt tốc độ tìm
-    kiếm nhanh nhất trên các màn chơi có quy mô và độ phức tạp khác nhau?
-    \item \textbf{RQ2 -- Mức tiêu thụ bộ nhớ:} Mức độ chiếm dụng bộ nhớ RAM
-    đỉnh điểm của các cấu trúc dữ liệu biên (FIFO, LIFO, Min-Heap) chênh
-    lệch ra sao?
-    \item \textbf{RQ3 -- Năng lực cắt tỉa không gian:} Hàm Heuristic của
-    A* giúp cắt tỉa bao nhiêu phần trăm không gian trạng thái so với
-    duyệt mù BFS và UCS?
-    \item \textbf{RQ4 -- Tính tối ưu của lời giải:} Tính tối ưu về số bước
-    đi được đảm bảo như thế nào? Lời giải của DFS bị suy giảm chất lượng
-    ở mức độ nào?
+\subsubsection{Các Tiêu chí Đánh giá Thực nghiệm}
+Quá trình thực nghiệm tập trung phân tích và đối sánh hiệu năng của các giải thuật dựa trên bốn tiêu chí định lượng then chốt:
+\begin{itemize}[--]
+    \item \textbf{Thời gian tìm kiếm:} Đo lường tốc độ hội tụ và thời gian tính toán thực tế của từng thuật toán trên các dạng cấu trúc địa hình từ cơ bản đến phức tạp.
+    \item \textbf{Mức tiêu thụ bộ nhớ đỉnh:} Đánh giá dung lượng RAM lớn nhất mà thuật toán chiếm dụng trong suốt chu trình tìm kiếm, phản ánh chi phí của cấu trúc dữ liệu biên.
+    \item \textbf{Năng lực cắt tỉa không gian trạng thái:} Đo đạc số lượng nút được mở rộng nhằm định lượng hiệu quả của hàm Heuristic trong việc thu hẹp không gian tìm kiếm so với các thuật toán tìm kiếm mù.
+    \item \textbf{Tính tối ưu của lời giải:} Kiểm chứng độ dài đường đi tìm được so với nghiệm tối ưu lý thuyết và đánh giá sự đánh đổi giữa thời gian thực thi với chất lượng lời giải.
 \end{itemize}
 
 \subsection{Kết quả Thực nghiệm Tổng hợp}
 \label{subsec:exp_results}
 
-Bảng \ref{tab:benchmark_summary} trình bày số liệu thống kê tổng hợp của 4
-giải thuật trên toàn bộ 10 màn chơi thử nghiệm.
+Bảng \ref{tab:benchmark_summary} tổng hợp số liệu thống kê hiệu năng của
+bốn giải thuật (BFS, DFS, UCS, A* với hàm heuristic đề xuất) trên toàn
+bộ 10 màn chơi chuẩn.
 
 \begin{table}[H]
 \centering
 \caption{Thống kê tổng hợp hiệu năng 4 thuật toán
-($N=10$ màn, $\text{seed}=42$)}
+($N=10$ màn chơi, $\text{seed}=42$)}
 \label{tab:benchmark_summary}
 \small
 \begin{tabular}{lrrrr}
@@ -92,12 +79,14 @@ Số nút mở rộng trung bình
 & 1.869,3 & \textbf{286,1} & 1.906,3 & \textbf{812,0} \\
 Độ dài lời giải trung bình
 & \textbf{59,5} & 120,7 & \textbf{59,5} & \textbf{59,5} \\
+Tỷ lệ nghiệm tối ưu & \textbf{100\%} & 10\% & \textbf{100\%} & \textbf{100\%} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Bảng \ref{tab:benchmark_detailed} chi tiết hóa kết quả thực nghiệm trên từng
-màn chơi được chọn.
+Bảng \ref{tab:benchmark_detailed} thể hiện chi tiết kết quả của từng
+lượt chạy trên 10 màn chơi, phân tách rõ ràng theo các nhóm đặc trưng
+cơ học.
 
 \begin{table}[H]
 \centering
@@ -173,34 +162,24 @@ màn chơi được chọn.
 \end{tabular}
 \end{table}
 
-\subsection{Phân tích Chuyên sâu theo Câu hỏi Nghiên cứu}
-\label{subsec:rq_analysis}
-
-Hình \ref{fig:benchmark_dashboard} hiển thị bức tranh toàn cảnh $2 \times 2$
-đối sánh 4 thuật toán trên cả 4 trục chỉ số đánh giá.
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{%
+    \includegraphics[width=0.98\textwidth]{%
         images/charts/benchmark_dashboard_2x2.png}
     \caption{Bảng điều khiển trực quan hóa $2 \times 2$ đối sánh hiệu năng
-    toàn diện 4 thuật toán}
+    toàn diện của bốn giải thuật tìm kiếm}
     \label{fig:benchmark_dashboard}
 \end{figure}
 
-\subsubsection{RQ1: Thời gian Tìm kiếm}
-Từ Bảng \ref{tab:benchmark_summary} và Hình \ref{fig:chart_time}, thời gian
-tìm kiếm trung bình của A* là $614,19\text{ ms}$, nhanh hơn xấp xỉ
-$2,6$ lần so với BFS ($1.618,00\text{ ms}$) và $2,4$ lần so với UCS
-($1.481,29\text{ ms}$).
+\subsection{Phân tích Hiệu năng Chuyên sâu}
+\label{subsec:rq_analysis}
 
-Đặc biệt, tại các màn chơi có không gian trạng thái khổng lồ do cơ chế
-phân thân (như \texttt{stage\_82}), ưu thế của A* thể hiện rõ rệt nhất:
-A* giải quyết màn chơi chỉ trong $918,1\text{ ms}$, trong khi BFS mất tới
-$8.909,0\text{ ms}$ (chậm hơn gần $10$ lần) và UCS mất $8.003,3\text{ ms}$.
-DFS đạt thời gian tìm kiếm trung bình thấp nhất ($162,96\text{ ms}$) vì
-thuật toán lặn sâu theo nhánh đầu tiên mà không phải duy trì cấu trúc sắp
-xếp hàng đợi phức tạp, tuy nhiên điều này phải trả giá bằng tính tối ưu.
+\subsubsection{Thời gian Tìm kiếm}
+Kết quả thực nghiệm tại Bảng \ref{tab:benchmark_summary} và Hình
+\ref{fig:chart_time} khẳng định ưu thế vượt trội về tốc độ của A* so với
+các thuật toán tìm kiếm tối ưu còn lại. A* đạt thời gian thực thi trung bình
+là $614,19\text{ ms}$, nhanh hơn xấp xỉ $2,6$ lần so với BFS
+($1.618,00\text{ ms}$) và $2,4$ lần so với UCS ($1.481,29\text{ ms}$).
 
 \begin{figure}[H]
     \centering
@@ -208,7 +187,7 @@ xếp hàng đợi phức tạp, tuy nhiên điều này phải trả giá bằn
         \centering
         \includegraphics[width=\textwidth]{%
             images/charts/comparison_search_time.png}
-        \caption{Thời gian tìm kiếm (thang đo Logarit)}
+        \caption{Thời gian tìm kiếm (thang Logarit)}
         \label{fig:chart_time}
     \end{subfigure}
     \hfill
@@ -216,32 +195,30 @@ xếp hàng đợi phức tạp, tuy nhiên điều này phải trả giá bằn
         \centering
         \includegraphics[width=\textwidth]{%
             images/charts/comparison_expanded_nodes.png}
-        \caption{Số lượng nút mở rộng (thang đo Logarit)}
+        \caption{Số lượng nút mở rộng (thang Logarit)}
         \label{fig:chart_nodes}
     \end{subfigure}
     \caption{Đối sánh thời gian tìm kiếm và số lượng nút mở rộng
-    giữa 4 thuật toán}
+    giữa các giải thuật}
     \label{fig:time_and_nodes}
 \end{figure}
 
-\subsubsection{RQ2: Mức Tiêu thụ Bộ nhớ Đỉnh}
-Mức độ tiêu thụ bộ nhớ (Hình \ref{fig:chart_memory}) phản ánh bản chất của
-cấu trúc dữ liệu biên:
-\begin{itemize}[--]
-    \item \textbf{DFS} tiêu tốn ít bộ nhớ nhất (trung bình $773,15\text{ KiB}$)
-    vì cấu trúc ngăn xếp LIFO chỉ lưu trữ các nút dọc theo nhánh đang duyệt.
-    \item \textbf{BFS} tiêu tốn trung bình $2.502,28\text{ KiB}$ do phải duy
-    trì toàn bộ các nút ở tầng độ sâu hiện tại trong hàng đợi hai đầu.
-    \item \textbf{UCS} có mức chiếm dụng bộ nhớ cao nhất (trung bình
-    $6.851,11\text{ KiB}$, đỉnh điểm đạt $41.028,9\text{ KiB}$ tại
-    \texttt{stage\_82}). Nguyên nhân là Min-Heap của UCS phải lưu giữ nhiều
-    phiên bản trạng thái với các mức chi phí khác nhau trước khi chúng được
-    lấy ra khỏi hàng đợi.
-    \item \textbf{A*} kiểm soát bộ nhớ hiệu quả hơn đáng kể so với UCS (trung
-    bình $3.217,62\text{ KiB}$, thấp hơn hơn $53\%$ so với UCS) nhờ hàm
-    Heuristic giúp loại bỏ sớm các nút kém triển vọng trước khi đưa vào
-    hàng đợi.
-\end{itemize}
+Khoảng cách hiệu năng trở nên rõ rệt nhất ở các màn chơi có không gian
+bùng nổ tổ hợp do cơ chế phân thân hai khối độc lập. Cụ thể tại
+\texttt{stage\_82}, trong khi BFS cần tới $8.909,0\text{ ms}$ và UCS cần
+$8.003,3\text{ ms}$ để giải quyết, A* hoàn thành tìm kiếm chỉ sau
+$918,1\text{ ms}$ (nhanh hơn xấp xỉ gần $10$ lần). DFS ghi nhận thời gian
+chạy trung bình thấp nhất ($162,96\text{ ms}$) nhờ cơ chế lặn sâu không cần
+duy trì sắp xếp hàng đợi ưu tiên, tuy nhiên điều này phải đánh đổi bằng sự suy
+giảm chất lượng đường đi như sẽ được phân tích ở phần sau.
+
+\subsubsection{Mức Tiêu thụ Bộ nhớ Đỉnh}
+Mức tiêu thụ bộ nhớ đỉnh (Hình \ref{fig:chart_memory}) phản ánh trực tiếp
+đặc tính cấu trúc dữ liệu biên của từng thuật toán. DFS có mức chiếm dụng
+bộ nhớ thấp nhất với trung bình $773,15\text{ KiB}$ do cấu trúc ngăn xếp
+LIFO chỉ lưu trữ các nút dọc theo nhánh đang duyệt sâu. BFS tiêu tốn
+trung bình $2.502,28\text{ KiB}$ vì phải lưu trữ toàn bộ các nút ở tầng
+độ sâu hiện tại trong hàng đợi hai đầu hai chiều.
 
 \begin{figure}[H]
     \centering
@@ -257,79 +234,215 @@ cấu trúc dữ liệu biên:
         \centering
         \includegraphics[width=\textwidth]{%
             images/charts/comparison_solution_length.png}
-        \caption{Độ dài lộ trình lời giải (số bước lật)}
+        \caption{Độ dài lời giải (số bước lật)}
         \label{fig:chart_length}
     \end{subfigure}
-    \caption{Đối sánh mức chiếm dụng bộ nhớ và tính tối ưu của độ dài đường đi}
+    \caption{Đối sánh mức chiếm dụng bộ nhớ và độ dài đường đi
+    giữa các giải thuật}
     \label{fig:memory_and_length}
 \end{figure}
 
-\subsubsection{RQ3: Năng lực Cắt tỉa của Hàm Heuristic}
-Số lượng nút mở rộng phản ánh năng lực thu hẹp không gian tìm kiếm của
-thuật toán:
-\begin{itemize}[--]
-    \item Trên toàn bộ 10 màn chơi, A* chỉ mở rộng trung bình $812,0$ nút,
-    giảm hơn $56,5\%$ số nút so với BFS ($1.869,3$ nút) và giảm $57,4\%$
-    so với UCS ($1.906,3$ nút).
-    \item Tại màn \texttt{stage\_82}, trong khi BFS duyệt tới $9.471$ nút và
-    UCS duyệt $9.748$ nút, hàm Heuristic khoảng cách Manhattan chia đôi kết
-    hợp phạt tư thế giúp A* định hướng chuẩn xác và chỉ cần mở rộng đúng
-    $1.171$ nút (\textbf{cắt tỉa thành công $87,6\%$ không gian trạng thái}).
-    \item Biểu đồ phân tán (Hình \ref{fig:scatter_time_nodes}) chỉ ra mối
-    tương quan tuyến tính cực kỳ chặt chẽ giữa số lượng nút mở rộng và thời
-    gian tìm kiếm, chứng minh rằng việc giảm số nút thông qua Heuristic là
-    chìa khóa quyết định để cải thiện tốc độ xử lý.
-\end{itemize}
+Ngược lại, UCS có mức sử dụng bộ nhớ cao nhất với trung bình
+$6.851,11\text{ KiB}$, đạt đỉnh điểm kỷ lục $41.028,9\text{ KiB}$ tại
+\texttt{stage\_82}. Nguyên nhân là Min-Heap của UCS phải lưu giữ đồng thời
+nhiều trạng thái trùng lặp với các mức chi phí khác nhau trước khi chúng được
+lấy ra. Trong khi đó, A* kiểm soát bộ nhớ đỉnh tốt hơn đáng kể (trung bình
+$3.217,62\text{ KiB}$, giảm hơn $53\%$ so với UCS) nhờ hàm heuristic định
+hướng loại bỏ sớm các nhánh trạng thái kém triển vọng, ngăn không cho biên
+hàng đợi phình to.
+
+\subsubsection{Năng lực Cắt tỉa Không gian Trạng thái}
+Số lượng nút mở rộng là thước đo chuẩn xác nhất cho năng lực cắt tỉa
+của hàm heuristic. Xét trên toàn bộ 10 màn chơi, A* chỉ mở rộng trung bình
+$812,0$ nút, cắt giảm $56,5\%$ số nút so với BFS ($1.869,3$ nút) và giảm
+$57,4\%$ so với UCS ($1.906,3$ nút).
+
+Mức độ cắt tỉa phụ thuộc chặt chẽ vào đặc thù cơ học của bản đồ
+(Hình \ref{fig:mechanics_pruning}). Trên nhóm màn cơ bản thuần túy như
+\texttt{stage\_36}, hàm khoảng cách định hướng tốt giúp cắt tỉa $58,2\%$
+số nút. Trên nhóm gạch mong manh (\texttt{stage\_04}) và cầu công tắc,
+tỷ lệ cắt tỉa dao động từ $15\%$ đến $28\%$ do không gian nghiệm bị ràng
+buộc chặt bởi thứ tự kích hoạt công tắc. Đặc biệt, tại nhóm màn chơi phân thân
+(\texttt{stage\_15} và \texttt{stage\_82}), thành phần heuristic phạt khoảng
+cách hợp nhất $h_{\text{merge}}$ giúp cắt tỉa hơn $87,6\%$ không gian trạng
+thái, giảm số nút duyệt tại \texttt{stage\_82} từ $9.748$ nút xuống còn
+$1.171$ nút.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{%
+        images/charts/mechanics_pruning_bars.png}
+    \caption{Tỷ lệ cắt tỉa không gian tìm kiếm của các biến thể Heuristic
+    phân nhóm theo đặc trưng cơ học màn chơi}
+    \label{fig:mechanics_pruning}
+\end{figure}
+
+Biểu đồ phân tán (Hình \ref{fig:scatter_time_nodes}) chỉ ra mối tương quan
+tuyến tính đồng biến cực kỳ chặt chẽ giữa số lượng nút mở rộng và thời gian
+tìm kiếm tổng thể ($R^2 > 0,95$). Điều này chứng minh rằng việc thiết kế
+hàm heuristic chặt nhằm giảm thiểu tối đa số nút sinh ra là yếu tố quyết
+định trực tiếp đến hiệu năng thời gian thực tế của bộ giải.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.72\textwidth]{%
         images/charts/scatter_time_vs_expanded.png}
-    \caption{Biểu đồ phân tán biểu diễn tương quan giữa Số nút mở rộng
-    và Thời gian tìm kiếm}
+    \caption{Biểu đồ phân tán thể hiện mối tương quan tuyến tính giữa
+    Số nút mở rộng và Thời gian tìm kiếm}
     \label{fig:scatter_time_nodes}
 \end{figure}
 
-\subsubsection{RQ4: Tính Tối ưu của Lời giải}
-Về độ dài đường đi (Hình \ref{fig:chart_length}):
-\begin{itemize}[--]
-    \item \textbf{BFS, UCS và A* đạt tính tối ưu tuyệt đối $100\%$}:
-    Độ dài lời giải của cả 3 thuật toán hoàn toàn trùng khớp trên từng màn chơi
-    (trung bình đúng $59,5$ bước). Kết quả này kiểm chứng hoàn hảo tính đúng đắn
-    của chứng minh toán học về tính Admissible của hàm Heuristic trong Chương
-    \ref{sec:algorithms}.
-    \item \textbf{DFS không bảo đảm tính tối ưu}:
-    Độ dài lộ trình do DFS tìm ra trung bình lên tới $120,7$ bước (dài hơn gấp
-    $2,03$ lần so với đường đi tối ưu). Đáng chú ý nhất tại \texttt{stage\_82},
-    DFS tìm ra đường đi dài tới $273$ bước trong khi nghiệm tối ưu chỉ cần $26$
-    bước (dài hơn gấp $10,5$ lần). Điều này khẳng định rằng mặc dù DFS có tốc
-    độ lặn nhánh nhanh, kết quả sinh ra không phù hợp cho các bài toán yêu cầu
-    tối ưu hóa tài nguyên.
-\end{itemize}
+\subsubsection{Tính Tối ưu của Lời giải và Đánh đổi Pareto}
+Về độ dài lộ trình tìm kiếm, thực nghiệm chứng minh rằng BFS, UCS và A*
+đạt tính tối ưu tuyệt đối $100\%$ trên mọi màn chơi thử nghiệm, cùng hội tụ
+về độ dài trung bình $59,5$ bước. Kết quả này kiểm chứng hoàn hảo tính đúng
+đắn của chứng minh toán học về tính Admissible của hàm heuristic đề xuất
+trong Chương \ref{sec:algorithms}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.86\textwidth]{%
+        images/charts/pareto_optimality_tradeoff.png}
+    \caption{Biểu đồ đánh đổi Pareto giữa Thời gian tìm kiếm và
+    Tỷ số tối ưu độ dài đường đi ($L_{\text{found}} / L^*$)}
+    \label{fig:pareto_tradeoff}
+\end{figure}
+
+Trái lại, DFS hoàn toàn thất bại trong việc bảo đảm tính tối ưu. Độ dài
+đường đi của DFS trung bình lên tới $120,7$ bước (dài hơn gấp $2,03$ lần so
+với nghiệm tối ưu). Tại \texttt{stage\_82}, DFS sinh ra lời giải dài tới
+$273$ bước trong khi nghiệm tối ưu chỉ cần $26$ bước (chênh lệch gấp $10,5$
+lần).
+
+Hình \ref{fig:pareto_tradeoff} trực quan hóa ranh giới đánh đổi Pareto giữa
+thời gian và tính tối ưu. Các thuật toán BFS, UCS và A* nằm cố định trên
+đường thẳng tối ưu hoàn hảo ($L/L^* = 1,0$). Trong đó, A* nằm tại vị trí
+tối ưu Pareto tuyệt đối khi vừa bảo đảm nghiệm ngắn nhất vừa đạt thời gian
+tìm kiếm nhanh hơn đáng kể so với BFS và UCS. DFS bị đẩy xa khỏi đường
+chuẩn tối ưu, khẳng định rằng mặc dù có tốc độ lặn nhánh nhanh, DFS không
+thể ứng dụng trong các bài toán yêu cầu chất lượng nghiệm khắt khe.
+
+\subsection{Thực nghiệm Bóc tách và Đánh giá Heuristic Nâng cao}
+\label{subsec:ablation_study}
+
+Nhằm lý giải tường minh cơ chế đóng góp của từng thành phần trong hàm
+đánh giá, nhóm đã thực hiện thử nghiệm bóc tách (Ablation Study) bằng cách
+xây dựng và kiểm thử có hệ thống sáu biến thể heuristic trên cùng tập
+10 màn chơi chuẩn. Các biến thể bao gồm: biến thể cơ sở không định hướng
+$H_0$ (UCS baseline, $h(s)=0$); biến thể Manhattan chưa nới lỏng $H_1$
+($h(s) = \min_{p \in s} d_M(p, G)$, vi phạm tính admissible); biến thể
+Manhattan nới lỏng $H_2$ ($h(s) = \lceil \min d_M / 2 \rceil$, bảo đảm
+admissible); biến thể kết hợp phạt tư thế đứng $H_3$
+($H_2 + h_{\text{orient}}$); biến thể hoàn chỉnh đề xuất $H_4$
+($H_3 + h_{\text{merge}}$, bổ sung phạt khoảng cách hợp nhất đa khối);
+và biến thể khoảng cách thực tế trên đồ thị
+nới lỏng $H_5$ (True-Distance Heuristic) xây dựng theo phương pháp tiền xử lý
+Backward BFS của Sturtevant và cộng sự \cite{sturtevant2009memory}.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả tổng hợp thực nghiệm bóc tách 6 biến thể Heuristic
+trên 10 màn chơi}
+\label{tab:ablation_summary}
+\resizebox{0.95\linewidth}{!}{%
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Ký hiệu} & \textbf{Hàm Heuristic} & \textbf{Admissible}
+& \textbf{Nút mở TB} & \textbf{Thời gian (ms)} & \textbf{RAM (KiB)}
+& \textbf{\% Cắt tỉa} \\
+\midrule
+$H_0$ & Null Heuristic (UCS) & $\checkmark$
+& 1.906,3 & 1.285,7 & 6.859,6 & 0,0\% \\
+$H_1$ & Unrelaxed Manhattan & $\times$
+& 1.491,6 & 1.011,3 & 7.218,4 & -21,8\% \\
+$H_2$ & Relaxed Manhattan & $\checkmark$
+& 1.434,3 & 962,2 & 6.264,5 & -24,8\% \\
+$H_3$ & Relaxed + Orient & $\checkmark$
+& 1.433,5 & 918,2 & 6.263,2 & -24,8\% \\
+$H_4$ & Full Proposed (+ Merge) & $\checkmark$
+& 812,0 & 516,6 & 3.241,9 & -57,4\% \\
+$H_5$ & True-Distance (SoCS) & $\checkmark$
+& \textbf{731,2} & \textbf{461,3} & \textbf{3.373,7} & \textbf{-61,6\%} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Bảng \ref{tab:ablation_summary} và Hình \ref{fig:ablation_overview} thể
+hiện rõ nét xu hướng cải thiện hiệu năng qua từng giai đoạn hoàn thiện
+heuristic. Sự chuyển đổi từ $H_0$ sang $H_2$ giúp giảm $24,8\%$ số nút mở
+rộng. Việc bổ sung thành phần $h_{\text{merge}}$ trong $H_4$ tạo nên bước
+nhảy vọt lớn nhất, cắt giảm thêm $32,6\%$ số nút, đưa thời gian trung bình
+từ $918,2\text{ ms}$ xuống $516,6\text{ ms}$ (giảm $43,7\%$) và tiết kiệm
+hơn một nửa dung lượng bộ nhớ RAM đỉnh.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.98\textwidth]{%
+        images/charts/ablation_overview.png}
+    \caption{Tổng quan thực nghiệm bóc tách: (a) Số nút mở rộng trung bình
+    và tỷ lệ cắt tỉa so với baseline; (b) Thời gian thực thi và bộ nhớ đỉnh}
+    \label{fig:ablation_overview}
+\end{figure}
+
+Phân tích chuyên sâu các biến thể rút ra ba nhận xét thực nghiệm quan trọng:
+
+Thứ nhất, biến thể $H_1$ minh chứng rõ nét cho hiện tượng suy giảm hiệu
+năng khi vi phạm tính admissible. Do không chia đôi khoảng cách Manhattan,
+$H_1$ đánh giá chi phí vượt quá thực tế đối với các bước lật khối 2 ô.
+Tại \texttt{stage\_18}, $H_1$ mở rộng tới $627$ nút, kém hơn cả giải thuật
+tìm kiếm mù $H_0$ ($598$ nút). Sự đánh giá sai lệch khiến hàng đợi ưu tiên
+bị biến dạng, dẫn thuật toán vào các nhánh tìm kiếm sai lầm trước khi quay
+lại nhánh chính.
+
+Thứ hai, vai trò cốt lõi của $h_{\text{merge}}$ được thể hiện rõ ràng trên
+các màn chơi có cơ chế phân thân. Tại \texttt{stage\_82}, nếu chỉ sử dụng
+khoảng cách nới lỏng ($H_2$ và $H_3$), thuật toán phải duyệt tới $5.902$ nút.
+Khi tích hợp $h_{\text{merge}}$ trong $H_4$, số nút mở rộng giảm mạnh xuống
+còn $1.171$ nút (giảm tới $80,1\%$). Điều này chứng minh rằng trong không
+gian trạng thái phân thân đa thực thể, việc mô hình hóa chi phí tụ họp hai
+khối là điều kiện tiên quyết để định hướng tìm kiếm.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.98\textwidth]{%
+        images/charts/ablation_stage_breakdown.png}
+    \caption{So sánh số nút mở rộng (thang Logarit) trên từng màn chơi
+    giữa các biến thể Heuristic then chốt}
+    \label{fig:ablation_breakdown}
+\end{figure}
+
+Thứ ba, biến thể True-Distance $H_5$ thiết lập chuẩn mực hiệu năng cao nhất
+khi chiếm ưu thế áp đảo trên toàn bộ $10/10$ màn chơi (Hình
+\ref{fig:ablation_breakdown}). Khác với Manhattan vốn giả định mặt phẳng
+không vật cản, $H_5$ tính toán khoảng cách đồ thị thực tế men theo các hành
+lang và hố sâu của địa hình thông qua một lượt tiền xử lý Backward BFS
+cực nhanh ($< 1\text{ ms}$). Nhờ hàm đánh giá chặt hơn rõ rệt
+($D_{\text{true}}(p) \ge d_M(p, G)$), $H_5$ giảm số nút mở rộng trung bình
+xuống mức kỷ lục $731,2$ nút (giảm $61,6\%$ so với baseline $H_0$) và rút
+ngắn thời gian xử lý xuống $461,3\text{ ms}$. Hiệu quả thể hiện ấn tượng
+nhất tại các màn chơi có địa hình ngoằn ngoèo như \texttt{stage\_36} (giảm
+$65,2\%$ số nút so với $H_4$), \texttt{stage\_70} (giảm $35,3\%$) và
+\texttt{stage\_14} (giảm $29,2\%$).
 
 \subsection{Các Mối đe dọa đến Tính Hợp lệ}
 \label{subsec:threats_validity}
 
-\noindent
-\textbf{Tính Hợp lệ Nội tại:}
-\begin{itemize}[--]
-    \item \textit{Đo lường thời gian và bộ nhớ:} Thời gian chạy trên Python có
-    thể chịu ảnh hưởng bởi cơ chế dọn rác tự động (\texttt{gc}).
-    Để giảm thiểu sai số, nhóm đã khởi động lại tiến trình đo lường cho từng
-    màn, chạy kiểm thử ở môi trường không giao diện và kích hoạt
-    \texttt{tracemalloc} đồng nhất trước mỗi lệnh gọi hàm.
-    \item \textit{Xử lý hòa điểm trong hàng đợi:} Thứ tự duyệt giữa các nút có
-    cùng giá trị $f(n)$ hoặc $g(n)$ được giải quyết tất định bằng bộ đếm tự tăng
-    \texttt{itertools.count()}, ngăn ngừa sự xáo trộn ngẫu nhiên giữa các lần
-    chạy.
-\end{itemize}
+Về tính hợp lệ nội tại (Internal Validity), thời gian thực thi trên nền
+tảng Python có thể chịu ảnh hưởng từ trình dọn rác tự động (\texttt{gc})
+hoặc dao động xung nhịp hệ thống. Để triệt tiêu sai số này, mỗi phiên
+thử nghiệm đều được cô lập trong tiến trình riêng biệt, vô hiệu hóa giao
+diện đồ họa và tái khởi tạo môi trường đo đạc \texttt{tracemalloc} trước
+mỗi lượt chạy. Ngoài ra, xung đột thứ tự giữa các trạng thái có cùng giá
+trị đánh giá $f(n)$ trong Min-Heap được giải quyết tất định bằng bộ đếm tự
+tăng tuần tự \texttt{itertools.count()}, loại bỏ hoàn toàn yếu tố bất định
+trong việc mở rộng trạng thái.
 
-\noindent
-\textbf{Tính Hợp lệ Bên ngoài:}
-Tập mẫu $10$ màn chơi được chọn ngẫu nhiên có kiểm soát hạt giống
-($\text{seed}=42$) tuy bao quát đầy đủ các cơ chế vật lý phức tạp
-(gạch cam, phân thân, công tắc chữ X) nhưng chưa thể đại diện cho toàn bộ
-các tình huống cực đoan trong các mê cung có hàng trăm công tắc đảo chiều
-liên hoàn. Tuy nhiên, các kết luận định tính về thứ hạng hiệu năng giữa
-các thuật toán vẫn giữ nguyên tính tổng quát cho toàn bộ lớp bài toán
-PSPACE-complete dạng rolling-block puzzle.
+Về tính hợp lệ bên ngoài (External Validity), mặc dù tập mẫu gồm 10 màn
+chơi đã được lấy mẫu ngẫu nhiên có kiểm soát hạt giống ($\text{seed}=42$)
+để bao quát đủ 4 đặc trưng vật lý phức tạp (gạch mong manh, công tắc đa
+trạng thái, phân thân), tập kiểm thử chưa thể phản ánh trọn vẹn toàn bộ các
+mê cung nhân tạo với quy mô hàng nghìn ô gạch. Tuy nhiên, tính nhất quán
+cao của các định luật tiệm cận lý thuyết và số liệu thực nghiệm bảo đảm
+rằng các kết luận so sánh hiệu năng giữa các giải thuật vẫn hoàn toàn khái
+quát cho toàn bộ lớp bài toán PSPACE-complete dạng rolling-block puzzle.

@@ -10,8 +10,8 @@ trúc nút tìm kiếm bất biến tối ưu bộ nhớ.
 
 \subsection{Hình thức hóa Bài toán Không gian Trạng thái}
 \label{subsec:formal_search_problem}
-Không gian trạng thái Bloxorz được hình thức hóa thành một bộ $6$ thành
-phần $\langle S, s_0, A, T, G, c \rangle$:
+Không gian trạng thái Bloxorz được mô hình hóa thành một bộ 6 
+$\langle S, s_0, A, T, G, c \rangle$:
 \begin{enumerate}[1.]
     \item \textbf{Tập trạng thái ($S$):}
     Mỗi trạng thái $s \in S$ là một cặp
@@ -43,46 +43,210 @@ phần $\langle S, s_0, A, T, G, c \rangle$:
     Xác định chi phí để thực hiện hành động $a$ chuyển từ $s$ sang $s'$.
 \end{enumerate}
 
-\subsection{Cấu trúc Nút Tìm kiếm Bất biến (\texttt{SearchNode})}
+\subsection{Cấu trúc Nút Tìm kiếm (\texttt{SearchNode})}
 \label{subsec:search_node}
-Một thách thức cố hữu trong việc hiện thực các giải thuật tìm kiếm đồ thị
-trên ngôn ngữ có cơ chế quản lý bộ nhớ tự động (như Python) là chi phí lưu
-trữ lịch sử đường đi. Nếu mỗi nút lưu trữ một danh sách các bước đi
-$\text{List}[a]$ từ gốc, chi phí bộ nhớ cho một nút ở độ sâu $d$ sẽ là
-$O(d)$, dẫn đến tổng chi phí bộ nhớ của toàn bộ cây tìm kiếm bùng nổ lên
-$O(b^d \cdot d)$ \cite{russell2020aima}.
+Trong các giải thuật tìm kiếm đồ thị không gian trạng thái, nút tìm kiếm (\textit{Search Node})
+đóng vai trò là cấu trúc dữ liệu nền tảng lưu giữ toàn bộ tiến trình duyệt cây, làm cầu nối
+giữa trạng thái thực thể của bài toán với bộ điều phối giải thuật. Mỗi nút không chỉ phản ánh
+cấu hình vật lý của môi trường mà còn ghi nhận chi phí tích lũy, độ sâu tìm kiếm, cùng thông tin
+lịch sử nhằm phục vụ việc tái cấu trúc chuỗi hành động dẫn tới nghiệm.
 
-Để giải quyết vấn đề này, nhóm thiết kế lớp dữ liệu bất biến
-\texttt{SearchNode} theo mô hình chuỗi liên kết ngược:
+Tuy nhiên, việc hiện thực cấu trúc này trong thực tế thường đối mặt với thách thức lớn về chi phí bộ nhớ.
+Trong cách tiếp cận ngây thơ, mỗi nút khi được sinh ra thường sao chép
+và lưu trữ toàn bộ chuỗi hành động lũy tích từ gốc dưới dạng một danh sách động $\text{path} = [a_1, a_2, \dots, a_d]$.
+Khi đó, chi phí lưu trữ cho một nút đơn lẻ ở độ sâu $d$ sẽ là $O(d)$. Với hệ số phân nhánh trung bình $b$,
+tổng không gian bộ nhớ cần thiết để duy trì tập biên (\textit{frontier}) và cây tìm kiếm sẽ bùng nổ lên mức
+$O(b^d \cdot d)$ \cite{russell2020aima}. Hơn nữa, việc liên tục cấp phát bộ nhớ và sao chép mảng qua từng
+bước mở rộng nút còn tạo ra áp lực thu gom rác rất lớn, gây suy giảm
+đáng kể tốc độ duyệt trạng thái.
+
+Để giải quyết triệt để sự dư thừa tài nguyên này, hệ thống hiện thực lớp \texttt{SearchNode} theo mô hình
+chuỗi liên kết ngược với nguyên tắc bất biến:
 \begin{equation}
     \text{SearchNode} = \langle \text{block}, \text{board}, \text{cost},
     \text{depth}, \text{parent}, \text{direction} \rangle
 \end{equation}
+
+Kiến trúc này mang lại những ưu thế kỹ thuật vượt trội:
 \begin{itemize}[--]
-    \item \textbf{Tiết kiệm bộ nhớ vượt trội $O(1)$:}
-    Mỗi khi một nút con được sinh ra, nó chỉ lưu trữ một con trỏ tham chiếu
-    ngược về nút cha (\texttt{parent}) và hành động dẫn xuất
-    (\texttt{direction}). Chi phí cấp phát bộ nhớ cho mỗi nút giảm từ
-    $O(d)$ xuống hằng số $O(1)$.
+    \item \textbf{Tối ưu hóa bộ nhớ xuống mức $O(1)$:}
+    Mỗi khi một nút con được mở rộng, nó chỉ lưu trữ duy nhất một con trỏ tham chiếu ngược về nút cha
+    (\texttt{parent}) cùng nhãn hành động dẫn xuất (\texttt{direction}). Nhờ vậy, chi phí bộ nhớ
+    để lưu trữ thông tin đường đi cho mỗi nút được cố định ở mức hằng số $O(1)$, giảm tổng độ phức tạp
+    không gian của toàn bộ quá trình tìm kiếm từ $O(b^d \cdot d)$ về đúng giới hạn lý thuyết tối thiểu $O(b^d)$.
     
     \item \textbf{Bảo toàn dữ liệu trong Hàng đợi Ưu tiên:}
-    Đặc tính bất biến đảm bảo rằng việc tìm thấy một đường đi tốt hơn tới cùng
-    một trạng thái sẽ không thể vô tình sửa đổi dữ liệu của các nhánh tìm kiếm
-    khác đang nằm trong hàng đợi ưu tiên Min-Heap.
+    Đặc tính bất biến đảm bảo rằng khi thuật toán khám phá được một lộ trình
+    khác tới cùng một trạng thái với chi phí thấp hơn, việc cập nhật đường đi sẽ không gây ra hiệu ứng lề
+    làm biến dạng dữ liệu hay đảo lộn thứ tự ưu tiên của các nút đang nằm trong Min-Heap.
 
-    \item \textbf{Tái cấu trúc đường đi trong $O(d)$:}
-    Khi trạng thái đích được phát hiện, hàm \texttt{reconstruct\_moves()} chỉ
-    cần lần ngược theo chuỗi con trỏ \texttt{parent} từ đích về gốc trong
-    thời gian tuyến tính $O(d)$ và đảo ngược danh sách để thu được chuỗi hành
-    động hoàn chỉnh.
+    \item \textbf{Tái cấu trúc đường đi trong thời gian tuyến tính $O(d)$:}
+    Khi trạng thái đích được phát hiện, hàm \texttt{reconstruct\_moves()} chỉ cần lần ngược theo chuỗi con trỏ
+    \texttt{parent} từ đích về gốc trong thời gian tuyến tính $O(d)$ và đảo ngược danh sách để thu được chuỗi hành
+    động hoàn chỉnh, đảm bảo việc trích xuất nghiệm diễn ra tức thời mà không phát sinh thêm chi phí tính toán
+    trong suốt quá trình tìm kiếm.
 \end{itemize}
+
+\subsection{Phân tích và Chứng minh Độ phức tạp Toán học}
+\label{subsec:complexity_analysis}
+Để khẳng định tính đúng đắn và hiệu quả vượt trội của cấu trúc \texttt{SearchNode}
+cũng như các giải thuật tìm kiếm được triển khai, phần này trình bày chứng minh
+toán học hình thức cho các giới hạn độ phức tạp về không gian bộ nhớ và thời gian tính toán.
+
+\subsubsection{Độ phức tạp Không gian Lưu trữ Đường đi}
+
+\noindent
+\textbf{Mệnh đề 1 (Độ phức tạp của phương pháp lưu trữ ngây thơ):}
+\textit{Xét một cây tìm kiếm có hệ số phân nhánh đều $b \ge 2$ và độ sâu tìm kiếm $d \ge 1$.
+Nếu mỗi nút tại độ sâu $k$ sao chép và lưu trữ toàn bộ chuỗi hành động từ gốc dưới dạng một
+danh sách mảng động $\text{path} = [a_1, a_2, \dots, a_k]$, thì tổng chi phí không gian bộ nhớ
+phụ trội để lưu trữ thông tin đường đi trên toàn bộ cây tìm kiếm là $\Theta(d \cdot b^d)$
+hay $O(b^d \cdot d)$.}
+
+\noindent
+\textbf{Chứng minh:}
+Giả sử chi phí bộ nhớ để lưu trữ một phần tử hành động (hoặc con trỏ tham chiếu) là một hằng số $c > 0$.
+Trên cây tìm kiếm $b$-phân đầy đủ, số lượng nút tại độ sâu $k \in \{0, 1, \dots, d\}$ là $N_k = b^k$.
+Vì một nút ở tầng $k$ lưu giữ một danh sách gồm đúng $k$ hành động, dung lượng bộ nhớ tiêu thụ
+để lưu đường đi tại nút đó là $S_{\text{path}}(k) = c \cdot k$.
+
+Tổng dung lượng bộ nhớ dành riêng cho việc lưu vết đường đi trên toàn bộ cây tìm kiếm đến độ sâu $d$ là:
+\begin{equation}
+    M_{\text{naive}}(b, d) = \sum_{k=0}^{d} N_k \cdot S_{\text{path}}(k)
+    = c \sum_{k=1}^{d} k \cdot b^k
+    \label{eq:naive_sum}
+\end{equation}
+Đặt $S = \sum_{k=1}^{d} k \cdot b^k$. Đây là một chuỗi hinh học.
+Nhân cả hai vế của $S$ với công bội $b$:
+\begin{equation}
+    b \cdot S = \sum_{k=1}^{d} k \cdot b^{k+1} = \sum_{j=2}^{d+1} (j - 1) b^j
+\end{equation}
+Lấy biểu thức $b \cdot S$ trừ đi $S$:
+\begin{align}
+    (b - 1) S &= \left( \sum_{k=1}^{d} k \cdot b^{k+1} \right) - \left( \sum_{k=1}^{d} k \cdot b^k \right) \nonumber \\
+              &= d \cdot b^{d+1} - \sum_{k=1}^{d} b^k \nonumber \\
+              &= d \cdot b^{d+1} - \frac{b(b^d - 1)}{b - 1}
+\end{align}
+Chia cả hai vế cho $(b - 1) > 0$, ta thu được biểu thức tường minh của $S$:
+\begin{equation}
+    S = \frac{d \cdot b^{d+1}}{b - 1} - \frac{b(b^d - 1)}{(b - 1)^2}
+      = \frac{b}{b - 1} \cdot d \cdot b^d - \frac{b(b^d - 1)}{(b - 1)^2}
+\end{equation}
+Khi $d \to \infty$ với hệ số phân nhánh $b \ge 2$ cố định, số hạng chứa $d \cdot b^d$ là số hạng
+chi phối bậc cao nhất:
+\begin{equation}
+    S = \frac{b}{b - 1} \cdot d \cdot b^d - O(b^d) = \Theta(d \cdot b^d)
+\end{equation}
+Thay $S$ vào Phương trình (\ref{eq:naive_sum}), ta có:
+\begin{equation}
+    M_{\text{naive}}(b, d) = c \cdot \Theta(d \cdot b^d) = \Theta(d \cdot b^d) = O(b^d \cdot d)
+\end{equation}
+Định lý được chứng minh hoàn tất. \hfill $\blacksquare$
+
+\vspace{0.3cm}
+\noindent
+\textbf{Mệnh đề 2 (Độ phức tạp khi sử dụng Chuỗi liên kết ngược):}
+\textit{Khi mỗi nút \texttt{SearchNode} chỉ lưu trữ một con trỏ tham chiếu về nút cha (\texttt{parent})
+và một nhãn hành động dẫn xuất (\texttt{direction}), chi phí lưu trữ thông tin đường đi tại mỗi nút
+đạt mức hằng số $O(1)$, và tổng không gian lưu trữ của toàn bộ cây tìm kiếm giảm xuống $\Theta(b^d) = O(b^d)$,
+tiết kiệm được một hệ số quy mô $\Theta(d)$ so với phương pháp ngây thơ.}
+
+\noindent
+\textbf{Chứng minh:}
+Trong cấu trúc \texttt{SearchNode}, mỗi nút chỉ lưu trữ cố định một con trỏ tham chiếu địa chỉ
+(\texttt{parent}) và một định danh hành động (\texttt{direction}). Dung lượng này là một hằng số
+$C_0 > 0$ độc lập với độ sâu $k$ của nút trong cây tìm kiếm:
+\begin{equation}
+    S_{\text{opt}}(k) = C_0 = \Theta(1), \quad \forall k \in \{0, 1, \dots, d\}
+\end{equation}
+Tổng dung lượng bộ nhớ để lưu trữ thông tin cây tìm kiếm đến độ sâu $d$ là:
+\begin{equation}
+    M_{\text{opt}}(b, d) = \sum_{k=0}^{d} N_k \cdot S_{\text{opt}}(k)
+    = C_0 \sum_{k=0}^{d} b^k
+    = C_0 \cdot \frac{b^{d+1} - 1}{b - 1} = \Theta(b^d) = O(b^d)
+\end{equation}
+Xét tỷ số tiêu thụ bộ nhớ giữa phương pháp ngây thơ và phương pháp chuỗi liên kết ngược:
+\begin{equation}
+    \lim_{d \to \infty} \frac{M_{\text{naive}}(b, d)}{M_{\text{opt}}(b, d)}
+    = \lim_{d \to \infty} \frac{c \left( \dfrac{b}{b - 1} \cdot d \cdot b^d - O(b^d) \right)}{C_0 \cdot \dfrac{b}{b - 1} \cdot b^d}
+    = \frac{c}{C_0} \cdot d = \Theta(d)
+\end{equation}
+Như vậy, cơ chế liên kết ngược giúp tiết kiệm bộ nhớ với hệ số tỷ lệ thuận tuyến tính theo độ sâu tìm kiếm $d$.
+Với các màn chơi Bloxorz phức tạp có độ sâu lời giải lớn ($d \ge 50$), kỹ thuật này giúp tiết kiệm hàng chục
+lần bộ nhớ RAM thực tế, ngăn chặn hiện tượng cạn kiệt bộ nhớ (\textit{Out-of-Memory}). \hfill $\blacksquare$
+
+\subsubsection{Độ phức tạp Thời gian Tái cấu trúc Đường đi}
+
+\noindent
+\textbf{Mệnh đề 3 (Thời gian trích xuất nghiệm tối ưu):}
+\textit{Cho nút đích $n_{\text{goal}}$ nằm ở độ sâu $d$ trên cây tìm kiếm. Hàm \texttt{reconstruct\_moves()}
+trích xuất chuỗi hành động tối ưu $[a_1, a_2, \dots, a_d]$ với độ phức tạp thời gian là $\Theta(d)$
+và độ phức tạp không gian phụ trợ là $\Theta(d)$.}
+
+\noindent
+\textbf{Chứng minh:}
+Thuật toán tái cấu trúc đường đi hoạt động theo hai giai đoạn tuần tự:
+\begin{enumerate}[1.]
+    \item \textbf{Giai đoạn 1 (Lần ngược con trỏ cha):}
+    Khởi tạo con trỏ $n = n_{\text{goal}}$ và danh sách kết quả rỗng $\text{moves} = []$.
+    Tại mỗi bước, thuật toán thêm phần tử $n.\texttt{direction}$ vào mảng (\texttt{append}) với chi phí thời gian
+    trung bình $O(1)$, sau đó gán $n \leftarrow n.\texttt{parent}$ với chi phí $O(1)$.
+    Vì nút đích ở độ sâu $d$, chuỗi con trỏ dẫn về nút gốc $n_0$ có đúng $d$ cạnh liên kết.
+    Vòng lặp kết thúc khi $n.\texttt{parent} = \text{None}$.
+    Do đó, vòng lặp thực hiện chính xác $d$ bước lặp, tiêu tốn thời gian tính toán là:
+    \begin{equation}
+        T_{\text{traverse}}(d) = \sum_{i=1}^{d} \Big( O(1) + O(1) \Big) = d \cdot O(1) = \Theta(d)
+    \end{equation}
+
+    \item \textbf{Giai đoạn 2 (Đảo ngược chuỗi hành động):}
+    Danh sách $\text{moves}$ thu được từ Giai đoạn 1 có độ dài $d$ và mang thứ tự từ đích về gốc:
+    $[a_d, a_{d-1}, \dots, a_1]$. Hàm \texttt{moves.reverse()} thực hiện hoán đổi đối xứng hai đầu
+    bằng cách duyệt từ hai biên vào giữa, thực hiện chính xác $\lfloor d/2 \rfloor$ phép hoán vị.
+    Chi phí thời gian của thao tác này là:
+    \begin{equation}
+        T_{\text{reverse}}(d) = \left\lfloor \frac{d}{2} \right\rfloor \cdot O(1) = \Theta(d)
+    \end{equation}
+\end{enumerate}
+Tổng thời gian thực thi của hàm \texttt{reconstruct\_moves()} là:
+\begin{equation}
+    T_{\text{reconstruct}}(d) = T_{\text{traverse}}(d) + T_{\text{reverse}}(d) = \Theta(d) + \Theta(d) = \Theta(d) = O(d)
+\end{equation}
+Không gian phụ trợ cần dùng là một danh sách chứa đúng $d$ phần tử hành động:
+$S_{\text{aux}}(d) = d \cdot O(1) = \Theta(d)$.
+Đáng chú ý, độ phức tạp thời gian và không gian này chỉ phụ thuộc tuyến tính vào độ dài nghiệm $d$,
+hoàn toàn độc lập với tổng số nút $N \le b^d$ mà thuật toán đã duyệt qua trong không gian trạng thái. \hfill $\blacksquare$
+
+\subsubsection{Tổng hợp So sánh Độ phức tạp các Giải thuật Tìm kiếm}
+Từ các kết quả chứng minh trên và lý thuyết tìm kiếm trên đồ thị \cite{russell2020aima},
+Bảng \ref{tab:algorithm_complexity_comparison} tổng hợp toàn diện các chỉ số độ phức tạp lý thuyết
+của 4 giải thuật được hiện thực trong đồ án, với $b$ là hệ số phân nhánh trung bình ($b \le 4$),
+$d$ là độ sâu nghiệm tối ưu, $m$ là độ sâu tối đa của không gian trạng thái ($m \ge d$), và
+$C^*$ là chi phí đường đi tối ưu với $\epsilon = \min_{s, a, s'} c(s, a, s') > 0$.
+
+\begin{table}[H]
+\centering
+\caption{So sánh độ phức tạp lý thuyết của các giải thuật tìm kiếm}
+\label{tab:algorithm_complexity_comparison}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Giải thuật} & \textbf{Thời gian} & \textbf{Không gian} & \textbf{Tính Đầy đủ} & \textbf{Tính Tối ưu} \\
+\midrule
+\textbf{BFS} & $O(b^d)$ & $O(b^d)$ & Có (với $b < \infty$) & Có (chi phí đồng nhất) \\
+\textbf{DFS (Graph)} & $O(|V| + |E|)$ & $O(b \cdot m + |V|)$ & Có (nhờ tập visited) & Không \\
+\textbf{UCS} & $O\left(b^{1 + \lfloor C^* / \epsilon \rfloor}\right)$ & $O\left(b^{1 + \lfloor C^* / \epsilon \rfloor}\right)$ & Có (với $c \ge \epsilon > 0$) & Có (chi phí bất kỳ) \\
+\textbf{A*} & $O(b^d)$ & $O(b^d)$ & Có & Có (khi $h$ admissible) \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
 
 \subsection{Tìm kiếm theo Chiều rộng và Chiều sâu}
 \label{subsec:bfs_dfs_impl}
 
 \noindent
 \textbf{Tìm kiếm theo Chiều rộng (BFS):}
-Hiện thực bằng hàng đợi hai đầu \texttt{collections.deque} trong Python.
+Thực hiện bằng cách sử dụng hàng đợi hai đầu \texttt{collections.deque} trong Python, từ đó
 BFS thăm các trạng thái theo từng tầng độ sâu tăng dần.
 \begin{itemize}[--]
     \item \textit{Kiểm tra Đích sớm:}
@@ -101,8 +265,8 @@ vào vòng lặp vô tận hoặc chạm giới hạn đệ quy của Python
 (\texttt{RecursionError}).
 \begin{itemize}[--]
     \item \textit{Ngăn xếp LIFO tường minh:} Nhóm hiện thực DFS bằng
-    ngăn xếp tường minh trên bộ nhớ Heap thông qua danh sách Python
-    (\texttt{list.pop()}), triệt tiêu hoàn toàn nguy cơ tràn ngăn xếp hệ thống.
+    ngăn xếp trên bộ nhớ Heap thông qua danh sách Python
+    (\texttt{list.pop()}), triệt tiêu nguy cơ tràn ngăn xếp hệ thống.
     \item \textit{Tập trạng thái đã duyệt:} Sử dụng bảng băm lưu trữ khóa định
     danh trạng thái $\langle \text{block\_key}, \text{bridge\_key} \rangle$.
     Trước khi đẩy một nút vào ngăn xếp, DFS kiểm tra khóa băm; nếu trạng thái
@@ -141,15 +305,42 @@ vòng trên nền gạch an toàn trước. Chỉ khi mọi lộ trình thuần 
 cho khối bước lên bề mặt mong manh. Cơ chế này giúp giảm thiểu tối đa xác suất
 phạm sai lầm trong các môi trường có độ rủi ro cơ học cao.
 
-\subsection{Thuật toán Tìm kiếm A* và Chứng minh Tính Chấp Nhận Được}
+\subsection{Thuật toán Tìm kiếm A* và Phân tích Tính Hợp lệ của Heuristic}
 \label{subsec:astar_admissibility}
 Giải thuật A* tích hợp tri thức định hướng thông qua hàm Heuristic $h(n)$
-để tập trung tia tìm kiếm về phía ô đích.
+nhằm ước lượng chi phí còn lại từ trạng thái hiện tại đến trạng thái đích,
+giúp tập trung không gian tìm kiếm và tối ưu hóa thời gian giải quyết bài toán.
+
+\subsubsection{Phương pháp luận và Ý tưởng Thiết kế Hàm Heuristic}
+Để giải thuật A* bảo đảm tìm được lời giải tối ưu toàn cục và phát huy tối đa
+năng lực cắt tỉa, hàm heuristic $h(n)$ cần phản ánh sát sao khoảng cách thực tế
+đến đích nhưng tuyệt đối không được đánh giá vượt quá chi phí thực tế ($h(n) \le h^*(n)$).
+Nhóm thiết kế hàm heuristic dựa trên kỹ thuật \textit{nới lỏng bài toán} (\textit{Problem Relaxation}):
+\begin{itemize}[--]
+    \item \textbf{Nới lỏng Không gian Bản đồ:} Giả định một mặt phẳng lưới $\mathbb{Z}^2$ vô hạn
+    không chứa ô rỗng, vách đá hay cầu bị ngắt. Mọi bước lật khối 4 hướng đều được thực hiện tự do.
+    
+    \item \textbf{Động học Khối $1 \times 1 \times 2$:} Trong mỗi bước lật hợp lệ từ tư thế đứng
+    sang nằm hoặc ngược lại, hình chiếu tiếp xúc của khối dịch chuyển tối đa $2$ đơn vị khoảng cách
+    Manhattan về phía ô đích. Do đó, nếu khoảng cách Manhattan ngắn nhất từ khối đến đích là $d_{\min}$,
+    số bước lật tối thiểu không thể nhỏ hơn $\lceil d_{\min} / 2 \rceil$.
+    
+    \item \textbf{Ràng buộc Tư thế Đích:} Luật chơi yêu cầu khối phải ở tư thế đứng (\texttt{STANDING})
+    ngay trên ô đích. Tại vị trí $d_{\min} = 0$, nếu khối đang ở tư thế nằm (\texttt{LYING\_X} hoặc
+    \texttt{LYING\_Y}), khối không thể tự đứng dậy tại chỗ mà bắt buộc phải lật ra ô bên cạnh ít nhất
+    $1$ bước rồi lật ngược trở lại để dựng đứng. Do đó, chi phí tối thiểu tại trạng thái này bắt buộc là $2$ bước.
+    
+    \item \textbf{Xử lý Cơ chế Phân thân:} Khi khối bị tách thành hai khối lập phương đơn $1 \times 1 \times 1$,
+    hệ thống không thể kết thúc màn chơi trực tiếp mà bắt buộc hai khối phải di chuyển tiếp giáp cạnh nhau
+    để hợp nhất. Vì mỗi bước đi của khối đơn chỉ làm giảm khoảng cách giữa chúng tối đa $1$ đơn vị,
+    chi phí tụ họp tối thiểu là $h_{\text{merge}} = \max(0, d_M(B_1, B_2) - 1)$. Sau khi hợp nhất,
+    khoảng cách đến đích của khối mới được chặn dưới bởi khối đơn gần đích nhất:
+    $h_{\text{goal}} = \lceil \min(d(B_1, G), d(B_2, G)) / 2 \rceil$.
+\end{itemize}
 
 \subsubsection{\texorpdfstring{Công thức Hàm Heuristic $h(n)$}%
 {Cong thuc Ham Heuristic h(n)}}
-Hàm Heuristic của nhóm được xây dựng trên nguyên lý nới lỏng bài toán,
-phân biệt hai cấu hình:
+Từ các phân tích nới lỏng trên, hàm Heuristic tổng quát được xác định cụ thể theo hai cấu hình:
 
 \begin{enumerate}[1.]
     \item \textbf{Cấu hình Khối Nguyên vẹn ($1 \times 1 \times 2$):}
@@ -200,7 +391,7 @@ phân biệt hai cấu hình:
 \textbf{Định lý 1 (Tính Chấp nhận được của $h(n)$):}
 \textit{Hàm đánh giá Heuristic $h(n)$ được định nghĩa tại Phương trình
 (\ref{eq:heuristic_normal}) và (\ref{eq:heuristic_split}) thỏa mãn điều kiện
-chấp nhận được:}
+chấp nhận được (\textit{Admissible}):}
 \begin{equation}
     0 \le h(n) \le h^*(n), \quad \forall n \in S
 \end{equation}
@@ -272,9 +463,90 @@ Vì các giai đoạn này diễn ra tuần tự và độc lập, ta có:
 \end{equation}
 
 Từ cả ba trường hợp trên, ta có $h(n) \le h^*(n)$ với mọi $n \in S$.
-Định lý được chứng minh hoàn tất.
-\hfill $\blacksquare$
+Định lý 1 được chứng minh hoàn tất. \hfill $\blacksquare$
 
-Hệ quả trực tiếp của Định lý 1 là giải thuật A* được bảo đảm $100\%$ về mặt
-lý thuyết sẽ luôn tìm ra lời giải có chi phí tối ưu toàn cục, đồng thời phát
-huy tối đa khả năng cắt tỉa các nhánh tìm kiếm kém triển vọng.
+\subsubsection{Bàn luận và Phân tích Tính Nhất Quán (Consistency)}
+Một hàm heuristic $h(n)$ được gọi là nhất quán (\textit{consistent} hay \textit{monotonic}) nếu với mọi nút $n$
+và mọi nút con $n'$ sinh ra từ hành động $a$, bất đẳng thức tam giác sau luôn được thỏa mãn \cite{russell2020aima}:
+\begin{equation}
+    h(n) \le c(n, a, n') + h(n')
+    \label{eq:consistency_def}
+\end{equation}
+
+\noindent
+\textbf{Xét trên cấu hình Khối Nguyên vẹn ($1 \times 1 \times 2$):}
+Trong mọi bước lật hợp lệ $a$, khối dịch chuyển tối đa $2$ đơn vị trên lưới Manhattan, dẫn đến:
+\begin{equation}
+    |d_{\min}(n) - d_{\min}(n')| \le 2
+\end{equation}
+Áp dụng tính chất của hàm trần (\textit{ceiling}):
+\begin{equation}
+    h(n) - h(n') = \left\lceil \frac{d_{\min}(n)}{2} \right\rceil - \left\lceil \frac{d_{\min}(n')}{2} \right\rceil \le 1
+\end{equation}
+Vì mọi bước lật thực tế đều có chi phí $c(n, a, n') \ge 1.0$, ta luôn có:
+\begin{equation}
+    h(n) - h(n') \le 1.0 \le c(n, a, n') \implies h(n) \le c(n, a, n') + h(n')
+\end{equation}
+Tại vùng lân cận ô đích ($d_{\min} \le 1$):
+\begin{itemize}[--]
+    \item Nếu $d_{\min}(n) = 1 \implies h(n) = 1$. Bước kế tiếp vào đích ở tư thế đứng có $h(n') = 0$, khi đó $h(n) - h(n') = 1 \le c = 1.0$. Nếu vào đích ở tư thế nằm, $h(n') = 2 \implies h(n) - h(n') = -1 \le c = 1.0$.
+    \item Nếu $d_{\min}(n) = 0$ và khối đang nằm ($h(n) = 2$): Bước lật ra ngoài đưa khối đến ô có $d_{\min}(n') \ge 1 \implies h(n') \ge 1$. Khi đó $h(n) - h(n') \le 2 - 1 = 1 \le c = 1.0$.
+\end{itemize}
+Như vậy, trên toàn bộ không gian khối nguyên vẹn, hàm heuristic $h(n)$ là \textbf{nhất quán nghiêm ngặt} (\textit{strictly consistent}).
+
+\vspace{0.2cm}
+\noindent
+\textbf{Xét trên cấu hình Khối Phân thân:}
+Khi khối ở trạng thái phân thân, $h(n) = h_{\text{merge}}(n) + h_{\text{goal}}(n)$.
+Khi di chuyển một khối đơn $B_1$, khoảng cách giữa hai khối $d(B_1, B_2)$ giảm tối đa $1$ đơn vị
+($\Delta h_{\text{merge}} \le 1$). Trong trường hợp đặc thù khi $B_1$ vừa di chuyển lại gần $B_2$
+vừa di chuyển lại gần ô đích $G$, cả $h_{\text{merge}}$ và $h_{\text{goal}}$ có thể cùng giảm $1$ đơn vị
+trong một bước đi duy nhất có chi phí $c = 1.0$, khiến độ sụt giảm tổng thể $\Delta h = 2 > c = 1.0$.
+Do đó, trong giai đoạn phân thân, hàm heuristic bảo đảm tính \textit{chấp nhận được} (\textit{admissible}) nhưng
+có thể vi phạm tính nhất quán cục bộ tại một số trạng thái chuyển tiếp đồng hướng.
+
+\noindent
+\textbf{Cơ chế bảo đảm tính tối ưu trong hiện thực giải thuật:}
+Để khắc phục hiện tượng trên trong Graph Search, thuật toán A* của nhóm không sử dụng tập đóng cứng (\textit{strict closed set})
+mà triển khai bảng lưu chi phí tối ưu \texttt{best\_cost[state\_key]}. Khi một trạng thái được tái khám phá
+với chi phí đường đi tích lũy thấp hơn ($g(n') < \texttt{best\_cost}[k]$), thuật toán cập nhật lại chi phí
+và đưa nút trở lại hàng đợi ưu tiên (\textit{node reopening}). Nhờ vậy, A* bảo đảm tìm ra nghiệm tối ưu toàn cục
+dưới mọi điều kiện mà không bị phụ thuộc vào điều kiện nhất quán ngặt nghèo của cây tìm kiếm đồ thị.
+
+\subsubsection{Tính Chấp nhận được Tương thích với Hàm Chi phí Đã chọn}
+Một lưu ý đặc biệt quan trọng là tính chấp nhận được của hàm Heuristic phải được bảo toàn
+với \textit{hàm chi phí thực tế} $c(s, a, s')$ đã chọn trong đồ án (Phương trình \ref{eq:fragile_cost}):
+
+\begin{enumerate}[1.]
+    \item \textbf{Bước lật thông thường ($c = 1.0$):}
+    Vì mỗi bước lật tối đa chỉ rút ngắn $2$ đơn vị khoảng cách Manhattan, số bước di chuyển tối thiểu
+    thực tế là $k^* \ge \lceil d_{\min} / 2 \rceil$. Do mỗi bước tốn ít nhất $1.0$ đơn vị chi phí,
+    chi phí thực tế thỏa mãn:
+    \begin{equation}
+        h^*(n) \ge 1.0 \cdot k^* \ge 1.0 \cdot \left\lceil \frac{d_{\min}}{2} \right\rceil = h(n)
+    \end{equation}
+
+    \item \textbf{Bước đi trên gạch mong manh ($c = 3.0$):}
+    Khi khối tiếp xúc với ô sàn mong manh (\texttt{FRAGILE}), chi phí bước đi tăng lên $3.0 > 1.0$.
+    Vì chi phí thực tế của mọi cung cạnh chứa gạch cam đều lớn hơn chi phí cơ sở, tổng chi phí thực tế
+    $h^*(n)$ chỉ có thể bằng hoặc lớn hơn chi phí trong môi trường đồng nhất:
+    \begin{equation}
+        h^*(n) \ge h^*(n)_{\text{đồng nhất}} \ge h(n)
+    \end{equation}
+    Do đó, hàm heuristic không bao giờ đánh giá vượt quá chi phí thực tế khi có sự xuất hiện của gạch mong manh.
+
+    \item \textbf{Hành động chuyển đổi quyền điều khiển khối ($a = \texttt{SWITCH\_CUBE}$, $c = 0.0$):}
+    Thao tác này cho phép tác tử luân chuyển quyền điều khiển giữa hai khối đơn mà không tốn chi phí ($c = 0.0$).
+    Đáng chú ý, hành động \texttt{SWITCH\_CUBE} chỉ thay đổi thuộc tính \texttt{active\_index} mà hoàn toàn
+    không làm thay đổi tọa độ không gian $(x_1, y_1)$ và $(x_2, y_2)$ của hai khối.
+    Vì cả $h_{\text{merge}}(n)$ và $h_{\text{goal}}(n)$ chỉ phụ thuộc thuần túy vào tọa độ hình học của các khối
+    mà không phụ thuộc vào khối nào đang nhận quyền điều khiển, ta có:
+    \begin{equation}
+        h(s') = h(s) \implies h(s) \le c(s, a, s') + h(s') = 0.0 + h(s')
+    \end{equation}
+    Bất đẳng thức được thỏa mãn ở trạng thái cân bằng tuyệt đối ($h(s) = h(s')$). Đồng thời, hành động đổi khối
+    không rút ngắn khoảng cách đến đích, nên chi phí thực tế cần thêm ít nhất $h(s)$ bước lật thực tế ($c \ge 1.0$).
+    Vì vậy, $h^*(n) \ge h(n)$ luôn được bảo toàn tuyệt đối.
+\end{enumerate}
+Kết luận: Hàm Heuristic đề xuất hoàn toàn tương thích và bảo đảm tính chấp nhận được (\textit{admissible})
+với hàm chi phí đã chọn trong toàn bộ không gian trạng thái của trò chơi.

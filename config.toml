@@ -113,8 +113,8 @@ default_delay = 0.08            # Delay in seconds between animated solver moves
 arrow_scheme = "isometric"
 
 [animation]
-wave_enabled = true
-wave_amplitude = 0.22
+wave_enabled = false
+wave_amplitude = 0.0
 wave_freq_x = 0.38
 wave_freq_z = 0.32
 wave_speed = 1.35

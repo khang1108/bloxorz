@@ -18,8 +18,8 @@ def test_animation_config_defaults():
     cfg = get_config()
     assert hasattr(cfg, "animation")
     anim = cfg.animation
-    assert anim.wave_enabled is True
-    assert anim.wave_amplitude > 0.0
+    assert anim.wave_enabled is False
+    assert anim.wave_amplitude >= 0.0
     assert anim.stage_intro_anim is True
     assert anim.tile_highlight_enabled is True
     assert anim.cushion_depth == 0.0

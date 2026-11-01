@@ -149,9 +149,9 @@ class BackgroundConfig:
 @dataclass
 class AnimationConfig:
     """Tuning parameters for Animation & VFX subsystem - Bloxpath Inspired Polish."""
-    # Sóng dập dìu cho các ô đi được (walkable board tiles floating like a raft on water)
-    wave_enabled: bool = True
-    wave_amplitude: float = 0.09
+    # Sóng dập dìu cho các ô đi được (disabled for rock-solid architectural board stability)
+    wave_enabled: bool = False
+    wave_amplitude: float = 0.0
     wave_freq_x: float = 0.40
     wave_freq_z: float = 0.35
     wave_speed: float = 1.6

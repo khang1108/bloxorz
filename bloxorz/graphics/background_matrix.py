@@ -98,48 +98,6 @@ class ColumnSea(Entity):
         base_top_y = getattr(CONFIG.animation, "column_sea_base_y", -1.72)
 
         # ---------------------------------------------------------------------
-        # Cyberpunk Neon Molten Lava Abyss (Infinite flowing magma ocean)
-        # ---------------------------------------------------------------------
-        lava_size = max(130.0, outer_radius * 2.8)
-        base_lava_y = -1.75
-
-        if _LAVA_TEX:
-            if hasattr(_LAVA_TEX, "_texture") and _LAVA_TEX._texture:
-                try:
-                    from panda3d.core import SamplerState
-                    _LAVA_TEX._texture.setMinfilter(SamplerState.FT_linear_mipmap_linear)
-                    _LAVA_TEX._texture.setMagfilter(SamplerState.FT_linear)
-                except Exception:
-                    pass
-
-            self.lava_plane = Entity(
-                parent=self,
-                model='plane',
-                texture=_LAVA_TEX,
-                position=(center_x, base_lava_y, -center_y),
-                scale=(lava_size, 1.0, lava_size),
-                unlit=True,
-                double_sided=True,
-                name="cyber_lava_surface",
-            )
-            self.lava_plane.texture_scale = (lava_size / 13.0, lava_size / 13.0)
-
-            # Deeper secondary parallax lava layer for glowing depth
-            self.lava_plane_deep = Entity(
-                parent=self,
-                model='plane',
-                texture=_LAVA_TEX,
-                rotation_y=35,
-                position=(center_x, base_lava_y - 0.20, -center_y),
-                scale=(lava_size * 1.25, 1.0, lava_size * 1.25),
-                color=color.rgba(0.40, 0.18, 0.10, 0.45),
-                unlit=True,
-                double_sided=True,
-                name="cyber_lava_deep",
-            )
-            self.lava_plane_deep.texture_scale = (lava_size / 22.0, lava_size / 22.0)
-
-        # ---------------------------------------------------------------------
         # Radial Organic Volcanic Archipelago (Tản tự nhiên, không ranh giới hộp)
         # ---------------------------------------------------------------------
         x_start = int(math.floor(center_x - outer_radius))
@@ -220,20 +178,7 @@ class ColumnSea(Entity):
         self._time += dt
         t = self._time
 
-        # 1. Flowing Cyberpunk Lava Sea animation
-        if self.lava_plane:
-            # Flowing molten magma current
-            self.lava_plane.texture_offset = (t * 0.010, t * 0.007)
-            # Radiant heat pulse (warm cyber neon lava glow)
-            heat_pulse = 0.72 + 0.10 * math.sin(t * 1.5)
-            self.lava_plane.color = color.rgba(heat_pulse * 0.65, heat_pulse * 0.38, heat_pulse * 0.25, 0.85)
-            self.lava_plane.y = -1.7505 + 0.03 * math.sin(t * 1.1)
-
-        if self.lava_plane_deep:
-            self.lava_plane_deep.texture_offset = (-t * 0.006, t * 0.008)
-            self.lava_plane_deep.y = -1.95 + 0.02 * math.sin(t * 0.9)
-
-        # 2. Mostly static background columns with sporadic asynchronous popping & radiant thermal uplift
+        # Mostly static background columns with sporadic asynchronous popping & radiant thermal uplift
         if self.columns:
             has_colors = len(self.column_base_colors) == len(self.columns)
             for i, (col, base_h, px, pz) in enumerate(self.columns):

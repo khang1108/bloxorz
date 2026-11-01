@@ -402,10 +402,10 @@ class FXManager(Entity):
     # -------------------------------------------------------------------------
 
     def setup_ambient_dust(self, center: Vec3, bounds: float = 12.0) -> None:
-        """Initializes floating atmospheric molten embers around stage bounds."""
+        """Initializes floating atmospheric dust particles around stage bounds."""
         self._ambient_center = center
         self._ambient_bounds = bounds
-        ember_tokens = [Palette.MAGMA_EMBER, Palette.MAGMA_SPARK, Palette.LAVA_NEON_PINK]
+        dust_tokens = [Palette.GHOST_TRAIL, Palette.TELEPORT_ENERGY, Palette.TELEPORT_GLOW]
 
         for dust in self._ambient:
             dust.base_pos = Vec3(
@@ -416,7 +416,7 @@ class FXManager(Entity):
             dust.entity.position = dust.base_pos
             s = random.uniform(0.035, 0.065)
             dust.entity.scale = Vec3(s, s, s)
-            tok = random.choice(ember_tokens)
+            tok = random.choice(dust_tokens)
             dust.r, dust.g, dust.b = tok.r, tok.g, tok.b
             dust.entity.color = color.rgba(dust.r, dust.g, dust.b, dust.alpha_base)
             dust.entity.enabled = True

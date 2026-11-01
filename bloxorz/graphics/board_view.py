@@ -391,8 +391,8 @@ class BoardView(Entity):
         # Backward compatibility: self.root points to self
         self.root = self
 
-        # Bloxpath Undulating Background Column Sea
-        self.column_sea = ColumnSea(parent=self)
+        # Bloxpath Undulating Background Column Sea (disabled in favor of 3D City background)
+        self.column_sea = None
 
         # Container registries
         self.tile_roots: Dict[Tuple[int, int], Entity] = {}
@@ -524,11 +524,7 @@ class BoardView(Entity):
     def clear(self):
         """Destroys all visual entities on the board."""
         for child in list(self.children):
-            if child is not getattr(self, "column_sea", None):
-                destroy(child)
-
-        if getattr(self, "column_sea", None):
-            self.column_sea.clear()
+            destroy(child)
 
         self._wave_time = 0.0
 
@@ -550,10 +546,6 @@ class BoardView(Entity):
         self.board = board
         if hasattr(board, "base_tiles"):
             self.tile_types = dict(board.base_tiles)
-
-        # Build undulating background column sea around the stage
-        if getattr(self, "column_sea", None):
-            self.column_sea.build_around_board(board)
 
         c_normal = color.hex(Palette.TILE_NORMAL.hex_code)
         c_pedestal = color.hex(Palette.TILE_PEDESTAL.hex_code)
@@ -615,30 +607,14 @@ class BoardView(Entity):
                 delay = min(0.38, dist * stagger)
                 tile_root.animate_y(0.0, duration=dur + 0.12, delay=delay, curve=curve.out_back)
 
-            # Deep monolithic foundation dropping into the column sea with glowing magma veins
+            # Deep monolithic obsidian foundation dropping into the abyss
             if tile_type != TileType.GOAL:
-                ped = Entity(
-                    parent=tile_root,
-                    model='cube',
-                    texture=_MAGMA_TEX,
-                    position=(0.0, -tile_h - base_depth / 2.0, 0.0),
-                    scale=(1.002, base_depth, 1.002),
-                    color=color.white if _MAGMA_TEX else c_pedestal,
-                )
-                if _MAGMA_TEX:
-                    ped.texture_scale = (0.70, 1.30)
-                    u_off = (float(x) * 0.28 + float(y) * 0.43) % 1.0
-                    ped.texture_offset = (u_off, 0.0)
-                    self.pedestal_entities.append((ped, u_off))
-
-                # Cyberpunk Magma heat collar anchoring the volcanic rock into the flowing lava
                 Entity(
                     parent=tile_root,
                     model='cube',
-                    position=(0.0, -1.73, 0.0),
-                    scale=(1.06, 0.05, 1.06),
-                    color=color.hex(Palette.LAVA_UNDERGLOW.hex_code),
-                    unlit=True,
+                    position=(0.0, -tile_h - base_depth / 2.0, 0.0),
+                    scale=(1.002, base_depth, 1.002),
+                    color=c_pedestal,
                 )
 
             if tile_type == TileType.NORMAL:
@@ -856,29 +832,13 @@ class BoardView(Entity):
                 )
                 self.tile_entities[(bx, by)] = top_slab
 
-                # 2. Deep monolithic foundation with flowing magma veins
-                ped = Entity(
-                    parent=bridge_col,
-                    model='cube',
-                    texture=_MAGMA_TEX,
-                    position=(0.0, -tile_h - base_depth / 2.0, 0.0),
-                    scale=(1.002, base_depth, 1.002),
-                    color=color.white if _MAGMA_TEX else c_pedestal,
-                )
-                if _MAGMA_TEX:
-                    ped.texture_scale = (0.70, 1.30)
-                    u_off = (float(bx) * 0.28 + float(by) * 0.43) % 1.0
-                    ped.texture_offset = (u_off, 0.0)
-                    self.pedestal_entities.append((ped, u_off))
-
-                # 3. Cyberpunk Magma heat collar
+                # 2. Deep monolithic obsidian foundation
                 Entity(
                     parent=bridge_col,
                     model='cube',
-                    position=(0.0, -1.73, 0.0),
-                    scale=(1.06, 0.05, 1.06),
-                    color=color.hex(Palette.LAVA_UNDERGLOW.hex_code),
-                    unlit=True,
+                    position=(0.0, -tile_h - base_depth / 2.0, 0.0),
+                    scale=(1.002, base_depth, 1.002),
+                    color=c_pedestal,
                 )
 
         # Setup ambient dust centered around the stage
@@ -1057,15 +1017,6 @@ class BoardView(Entity):
 
             for (bx, by), broot in self.bridge_roots.items():
                 broot.y = self.compute_wave_y(float(bx), -float(by))
-
-        # Flowing molten lava veins streaming down the walkable column pillars
-        if self.pedestal_entities:
-            flow_y = +(self._anim_time * 0.075)  # Flowing downward smoothly
-            heat_pulse = 0.94 + 0.10 * math.sin(self._anim_time * 2.2)
-            c_flow = color.rgba(heat_pulse, heat_pulse * 0.95, heat_pulse * 0.92, 1.0)
-            for ped, u_off in self.pedestal_entities:
-                ped.texture_offset = (u_off, flow_y)
-                ped.color = c_flow
 
         # Pulsating arcane breathing glow for goal core floor
         if self.goal_floor:

@@ -157,7 +157,7 @@ class AnimationConfig:
     wave_speed: float = 1.6
 
     # Bloxpath Column Sea (Ô nền bên ngoài gần như tĩnh, trồi lên sụt xuống bất đối xứng)
-    column_sea_enabled: bool = True
+    column_sea_enabled: bool = False
     column_sea_padding: int = 8
     column_sea_amplitude: float = 0.50
     column_sea_speed: float = 1.50

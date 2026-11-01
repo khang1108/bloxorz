@@ -61,13 +61,6 @@ class BloxorzApp:
             dlnp.setHpr(42, -50, 0)
             base.render.setLight(dlnp)
 
-            # Cyberpunk Magma Upward Underlight (warm radiant molten underglow from lava abyss)
-            lava_light = DirectionalLight('lava_up_light')
-            lava_light.setColor(Vec4(0.48, 0.16, 0.04, 1.0))
-            lava_lnp = base.render.attachNewNode(lava_light)
-            lava_lnp.setHpr(42, 65, 0)
-            base.render.setLight(lava_lnp)
-
             alight = AmbientLight('ambient_light')
             alight.setColor(Vec4(0.38, 0.38, 0.44, 1.0))
             alnp = base.render.attachNewNode(alight)
